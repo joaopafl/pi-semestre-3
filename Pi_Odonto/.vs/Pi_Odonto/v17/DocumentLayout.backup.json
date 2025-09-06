@@ -84,7 +84,7 @@
               "RelativeDocumentMoniker": "appsettings.json",
               "ToolTip": "C:\\fatec\\Pi_Odonto\\appsettings.json",
               "RelativeToolTip": "appsettings.json",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAkAAABpAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA4AAAAmAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
               "WhenOpened": "2025-09-01T00:01:02.783Z",
               "EditorCaption": ""
@@ -99,8 +99,7 @@
               "RelativeToolTip": "Views\\Perfil\\CadastrarCrianca.cshtml",
               "ViewState": "AgIAACYAAAAAAAAAAAAUwGsAAAAIAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2025-08-31T06:24:23.473Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-08-31T06:24:23.473Z"
             },
             {
               "$type": "Document",
@@ -112,8 +111,7 @@
               "RelativeToolTip": "Controllers\\PerfilController.cs",
               "ViewState": "AgIAAEQBAAAAAAAAAADwv4oBAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-08-31T06:12:43.838Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-08-31T06:12:43.838Z"
             },
             {
               "$type": "Document",
@@ -125,8 +123,7 @@
               "RelativeToolTip": "Controllers\\ResponsavelController.cs",
               "ViewState": "AgIAAJcBAAAAAAAAAAA0wKYBAAAJAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-08-31T06:05:35.445Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-08-31T06:05:35.445Z"
             },
             {
               "$type": "Document",
@@ -150,8 +147,7 @@
               "RelativeToolTip": "Program.cs",
               "ViewState": "AgIAAHEAAAAAAAAAAAAUwIYAAAA3AAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-08-31T05:03:57.697Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-08-31T05:03:57.697Z"
             },
             {
               "$type": "Document",
@@ -163,8 +159,7 @@
               "RelativeToolTip": "Views\\Perfil\\MinhasCriancas.cshtml",
               "ViewState": "AgIAAAYAAAAAAAAAAAAAAAMBAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2025-08-31T04:59:58.642Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-08-31T04:59:58.642Z"
             },
             {
               "$type": "Document",
@@ -176,8 +171,7 @@
               "RelativeToolTip": "Views\\Responsavel\\CreateCrianca.cshtml",
               "ViewState": "AgIAAE8AAAAAAAAAAAAAAFoAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2025-08-31T04:56:58.564Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-08-31T04:56:58.564Z"
             },
             {
               "$type": "Document",
@@ -225,8 +219,7 @@
               "RelativeToolTip": "Controllers\\AuthController.cs",
               "ViewState": "AgIAAHYAAAAAAAAAAAAmwIMAAAANAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-08-31T02:07:22.179Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-08-31T02:07:22.179Z"
             },
             {
               "$type": "Document",
@@ -238,8 +231,7 @@
               "RelativeToolTip": "Views\\Auth\\Login.cshtml",
               "ViewState": "AgIAALECAAAAAAAAAAAmwPoBAAAmAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2025-08-31T01:49:11.507Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-08-31T01:49:11.507Z"
             },
             {
               "$type": "Document",
@@ -263,8 +255,7 @@
               "RelativeToolTip": "Views\\Shared\\_Layout.cshtml",
               "ViewState": "AgIAANsAAAAAAAAAAAAawPMAAAA3AAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2025-08-31T00:06:09.604Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-08-31T00:06:09.604Z"
             },
             {
               "$type": "Document",
@@ -276,8 +267,7 @@
               "RelativeToolTip": "Views\\Home\\Index.cshtml",
               "ViewState": "AgIAAIkBAAAAAAAAAAAawJoBAAAmAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2025-08-30T23:52:52.913Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-08-30T23:52:52.913Z"
             }
           ]
         }

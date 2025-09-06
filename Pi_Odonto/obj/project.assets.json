@@ -2318,11 +2318,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\fatec\\Pi_Odonto\\Pi_Odonto.csproj",
+      "projectUniqueName": "C:\\fatec\\pi-semestre-3\\Pi_Odonto\\Pi_Odonto.csproj",
       "projectName": "Pi_Odonto",
-      "projectPath": "C:\\fatec\\Pi_Odonto\\Pi_Odonto.csproj",
+      "projectPath": "C:\\fatec\\pi-semestre-3\\Pi_Odonto\\Pi_Odonto.csproj",
       "packagesPath": "C:\\Users\\joaop\\.nuget\\packages\\",
-      "outputPath": "C:\\fatec\\Pi_Odonto\\obj\\",
+      "outputPath": "C:\\fatec\\pi-semestre-3\\Pi_Odonto\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
