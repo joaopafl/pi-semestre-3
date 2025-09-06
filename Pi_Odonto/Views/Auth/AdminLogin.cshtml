@@ -1,0 +1,62 @@
+﻿@{
+    ViewData["Title"] = "Login - Área Administrativa";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+@model Pi_Odonto.ViewModels.AdminLoginViewModel
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-4">
+            <div class="card shadow-lg border-warning">
+                <div class="card-header bg-warning text-dark text-center">
+                    <h3 class="mb-0">
+                        <i class="fas fa-shield-alt"></i> Área Administrativa
+                    </h3>
+                    <p class="mb-0 mt-2">Acesso restrito - Administradores</p>
+                </div>
+                <div class="card-body p-4">
+                    <form asp-action="AdminLogin" method="post">
+                        <div asp-validation-summary="All" class="alert alert-danger"></div>
+
+                        <div class="mb-3">
+                            <label asp-for="Email" class="form-label">
+                                <i class="fas fa-user-tie"></i> Email do Administrador
+                            </label>
+                            <input asp-for="Email" type="email" class="form-control" placeholder="admin@piodonto.com" required />
+                            <span asp-validation-for="Email" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-4">
+                            <label asp-for="Senha" class="form-label">
+                                <i class="fas fa-key"></i> Senha
+                            </label>
+                            <input asp-for="Senha" type="password" class="form-control" placeholder="Senha do administrador" required />
+                            <span asp-validation-for="Senha" class="text-danger"></span>
+                        </div>
+
+                        <div class="d-grid gap-2 mb-3">
+                            <button type="submit" class="btn btn-warning btn-lg text-dark">
+                                <i class="fas fa-unlock-alt"></i> Acessar Sistema
+                            </button>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i>
+                            <small>Esta área é restrita a administradores autorizados do sistema Pi Odonto.</small>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="text-center mt-3">
+                <a href="/" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Voltar ao Site
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
+}

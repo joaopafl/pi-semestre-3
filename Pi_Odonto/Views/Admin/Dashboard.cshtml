@@ -1,0 +1,256 @@
+﻿@{
+    ViewData["Title"] = "Dashboard Administrativo";
+}
+@model List<Pi_Odonto.Models.Responsavel>
+
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="text-primary">
+                <i class="fas fa-tachometer-alt"></i> Dashboard Administrativo
+            </h1>
+            <p class="text-muted">Painel de controle do sistema Pi Odonto</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <div class="dropdown">
+                <button class="btn btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                    <i class="fas fa-user-shield"></i> @User.Identity.Name
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="/Admin/Responsaveis"><i class="fas fa-users"></i> Gerenciar Responsáveis</a></li>
+                    <li><a class="dropdown-item" href="/Admin/Relatorios"><i class="fas fa-chart-bar"></i> Relatórios</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <form asp-action="Logout" asp-controller="Auth" method="post" class="d-inline">
+                            <button type="submit" class="dropdown-item text-danger">
+                                <i class="fas fa-sign-out-alt"></i> Sair
+                            </button>
+                        </form>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cards de Estatísticas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="mb-0">@ViewBag.TotalResponsaveis</h4>
+                            <p class="mb-0">Total de Responsáveis</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-users fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <a href="/Admin/Responsaveis" class="text-white text-decoration-none">
+                        <small>Ver todos <i class="fas fa-arrow-right"></i></small>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="mb-0">@ViewBag.ResponsaveisAtivos</h4>
+                            <p class="mb-0">Responsáveis Ativos</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-user-check fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <small>Usuários ativos no sistema</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="mb-0">@ViewBag.CadastrosHoje</h4>
+                            <p class="mb-0">Cadastros Hoje</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-user-plus fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <small>Novos cadastros de hoje</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card bg-warning text-dark">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="mb-0">@ViewBag.CadastrosEsteMes</h4>
+                            <p class="mb-0">Cadastros Este Mês</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-calendar-alt fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <small>Total no mês atual</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ações Rápidas -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0"><i class="fas fa-bolt"></i> Ações Rápidas</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 text-center mb-3">
+                            <a href="/Admin/Responsaveis" class="btn btn-outline-primary btn-lg w-100">
+                                <i class="fas fa-users fa-2x d-block mb-2"></i>
+                                Gerenciar Responsáveis
+                            </a>
+                        </div>
+                        <div class="col-md-3 text-center mb-3">
+                            <a href="/Admin/Relatorios" class="btn btn-outline-success btn-lg w-100">
+                                <i class="fas fa-chart-bar fa-2x d-block mb-2"></i>
+                                Relatórios
+                            </a>
+                        </div>
+                        <div class="col-md-3 text-center mb-3">
+                            <a href="/Responsavel/Create" class="btn btn-outline-info btn-lg w-100">
+                                <i class="fas fa-user-plus fa-2x d-block mb-2"></i>
+                                Cadastrar Responsável
+                            </a>
+                        </div>
+                        <div class="col-md-3 text-center mb-3">
+                            <a href="/" class="btn btn-outline-warning btn-lg w-100" target="_blank">
+                                <i class="fas fa-home fa-2x d-block mb-2"></i>
+                                Página Inicial
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Últimos Cadastros -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0"><i class="fas fa-clock"></i> Últimos Cadastros</h5>
+                </div>
+                <div class="card-body">
+                    @if (Model != null && Model.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Nome</th>
+                                        <th>Email</th>
+                                        <th>Telefone</th>
+                                        <th>CPF</th>
+                                        <th>Status</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var responsavel in Model)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <i class="fas fa-user text-primary"></i>
+                                                @responsavel.Nome
+                                            </td>
+                                            <td>@responsavel.Email</td>
+                                            <td>
+                                                @if (responsavel.Telefone.Length == 11)
+                                                {
+                                                    @($"({responsavel.Telefone.Substring(0, 2)}) {responsavel.Telefone.Substring(2, 5)}-{responsavel.Telefone.Substring(7, 4)}")
+                                                }
+                                                else
+                                                {
+                                                    @responsavel.Telefone
+                                                }
+                                            </td>
+                                            <td>
+                                                @if (responsavel.Cpf.Length == 11)
+                                                {
+                                                    @($"{responsavel.Cpf.Substring(0, 3)}.{responsavel.Cpf.Substring(3, 3)}.{responsavel.Cpf.Substring(6, 3)}-{responsavel.Cpf.Substring(9, 2)}")
+                                                }
+                                                else
+                                                {
+                                                    @responsavel.Cpf
+                                                }
+                                            </td>
+                                            <td>
+                                                @if (responsavel.Ativo)
+                                                {
+                                                    <span class="badge bg-success">Ativo</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-danger">Inativo</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                <div class="btn-group btn-group-sm">
+                                                    <a href="/Admin/Responsaveis/Detalhes/@responsavel.Id" class="btn btn-outline-info btn-sm" title="Ver detalhes">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                    <a href="/Admin/Responsaveis/Editar/@responsavel.Id" class="btn btn-outline-warning btn-sm" title="Editar">
+                                                        <i class="fas fa-edit"></i>
+                                                    </a>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="text-center mt-3">
+                            <a href="/Admin/Responsaveis" class="btn btn-primary">
+                                <i class="fas fa-list"></i> Ver Todos os Responsáveis
+                            </a>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center text-muted">
+                            <i class="fas fa-user-plus fa-3x mb-3"></i>
+                            <p>Nenhum responsável cadastrado ainda.</p>
+                            <a href="/Responsavel/Create" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Cadastrar Primeiro Responsável
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
+}
