@@ -16,7 +16,7 @@ namespace Pi_Odonto.Models
         public string Nome { get; set; }
 
         [Required]
-        [StringLength(11)]
+        [StringLength(14)]
         [Column("cpf_crianca")]
         [Display(Name = "CPF")]
         public string Cpf { get; set; }
@@ -41,5 +41,6 @@ namespace Pi_Odonto.Models
         // Navegação - SEM [Required] e nullable
         [ForeignKey("IdResponsavel")]
         public virtual Responsavel? Responsavel { get; set; }
+        public bool Ativa { get; set; } = true;
     }
 }
