@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Pi_Odonto")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+39bc03c353f4a34e53b3bbb1f9f7db167e2369a4")]
 [assembly: System.Reflection.AssemblyProductAttribute("Pi_Odonto")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Pi_Odonto")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
