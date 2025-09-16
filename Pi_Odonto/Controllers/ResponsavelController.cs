@@ -80,13 +80,13 @@ namespace Pi_Odonto.Controllers
                     try
                     {
                         // Define valores padrão
-                        viewModel.Responsavel.Ativo = false;
+                        viewModel.Responsavel!.Ativo = false;
                         viewModel.Responsavel.DataCadastro = DateTime.Now;
                         viewModel.Responsavel.EmailVerificado = false;
                         viewModel.Responsavel.TokenVerificacao = Guid.NewGuid().ToString();
 
                         // Criptografar a senha
-                        viewModel.Responsavel.Senha = PasswordHelper.HashPassword(viewModel.Responsavel.Senha);
+                        viewModel.Responsavel.Senha = PasswordHelper.HashPassword(viewModel.Responsavel.Senha ?? "");
 
                         // Debug - mostra SQL gerado
                         Console.WriteLine("=== DADOS RESPONSÁVEL ===");
@@ -157,7 +157,7 @@ namespace Pi_Odonto.Controllers
             }
 
             // Se deu erro, recarrega as opções
-            if (viewModel.OpcoesParentesco == null || !viewModel.OpcoesParentesco.Any())
+            if (viewModel.OpcoesParentesco == null || !viewModel.OpcoesParentesco!.Any())
             {
                 viewModel.OpcoesParentesco = new List<string>
                 {
@@ -408,7 +408,7 @@ namespace Pi_Odonto.Controllers
         public IActionResult CreateCrianca()
         {
             // Redireciona para o PerfilController se o usuário estiver logado
-            if (User.Identity.IsAuthenticated)
+            if (User.Identity?.IsAuthenticated == true)
             {
                 return RedirectToAction("CadastrarCrianca", "Perfil");
             }
