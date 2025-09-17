@@ -9,6 +9,7 @@ namespace Pi_Odonto.Data
         public DbSet<Responsavel> Responsaveis { get; set; }
         public DbSet<Crianca> Criancas { get; set; }
         public DbSet<RecuperacaoSenhaToken> RecuperacaoSenhaTokens { get; set; }
+        public DbSet<Dentista> Dentistas { get; set; }
 
         // Configurações adicionais do relacionamento (opcional, mas recomendado)
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -33,6 +34,10 @@ namespace Pi_Odonto.Data
             // Configuração da tabela de tokens de recuperação
             modelBuilder.Entity<RecuperacaoSenhaToken>()
                 .ToTable("RecuperacaoSenhaTokens");
+
+            // Configuração da tabela dentista
+            modelBuilder.Entity<Dentista>()
+                .ToTable("dentista");
         }
     }
 }
