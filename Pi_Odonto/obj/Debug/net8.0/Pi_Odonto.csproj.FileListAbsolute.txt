@@ -214,3 +214,16 @@ C:\fatec\Pi_Odonto-Pronto_TOP_OK\obj\Debug\net8.0\Pi_Odonto.pdb
 C:\fatec\Pi_Odonto-Pronto_TOP_OK\obj\Debug\net8.0\Pi_Odonto.genruntimeconfig.cache
 C:\fatec\Pi_Odonto-Pronto_TOP_OK\obj\Debug\net8.0\ref\Pi_Odonto.dll
 C:\fatec\Pi_Odonto\obj\Debug\net8.0\staticwebassets.upToDateCheck.txt
+C:\Users\Aluno\Desktop\projetoPI\pi-semestre-3\Pi_Odonto\obj\Debug\net8.0\Pi_Odonto.csproj.AssemblyReference.cache
+C:\Users\Aluno\Desktop\projetoPI\pi-semestre-3\Pi_Odonto\obj\Debug\net8.0\rpswa.dswa.cache.json
+C:\Users\Aluno\Desktop\projetoPI\pi-semestre-3\Pi_Odonto\obj\Debug\net8.0\Pi_Odonto.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Aluno\Desktop\projetoPI\pi-semestre-3\Pi_Odonto\obj\Debug\net8.0\Pi_Odonto.AssemblyInfoInputs.cache
+C:\Users\Aluno\Desktop\projetoPI\pi-semestre-3\Pi_Odonto\obj\Debug\net8.0\Pi_Odonto.AssemblyInfo.cs
+C:\Users\Aluno\Desktop\projetoPI\pi-semestre-3\Pi_Odonto\obj\Debug\net8.0\Pi_Odonto.csproj.CoreCompileInputs.cache
+C:\Users\Aluno\Desktop\projetoPI\pi-semestre-3\Pi_Odonto\obj\Debug\net8.0\Pi_Odonto.MvcApplicationPartsAssemblyInfo.cache
+C:\Users\Aluno\Desktop\projetoPI\pi-semestre-3\Pi_Odonto\obj\Debug\net8.0\Pi_Odonto.RazorAssemblyInfo.cache
+C:\Users\Aluno\Desktop\projetoPI\pi-semestre-3\Pi_Odonto\obj\Debug\net8.0\Pi_Odonto.RazorAssemblyInfo.cs
+C:\Users\Aluno\Desktop\projetoPI\pi-semestre-3\Pi_Odonto\obj\Debug\net8.0\Pi_Odonto.sourcelink.json
+C:\Users\Aluno\Desktop\projetoPI\pi-semestre-3\Pi_Odonto\obj\Debug\net8.0\Pi_Odonto.dll
+C:\Users\Aluno\Desktop\projetoPI\pi-semestre-3\Pi_Odonto\obj\Debug\net8.0\refint\Pi_Odonto.dll
+C:\Users\Aluno\Desktop\projetoPI\pi-semestre-3\Pi_Odonto\obj\Debug\net8.0\Pi_Odonto.pdb

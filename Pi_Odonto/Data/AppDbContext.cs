@@ -9,6 +9,7 @@ namespace Pi_Odonto.Data
         public DbSet<Responsavel> Responsaveis { get; set; }
         public DbSet<Crianca> Criancas { get; set; }
         public DbSet<RecuperacaoSenhaToken> RecuperacaoSenhaTokens { get; set; }
+        public object Atendimentos { get; internal set; }
 
         // Configurações adicionais do relacionamento (opcional, mas recomendado)
         protected override void OnModelCreating(ModelBuilder modelBuilder)

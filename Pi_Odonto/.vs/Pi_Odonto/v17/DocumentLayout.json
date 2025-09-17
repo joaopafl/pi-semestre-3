@@ -3,8 +3,40 @@
   "WorkspaceRootPath": "C:\\Users\\Aluno\\Desktop\\projetoPI\\pi-semestre-3\\Pi_Odonto\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{EE5FF775-F796-49F4-A6A8-ACB35C6C19AE}|Pi_Odonto.csproj|c:\\users\\aluno\\desktop\\projetopi\\pi-semestre-3\\pi_odonto\\controllers\\atendimentocontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{EE5FF775-F796-49F4-A6A8-ACB35C6C19AE}|Pi_Odonto.csproj|solutionrelative:controllers\\atendimentocontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{EE5FF775-F796-49F4-A6A8-ACB35C6C19AE}|Pi_Odonto.csproj|c:\\users\\aluno\\desktop\\projetopi\\pi-semestre-3\\pi_odonto\\models\\atendimento.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{EE5FF775-F796-49F4-A6A8-ACB35C6C19AE}|Pi_Odonto.csproj|solutionrelative:models\\atendimento.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{EE5FF775-F796-49F4-A6A8-ACB35C6C19AE}|Pi_Odonto.csproj|c:\\users\\aluno\\desktop\\projetopi\\pi-semestre-3\\pi_odonto\\viewmodels\\atendimentoviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{EE5FF775-F796-49F4-A6A8-ACB35C6C19AE}|Pi_Odonto.csproj|solutionrelative:viewmodels\\atendimentoviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{EE5FF775-F796-49F4-A6A8-ACB35C6C19AE}|Pi_Odonto.csproj|c:\\users\\aluno\\desktop\\projetopi\\pi-semestre-3\\pi_odonto\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
       "RelativeMoniker": "D:0:0:{EE5FF775-F796-49F4-A6A8-ACB35C6C19AE}|Pi_Odonto.csproj|solutionrelative:appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{EE5FF775-F796-49F4-A6A8-ACB35C6C19AE}|Pi_Odonto.csproj|c:\\users\\aluno\\desktop\\projetopi\\pi-semestre-3\\pi_odonto\\views\\atendimento\\index.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{EE5FF775-F796-49F4-A6A8-ACB35C6C19AE}|Pi_Odonto.csproj|solutionrelative:views\\atendimento\\index.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{EE5FF775-F796-49F4-A6A8-ACB35C6C19AE}|Pi_Odonto.csproj|c:\\users\\aluno\\desktop\\projetopi\\pi-semestre-3\\pi_odonto\\views\\atendimento\\edit.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{EE5FF775-F796-49F4-A6A8-ACB35C6C19AE}|Pi_Odonto.csproj|solutionrelative:views\\atendimento\\edit.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{EE5FF775-F796-49F4-A6A8-ACB35C6C19AE}|Pi_Odonto.csproj|c:\\users\\aluno\\desktop\\projetopi\\pi-semestre-3\\pi_odonto\\views\\atendimento\\details.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{EE5FF775-F796-49F4-A6A8-ACB35C6C19AE}|Pi_Odonto.csproj|solutionrelative:views\\atendimento\\details.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{EE5FF775-F796-49F4-A6A8-ACB35C6C19AE}|Pi_Odonto.csproj|c:\\users\\aluno\\desktop\\projetopi\\pi-semestre-3\\pi_odonto\\views\\atendimento\\delete.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{EE5FF775-F796-49F4-A6A8-ACB35C6C19AE}|Pi_Odonto.csproj|solutionrelative:views\\atendimento\\delete.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{EE5FF775-F796-49F4-A6A8-ACB35C6C19AE}|Pi_Odonto.csproj|c:\\users\\aluno\\desktop\\projetopi\\pi-semestre-3\\pi_odonto\\views\\atendimento\\create.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{EE5FF775-F796-49F4-A6A8-ACB35C6C19AE}|Pi_Odonto.csproj|solutionrelative:views\\atendimento\\create.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{EE5FF775-F796-49F4-A6A8-ACB35C6C19AE}|Pi_Odonto.csproj|c:\\users\\aluno\\desktop\\projetopi\\pi-semestre-3\\pi_odonto\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -74,17 +106,82 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 0,
+          "SelectedChildIndex": 3,
           "Children": [
             {
               "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "Index.cshtml",
+              "DocumentMoniker": "C:\\Users\\Aluno\\Desktop\\projetoPI\\pi-semestre-3\\Pi_Odonto\\Views\\Atendimento\\Index.cshtml",
+              "RelativeDocumentMoniker": "Views\\Atendimento\\Index.cshtml",
+              "ToolTip": "C:\\Users\\Aluno\\Desktop\\projetoPI\\pi-semestre-3\\Pi_Odonto\\Views\\Atendimento\\Index.cshtml",
+              "RelativeToolTip": "Views\\Atendimento\\Index.cshtml",
+              "ViewState": "AgIAAHsAAAAAAAAAAAAAANgAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-09-16T23:30:53.696Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "Edit.cshtml",
+              "DocumentMoniker": "C:\\Users\\Aluno\\Desktop\\projetoPI\\pi-semestre-3\\Pi_Odonto\\Views\\Atendimento\\Edit.cshtml",
+              "RelativeDocumentMoniker": "Views\\Atendimento\\Edit.cshtml",
+              "ToolTip": "C:\\Users\\Aluno\\Desktop\\projetoPI\\pi-semestre-3\\Pi_Odonto\\Views\\Atendimento\\Edit.cshtml",
+              "RelativeToolTip": "Views\\Atendimento\\Edit.cshtml",
+              "ViewState": "AgIAALAAAAAAAAAAAAAQwMsAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-09-16T23:30:14.689Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "AtendimentoViewModel.cs",
+              "DocumentMoniker": "C:\\Users\\Aluno\\Desktop\\projetoPI\\pi-semestre-3\\Pi_Odonto\\ViewModels\\AtendimentoViewModel.cs",
+              "RelativeDocumentMoniker": "ViewModels\\AtendimentoViewModel.cs",
+              "ToolTip": "C:\\Users\\Aluno\\Desktop\\projetoPI\\pi-semestre-3\\Pi_Odonto\\ViewModels\\AtendimentoViewModel.cs",
+              "RelativeToolTip": "ViewModels\\AtendimentoViewModel.cs",
+              "ViewState": "AgIAACMAAAAAAAAAAAAswDIAAAAwAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-16T23:21:07.165Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
               "DocumentIndex": 0,
+              "Title": "AtendimentoController.cs",
+              "DocumentMoniker": "C:\\Users\\Aluno\\Desktop\\projetoPI\\pi-semestre-3\\Pi_Odonto\\Controllers\\AtendimentoController.cs",
+              "RelativeDocumentMoniker": "Controllers\\AtendimentoController.cs",
+              "ToolTip": "C:\\Users\\Aluno\\Desktop\\projetoPI\\pi-semestre-3\\Pi_Odonto\\Controllers\\AtendimentoController.cs",
+              "RelativeToolTip": "Controllers\\AtendimentoController.cs",
+              "ViewState": "AgIAAKkAAAAAAAAAAAAYwMIAAAANAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-16T23:15:06.608Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "Atendimento.cs",
+              "DocumentMoniker": "C:\\Users\\Aluno\\Desktop\\projetoPI\\pi-semestre-3\\Pi_Odonto\\Models\\Atendimento.cs",
+              "RelativeDocumentMoniker": "Models\\Atendimento.cs",
+              "ToolTip": "C:\\Users\\Aluno\\Desktop\\projetoPI\\pi-semestre-3\\Pi_Odonto\\Models\\Atendimento.cs",
+              "RelativeToolTip": "Models\\Atendimento.cs",
+              "ViewState": "AgIAABwAAAAAAAAAAAAkwEUAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-16T23:16:29.693Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
               "Title": "appsettings.json",
               "DocumentMoniker": "C:\\Users\\Aluno\\Desktop\\projetoPI\\pi-semestre-3\\Pi_Odonto\\appsettings.json",
               "RelativeDocumentMoniker": "appsettings.json",
               "ToolTip": "C:\\Users\\Aluno\\Desktop\\projetoPI\\pi-semestre-3\\Pi_Odonto\\appsettings.json",
               "RelativeToolTip": "appsettings.json",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA4AAAAmAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABUAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
               "WhenOpened": "2025-09-01T00:01:02.783Z",
               "EditorCaption": ""
@@ -92,6 +189,45 @@
             {
               "$type": "Document",
               "DocumentIndex": 6,
+              "Title": "Details.cshtml",
+              "DocumentMoniker": "C:\\Users\\Aluno\\Desktop\\projetoPI\\pi-semestre-3\\Pi_Odonto\\Views\\Atendimento\\Details.cshtml",
+              "RelativeDocumentMoniker": "Views\\Atendimento\\Details.cshtml",
+              "ToolTip": "C:\\Users\\Aluno\\Desktop\\projetoPI\\pi-semestre-3\\Pi_Odonto\\Views\\Atendimento\\Details.cshtml",
+              "RelativeToolTip": "Views\\Atendimento\\Details.cshtml",
+              "ViewState": "AgIAAFEAAAAAAAAAAAAAAOQAAAAoAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-09-16T23:27:55.528Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "Delete.cshtml",
+              "DocumentMoniker": "C:\\Users\\Aluno\\Desktop\\projetoPI\\pi-semestre-3\\Pi_Odonto\\Views\\Atendimento\\Delete.cshtml",
+              "RelativeDocumentMoniker": "Views\\Atendimento\\Delete.cshtml",
+              "ToolTip": "C:\\Users\\Aluno\\Desktop\\projetoPI\\pi-semestre-3\\Pi_Odonto\\Views\\Atendimento\\Delete.cshtml",
+              "RelativeToolTip": "Views\\Atendimento\\Delete.cshtml",
+              "ViewState": "AgIAADkAAAAAAAAAAAAAAJ8AAAAGAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-09-16T23:24:31.26Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "Create.cshtml",
+              "DocumentMoniker": "C:\\Users\\Aluno\\Desktop\\projetoPI\\pi-semestre-3\\Pi_Odonto\\Views\\Atendimento\\Create.cshtml",
+              "RelativeDocumentMoniker": "Views\\Atendimento\\Create.cshtml",
+              "ToolTip": "C:\\Users\\Aluno\\Desktop\\projetoPI\\pi-semestre-3\\Pi_Odonto\\Views\\Atendimento\\Create.cshtml",
+              "RelativeToolTip": "Views\\Atendimento\\Create.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAALAAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-09-16T23:23:10.944Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 14,
               "Title": "CadastrarCrianca.cshtml",
               "DocumentMoniker": "C:\\Users\\Aluno\\Desktop\\projetoPI\\pi-semestre-3\\Pi_Odonto\\Views\\Perfil\\CadastrarCrianca.cshtml",
               "RelativeDocumentMoniker": "Views\\Perfil\\CadastrarCrianca.cshtml",
@@ -103,7 +239,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 9,
+              "DocumentIndex": 17,
               "Title": "PerfilController.cs",
               "DocumentMoniker": "C:\\Users\\Aluno\\Desktop\\projetoPI\\pi-semestre-3\\Pi_Odonto\\Controllers\\PerfilController.cs",
               "RelativeDocumentMoniker": "Controllers\\PerfilController.cs",
@@ -115,7 +251,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 10,
+              "DocumentIndex": 18,
               "Title": "ResponsavelController.cs",
               "DocumentMoniker": "C:\\Users\\Aluno\\Desktop\\projetoPI\\pi-semestre-3\\Pi_Odonto\\Controllers\\ResponsavelController.cs",
               "RelativeDocumentMoniker": "Controllers\\ResponsavelController.cs",
@@ -127,7 +263,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 11,
+              "DocumentIndex": 19,
               "Title": "CriancaViewModel.cs",
               "DocumentMoniker": "C:\\Users\\Aluno\\Desktop\\projetoPI\\pi-semestre-3\\Pi_Odonto\\ViewModels\\CriancaViewModel.cs",
               "RelativeDocumentMoniker": "ViewModels\\CriancaViewModel.cs",
@@ -139,7 +275,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 9,
               "Title": "Program.cs",
               "DocumentMoniker": "C:\\Users\\Aluno\\Desktop\\projetoPI\\pi-semestre-3\\Pi_Odonto\\Program.cs",
               "RelativeDocumentMoniker": "Program.cs",
@@ -151,7 +287,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 7,
+              "DocumentIndex": 15,
               "Title": "MinhasCriancas.cshtml",
               "DocumentMoniker": "C:\\Users\\Aluno\\Desktop\\projetoPI\\pi-semestre-3\\Pi_Odonto\\Views\\Perfil\\MinhasCriancas.cshtml",
               "RelativeDocumentMoniker": "Views\\Perfil\\MinhasCriancas.cshtml",
@@ -163,7 +299,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 8,
+              "DocumentIndex": 16,
               "Title": "CreateCrianca.cshtml",
               "DocumentMoniker": "C:\\Users\\Aluno\\Desktop\\projetoPI\\pi-semestre-3\\Pi_Odonto\\Views\\Responsavel\\CreateCrianca.cshtml",
               "RelativeDocumentMoniker": "Views\\Responsavel\\CreateCrianca.cshtml",
@@ -175,7 +311,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 13,
+              "DocumentIndex": 21,
               "Title": "Index.cshtml",
               "DocumentMoniker": "C:\\Users\\Aluno\\Desktop\\projetoPI\\pi-semestre-3\\Pi_Odonto\\Views\\Perfil\\Index.cshtml",
               "RelativeDocumentMoniker": "Views\\Perfil\\Index.cshtml",
@@ -187,7 +323,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 14,
+              "DocumentIndex": 22,
               "Title": "EmailEnviado.cshtml",
               "DocumentMoniker": "C:\\Users\\Aluno\\Desktop\\projetoPI\\pi-semestre-3\\Pi_Odonto\\Views\\Responsavel\\EmailEnviado.cshtml",
               "RelativeDocumentMoniker": "Views\\Responsavel\\EmailEnviado.cshtml",
@@ -199,7 +335,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 12,
+              "DocumentIndex": 20,
               "Title": "Create.cshtml",
               "DocumentMoniker": "C:\\Users\\Aluno\\Desktop\\projetoPI\\pi-semestre-3\\Pi_Odonto\\Views\\Responsavel\\Create.cshtml",
               "RelativeDocumentMoniker": "Views\\Responsavel\\Create.cshtml",
@@ -211,7 +347,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 12,
               "Title": "AuthController.cs",
               "DocumentMoniker": "C:\\Users\\Aluno\\Desktop\\projetoPI\\pi-semestre-3\\Pi_Odonto\\Controllers\\AuthController.cs",
               "RelativeDocumentMoniker": "Controllers\\AuthController.cs",
@@ -223,7 +359,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
+              "DocumentIndex": 13,
               "Title": "Login.cshtml",
               "DocumentMoniker": "C:\\Users\\Aluno\\Desktop\\projetoPI\\pi-semestre-3\\Pi_Odonto\\Views\\Auth\\Login.cshtml",
               "RelativeDocumentMoniker": "Views\\Auth\\Login.cshtml",
@@ -235,7 +371,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 15,
+              "DocumentIndex": 23,
               "Title": "Responsaveis.cshtml",
               "DocumentMoniker": "C:\\Users\\Aluno\\Desktop\\projetoPI\\pi-semestre-3\\Pi_Odonto\\Views\\Admin\\Responsaveis.cshtml",
               "RelativeDocumentMoniker": "Views\\Admin\\Responsaveis.cshtml",
@@ -247,7 +383,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 10,
               "Title": "_Layout.cshtml",
               "DocumentMoniker": "C:\\Users\\Aluno\\Desktop\\projetoPI\\pi-semestre-3\\Pi_Odonto\\Views\\Shared\\_Layout.cshtml",
               "RelativeDocumentMoniker": "Views\\Shared\\_Layout.cshtml",
@@ -259,7 +395,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 11,
               "Title": "Index.cshtml",
               "DocumentMoniker": "C:\\Users\\Aluno\\Desktop\\projetoPI\\pi-semestre-3\\Pi_Odonto\\Views\\Home\\Index.cshtml",
               "RelativeDocumentMoniker": "Views\\Home\\Index.cshtml",
