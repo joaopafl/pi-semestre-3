@@ -1,6 +1,4 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
 using Pi_Odonto.Data;
 using Pi_Odonto.Models;
 
@@ -14,7 +12,7 @@ namespace Pi_Odonto.Controllers
         {
             _context = context;
         }
-
+        
         public IActionResult Index()
         {
             var dentistas = _context.Dentistas.ToList();
