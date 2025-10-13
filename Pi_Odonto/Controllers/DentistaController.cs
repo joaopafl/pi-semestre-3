@@ -83,25 +83,73 @@ namespace Pi_Odonto.Controllers
         {
             var dentista = _context.Dentistas
                 .Include(d => d.EscalaTrabalho)
+                .Include(d => d.Disponibilidades)
                 .FirstOrDefault(d => d.Id == id);
             if (dentista == null) return NotFound();
 
             ViewBag.Escalas = _context.EscalaTrabalho.ToList();
-            return View(dentista);
+            
+            // Criar o ViewModel com as disponibilidades existentes
+            var viewModel = new DentistaViewModel
+            {
+                Id = dentista.Id,
+                Nome = dentista.Nome,
+                Cpf = dentista.Cpf,
+                Cro = dentista.Cro,
+                Endereco = dentista.Endereco,
+                Email = dentista.Email,
+                Telefone = dentista.Telefone,
+                IdEscala = dentista.IdEscala,
+                Disponibilidades = ObterDisponibilidadesComSelecoes(dentista.Disponibilidades)
+            };
+
+            return View(viewModel);
         }
 
         [HttpPost]
-        public IActionResult Edit(Dentista dentista)
+        public IActionResult Edit(DentistaViewModel viewModel, int? IdEscala)
         {
             if (ModelState.IsValid)
             {
+                // Atualizar o dentista
+                var dentista = _context.Dentistas.FirstOrDefault(d => d.Id == viewModel.Id);
+                if (dentista == null) return NotFound();
+
+                dentista.Nome = viewModel.Nome;
+                dentista.Cpf = viewModel.Cpf;
+                dentista.Cro = viewModel.Cro;
+                dentista.Endereco = viewModel.Endereco;
+                dentista.Email = viewModel.Email;
+                dentista.Telefone = viewModel.Telefone;
+                dentista.IdEscala = IdEscala;
+
                 _context.Dentistas.Update(dentista);
+
+                // Remover todas as disponibilidades existentes
+                var disponibilidadesExistentes = _context.DisponibilidadesDentista.Where(d => d.IdDentista == dentista.Id).ToList();
+                _context.DisponibilidadesDentista.RemoveRange(disponibilidadesExistentes);
+
+                // Adicionar as novas disponibilidades selecionadas
+                foreach (var disponibilidade in viewModel.Disponibilidades.Where(d => d.Selecionado))
+                {
+                    var novaDisponibilidade = new DisponibilidadeDentista
+                    {
+                        IdDentista = dentista.Id,
+                        DiaSemana = disponibilidade.DiaSemana,
+                        HoraInicio = disponibilidade.HoraInicio,
+                        HoraFim = disponibilidade.HoraFim
+                    };
+
+                    _context.DisponibilidadesDentista.Add(novaDisponibilidade);
+                }
+
                 _context.SaveChanges();
                 return RedirectToAction("Index");
             }
 
             ViewBag.Escalas = _context.EscalaTrabalho.ToList();
-            return View(dentista);
+            viewModel.Disponibilidades = ObterDisponibilidadesPadrao();
+            return View(viewModel);
         }
 
         [HttpGet]
@@ -237,6 +285,21 @@ namespace Pi_Odonto.Controllers
             }
 
             return disponibilidades;
+        }
+
+        private List<DisponibilidadeItem> ObterDisponibilidadesComSelecoes(ICollection<DisponibilidadeDentista> disponibilidadesExistentes)
+        {
+            var disponibilidadesPadrao = ObterDisponibilidadesPadrao();
+
+            foreach (var disponibilidade in disponibilidadesPadrao)
+            {
+                disponibilidade.Selecionado = disponibilidadesExistentes.Any(d => 
+                    d.DiaSemana == disponibilidade.DiaSemana &&
+                    d.HoraInicio == disponibilidade.HoraInicio &&
+                    d.HoraFim == disponibilidade.HoraFim);
+            }
+
+            return disponibilidadesPadrao;
         }
     }
 }

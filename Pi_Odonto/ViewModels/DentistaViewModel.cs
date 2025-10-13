@@ -38,6 +38,9 @@ namespace Pi_Odonto.ViewModels
         [Display(Name = "Telefone")]
         public string Telefone { get; set; } = string.Empty;
 
+        [Display(Name = "Escala de Trabalho")]
+        public int? IdEscala { get; set; }
+
         // Lista de disponibilidades selecionadas
         public List<DisponibilidadeItem> Disponibilidades { get; set; } = new List<DisponibilidadeItem>();
     }

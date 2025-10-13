@@ -12,6 +12,7 @@ namespace Pi_Odonto.Data
         public DbSet<Dentista> Dentistas { get; set; }
         public DbSet<EscalaTrabalho> EscalaTrabalho { get; set; }
         public DbSet<DisponibilidadeDentista> DisponibilidadesDentista { get; set; }
+        public DbSet<Atendimento> Atendimentos { get; set; }
 
         // Configurações adicionais do relacionamento (opcional, mas recomendado)
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -48,6 +49,10 @@ namespace Pi_Odonto.Data
             // Configuração da tabela disponibilidade_dentista
             modelBuilder.Entity<DisponibilidadeDentista>()
                 .ToTable("disponibilidade_dentista");
+
+            // Configuração da tabela atendimento
+            modelBuilder.Entity<Atendimento>()
+                .ToTable("atendimento");
 
             // Configuração do relacionamento Dentista -> EscalaTrabalho
             modelBuilder.Entity<Dentista>()
