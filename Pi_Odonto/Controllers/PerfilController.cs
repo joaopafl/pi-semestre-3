@@ -63,7 +63,13 @@ namespace Pi_Odonto.Controllers
                 query = query.Where(c => c.IdResponsavel == currentResponsavelId);
             }
 
-            var criancas = query.OrderBy(c => c.Nome).ToList();
+            // Inclui tanto crianças ativas quanto inativas, ordenadas por ativas primeiro
+            var criancas = query
+                .Include(c => c.Responsavel)
+                .OrderByDescending(c => c.Ativa)
+                .ThenBy(c => c.Nome)
+                .ToList();
+
             ViewBag.IsAdmin = IsAdmin();
             ViewBag.ResponsavelId = responsavelId;
 
@@ -109,6 +115,13 @@ namespace Pi_Odonto.Controllers
             {
                 TempData["Erro"] = "Criança não encontrada.";
                 return RedirectToAction("MinhasCriancas");
+            }
+
+            // Verifica se a criança está ativa
+            if (!crianca.Ativa)
+            {
+                TempData["Erro"] = "Não é possível editar uma criança inativa.";
+                return RedirectToAction("DetalhesCrianca", new { id });
             }
 
             // Verifica se o usuário tem permissão para editar essa criança
@@ -157,6 +170,13 @@ namespace Pi_Odonto.Controllers
                 {
                     TempData["Erro"] = "Criança não encontrada.";
                     return RedirectToAction("MinhasCriancas");
+                }
+
+                // Verifica se a criança está ativa
+                if (!criancaExistente.Ativa)
+                {
+                    TempData["Erro"] = "Não é possível editar uma criança inativa.";
+                    return RedirectToAction("DetalhesCrianca", new { id = model.Id });
                 }
 
                 // Verifica se o usuário tem permissão para editar essa criança
@@ -264,6 +284,9 @@ namespace Pi_Odonto.Controllers
                 model.IdResponsavel = GetCurrentResponsavelId();
             }
 
+            // Define a criança como ativa por padrão
+            model.Ativa = true;
+
             if (ModelState.IsValid)
             {
                 try
@@ -309,45 +332,54 @@ namespace Pi_Odonto.Controllers
             return View(model);
         }
 
+        // NOVO MÉTODO: Alterar Status da Criança (substitui ExcluirCrianca)
         [HttpPost]
-        public IActionResult ExcluirCrianca(int id)
+        public IActionResult AlterarStatusCrianca(int id, bool ativar)
         {
-            var crianca = _context.Criancas
-                .FirstOrDefault(c => c.Id == id);
-
-            if (crianca == null)
-            {
-                return Json(new { success = false, message = "Criança não encontrada." });
-            }
-
-            // Verifica se o usuário tem permissão para excluir essa criança
-            if (!IsAdmin())
-            {
-                var responsavelId = GetCurrentResponsavelId();
-                if (crianca.IdResponsavel != responsavelId)
-                {
-                    return Json(new { success = false, message = "Você não tem permissão para excluir esta criança." });
-                }
-
-                // Verifica se não é a única criança do responsável
-                var qtdCriancas = _context.Criancas.Count(c => c.IdResponsavel == responsavelId);
-                if (qtdCriancas <= 1)
-                {
-                    return Json(new { success = false, message = "Você deve ter pelo menos uma criança cadastrada." });
-                }
-            }
-
             try
             {
-                _context.Criancas.Remove(crianca);
+                var crianca = _context.Criancas
+                    .FirstOrDefault(c => c.Id == id);
+
+                if (crianca == null)
+                {
+                    return Json(new { success = false, message = "Criança não encontrada." });
+                }
+
+                // Verifica se o usuário tem permissão para alterar essa criança
+                if (!IsAdmin())
+                {
+                    var responsavelId = GetCurrentResponsavelId();
+                    if (crianca.IdResponsavel != responsavelId)
+                    {
+                        return Json(new { success = false, message = "Você não tem permissão para alterar esta criança." });
+                    }
+
+                    // Se está desativando, verifica se não é a única criança ativa do responsável
+                    if (!ativar)
+                    {
+                        var qtdCriancasAtivas = _context.Criancas.Count(c => c.IdResponsavel == responsavelId && c.Ativa && c.Id != id);
+                        if (qtdCriancasAtivas < 1)
+                        {
+                            return Json(new { success = false, message = "Você deve ter pelo menos uma criança ativa." });
+                        }
+                    }
+                }
+
+                // Altera o status da criança
+                crianca.Ativa = ativar;
                 _context.SaveChanges();
 
-                return Json(new { success = true, message = "Criança excluída com sucesso!" });
+                string mensagem = ativar
+                    ? $"Criança {crianca.Nome} foi reativada com sucesso."
+                    : $"Criança {crianca.Nome} foi desativada com sucesso.";
+
+                return Json(new { success = true, message = mensagem });
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Erro ao excluir criança: {ex.Message}");
-                return Json(new { success = false, message = "Erro ao excluir criança." });
+                Console.WriteLine($"Erro ao alterar status da criança: {ex.Message}");
+                return Json(new { success = false, message = "Erro interno do servidor." });
             }
         }
 
