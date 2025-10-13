@@ -13,13 +13,13 @@ namespace Pi_Odonto.Models
         [StringLength(50)]
         [Column("nome_crianca")]
         [Display(Name = "Nome da Criança")]
-        public string Nome { get; set; }
+        public string Nome { get; set; } = string.Empty;
 
         [Required]
         [StringLength(11)]
         [Column("cpf_crianca")]
         [Display(Name = "CPF")]
-        public string Cpf { get; set; }
+        public string Cpf { get; set; } = string.Empty;
 
         [Required]
         [Column("dt_nasc_crianca")]
@@ -31,7 +31,7 @@ namespace Pi_Odonto.Models
         [StringLength(20)]
         [Column("parentesco")]
         [Display(Name = "Parentesco")]
-        public string Parentesco { get; set; }
+        public string Parentesco { get; set; } = string.Empty;
 
         [Required]
         [Column("id_resp")]

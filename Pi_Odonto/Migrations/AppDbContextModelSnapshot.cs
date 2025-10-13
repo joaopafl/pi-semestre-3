@@ -59,6 +59,126 @@ namespace Pi_Odonto.Migrations
                     b.ToTable("crianca", (string)null);
                 });
 
+            modelBuilder.Entity("Pi_Odonto.Models.Dentista", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("id_dentista");
+
+                    b.Property<string>("Cpf")
+                        .IsRequired()
+                        .HasMaxLength(11)
+                        .HasColumnType("varchar(11)")
+                        .HasColumnName("cpf_dent");
+
+                    b.Property<string>("Cro")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("varchar(10)")
+                        .HasColumnName("cro");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)")
+                        .HasColumnName("email_dent");
+
+                    b.Property<string>("Endereco")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("varchar(60)")
+                        .HasColumnName("endereco_dent");
+
+                    b.Property<int?>("IdEscala")
+                        .HasColumnType("int")
+                        .HasColumnName("id_escala");
+
+                    b.Property<string>("Nome")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)")
+                        .HasColumnName("nome_dent");
+
+                    b.Property<string>("Telefone")
+                        .IsRequired()
+                        .HasMaxLength(15)
+                        .HasColumnType("varchar(15)")
+                        .HasColumnName("tel_dent");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdEscala");
+
+                    b.ToTable("dentista", (string)null);
+                });
+
+            modelBuilder.Entity("Pi_Odonto.Models.DisponibilidadeDentista", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("id_disponibilidade");
+
+                    b.Property<bool>("Ativo")
+                        .HasColumnType("tinyint(1)")
+                        .HasColumnName("ativo");
+
+                    b.Property<DateTime>("DataCadastro")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("data_cadastro");
+
+                    b.Property<string>("DiaSemana")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("dia_semana");
+
+                    b.Property<TimeSpan>("HoraFim")
+                        .HasColumnType("time(6)")
+                        .HasColumnName("hora_fim");
+
+                    b.Property<TimeSpan>("HoraInicio")
+                        .HasColumnType("time(6)")
+                        .HasColumnName("hora_inicio");
+
+                    b.Property<int>("IdDentista")
+                        .HasColumnType("int")
+                        .HasColumnName("id_dentista");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IdDentista");
+
+                    b.ToTable("disponibilidade_dentista", (string)null);
+                });
+
+            modelBuilder.Entity("Pi_Odonto.Models.EscalaTrabalho", b =>
+                {
+                    b.Property<int>("IdEscala")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("id_escala");
+
+                    b.Property<string>("DtDisponivel")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("dt_disponivel");
+
+                    b.Property<int>("HrFim")
+                        .HasColumnType("int")
+                        .HasColumnName("hr_fim");
+
+                    b.Property<int>("HrInicio")
+                        .HasColumnType("int")
+                        .HasColumnName("hr_inicio");
+
+                    b.HasKey("IdEscala");
+
+                    b.ToTable("escala_trabalho", (string)null);
+                });
+
             modelBuilder.Entity("Pi_Odonto.Models.RecuperacaoSenhaToken", b =>
                 {
                     b.Property<int>("Id")
@@ -161,6 +281,37 @@ namespace Pi_Odonto.Migrations
                         .IsRequired();
 
                     b.Navigation("Responsavel");
+                });
+
+            modelBuilder.Entity("Pi_Odonto.Models.Dentista", b =>
+                {
+                    b.HasOne("Pi_Odonto.Models.EscalaTrabalho", "EscalaTrabalho")
+                        .WithMany("Dentistas")
+                        .HasForeignKey("IdEscala")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("EscalaTrabalho");
+                });
+
+            modelBuilder.Entity("Pi_Odonto.Models.DisponibilidadeDentista", b =>
+                {
+                    b.HasOne("Pi_Odonto.Models.Dentista", "Dentista")
+                        .WithMany("Disponibilidades")
+                        .HasForeignKey("IdDentista")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Dentista");
+                });
+
+            modelBuilder.Entity("Pi_Odonto.Models.Dentista", b =>
+                {
+                    b.Navigation("Disponibilidades");
+                });
+
+            modelBuilder.Entity("Pi_Odonto.Models.EscalaTrabalho", b =>
+                {
+                    b.Navigation("Dentistas");
                 });
 
             modelBuilder.Entity("Pi_Odonto.Models.Responsavel", b =>
