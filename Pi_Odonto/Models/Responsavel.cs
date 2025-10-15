@@ -15,32 +15,32 @@ namespace Pi_Odonto.Models
         [StringLength(50)]
         [Column("nome_resp")]
         [Display(Name = "Nome")]
-        public string Nome { get; set; } = string.Empty;
+        public string Nome { get; set; }
 
         [Required]
         [StringLength(15)]
         [Column("cpf_resp")]
         [Display(Name = "CPF")]
-        public string Cpf { get; set; } = string.Empty;
+        public string Cpf { get; set; }
 
         [Required]
         [StringLength(15)]
         [Column("tel_resp")]
         [Display(Name = "Telefone")]
-        public string Telefone { get; set; } = string.Empty;
+        public string Telefone { get; set; }
 
         [Required]
         [StringLength(50)]
         [Column("email_resp")]
         [Display(Name = "Email")]
         [EmailAddress]
-        public string Email { get; set; } = string.Empty;
+        public string Email { get; set; }
 
         [Required]
         [StringLength(60)]
         [Column("endereco_resp")]
         [Display(Name = "Endereço")]
-        public string Endereco { get; set; } = string.Empty;
+        public string Endereco { get; set; }
 
         [Column("ativo")]
         [Display(Name = "Ativo")]

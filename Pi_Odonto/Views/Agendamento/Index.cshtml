@@ -11,7 +11,7 @@
     <form method="post" asp-action="Confirmar" asp-controller="Agendamento" id="agendamentoForm">
         <h3>Selecione a criança a ser atendida:</h3>
         <div class="select-row">
-            <select name="selectedChildId" id="childSelect" class="styled-select" onchange="enableDates()">
+            <select name="SelectedChildId" id="childSelect" class="styled-select" onchange="enableDates()">
                 <option value="">Selecione uma criança</option>
                 @foreach(Crianca c in Model.Children)
                 {
@@ -36,8 +36,10 @@
                 </div>
         </div>
         
-        <input type="hidden" name="SelectedDate" id="dateInput" />
+        <input type="hidden" name="SelectedDateString" id="dateInput" />
         <input type="hidden" name="SelectedTime" id="timeInput" />
+        <input type="hidden" name="SelectedChildId" id="childInput" /> @* Adicionado para garantir que o ID da criança seja enviado *@
+
     </form>
     
     @if(TempData["ErrorMessage"] != null)
@@ -81,7 +83,7 @@
         const availableTimes = ["08:00", "09:00", "10:00", "11:00", "13:00", "14:00"];
         
         // As variáveis para armazenar os valores de exibição
-        let selectedDateDisplay = ''; // Agora essa variável será preenchida corretamente
+        let selectedDateDisplay = ''; 
         let selectedChildName = '';
 
         // Variável para controlar o modal
@@ -94,6 +96,9 @@
             const timesSection = document.getElementById('timesSection');
             
             selectedChildName = childSelect.options[childSelect.selectedIndex]?.dataset.name || '';
+            
+            // 1. ATUALIZA O INPUT OCULTO DO ID DA CRIANÇA
+            document.getElementById('childInput').value = childSelect.value;
             
             if (childSelect.value !== "") {
                 datesSection.style.display = 'block';
@@ -112,7 +117,7 @@
             // 1. SALVA O VALOR DA DATA DO FORMATO YYYY-MM-DD NO INPUT OCULTO
             document.getElementById('dateInput').value = selectedDate;
 
-            // 2. CORREÇÃO CRUCIAL: SALVA O TEXTO DO BOTÃO (EX: "15/10") NA VARIÁVEL DE EXIBIÇÃO
+            // 2. SALVA O TEXTO DO BOTÃO (EX: "15/10") NA VARIÁVEL DE EXIBIÇÃO
             selectedDateDisplay = button.textContent; 
             
             const timesGrid = document.querySelector('.times-grid');
@@ -152,6 +157,7 @@
             document.getElementById('agendamentoForm').submit();
         }
 
+        // Garante que o estado inicial é avaliado ao carregar a página
         enableDates();
     </script>
 }

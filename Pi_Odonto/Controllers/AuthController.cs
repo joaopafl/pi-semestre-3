@@ -32,7 +32,7 @@ namespace Pi_Odonto.Controllers
         public IActionResult Login()
         {
             // Se já estiver logado, redireciona para o perfil
-            if (User.Identity?.IsAuthenticated == true && User.HasClaim("TipoUsuario", "Responsavel"))
+            if (User.Identity.IsAuthenticated && User.HasClaim("TipoUsuario", "Responsavel"))
             {
                 return RedirectToAction("Index", "Perfil");
             }
@@ -49,7 +49,7 @@ namespace Pi_Odonto.Controllers
                 var responsavel = _context.Responsaveis
                     .FirstOrDefault(r => r.Email == model.Email && r.Ativo && r.EmailVerificado);
 
-                if (responsavel != null && PasswordHelper.VerifyPassword(model.Senha, responsavel.Senha ?? ""))
+                if (responsavel != null && PasswordHelper.VerifyPassword(model.Senha, responsavel.Senha))
                 {
                     var claims = new List<Claim>
                     {
@@ -227,7 +227,7 @@ namespace Pi_Odonto.Controllers
         public IActionResult AdminLogin()
         {
             // Se já estiver logado como admin, redireciona
-            if (User.Identity?.IsAuthenticated == true && User.HasClaim("TipoUsuario", "Admin"))
+            if (User.Identity.IsAuthenticated && User.HasClaim("TipoUsuario", "Admin"))
             {
                 return RedirectToAction("Dashboard", "Admin");
             }
@@ -248,7 +248,7 @@ namespace Pi_Odonto.Controllers
                 // Verificar se existe e se é o admin (você pode criar um campo específico depois)
                 if (admin != null &&
                     model.Email == "admin@piodonto.com" &&
-                    PasswordHelper.VerifyPassword(model.Senha, admin.Senha ?? ""))
+                    PasswordHelper.VerifyPassword(model.Senha, admin.Senha))
                 {
                     var claims = new List<Claim>
                     {
@@ -286,7 +286,7 @@ namespace Pi_Odonto.Controllers
         [Route("AreaRestrita")]
         public IActionResult AreaRestrita()
         {
-            if (User.Identity?.IsAuthenticated != true)
+            if (!User.Identity.IsAuthenticated)
             {
                 return RedirectToAction("Login");
             }
