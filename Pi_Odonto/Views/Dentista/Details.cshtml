@@ -85,10 +85,42 @@
                                 </label>
                                 <p class="form-control-plaintext border-bottom">@Model.Endereco</p>
                             </div>
+
                         </div>
                     </div>
                 </div>
             </div>
+
+            <!-- Disponibilidades do Dentista -->
+            @if (Model.Disponibilidades != null && Model.Disponibilidades.Any())
+            {
+                <div class="card shadow-lg mt-4">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-calendar-check"></i> Disponibilidades
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            @foreach (var disponibilidade in Model.Disponibilidades.Where(d => d.Ativo))
+                            {
+                                <div class="col-md-4 mb-3">
+                                    <div class="card border-primary">
+                                        <div class="card-body text-center">
+                                            <h6 class="card-title text-primary">@disponibilidade.DiaSemana</h6>
+                                            <p class="card-text">
+                                                <span class="badge bg-success">@disponibilidade.HoraInicio.ToString(@"hh\:mm")</span>
+                                                <span class="text-muted"> até </span>
+                                                <span class="badge bg-danger">@disponibilidade.HoraFim.ToString(@"hh\:mm")</span>
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
 
             <!-- Ações -->
             <div class="card shadow-lg mt-4">

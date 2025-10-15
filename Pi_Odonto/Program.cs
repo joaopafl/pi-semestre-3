@@ -56,6 +56,32 @@ builder.Services.AddAuthorization(options =>
 
 var app = builder.Build();
 
+// Popular dados iniciais se necessário
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    
+    // Garantir que o banco existe
+    context.Database.EnsureCreated();
+    
+    // Popular escalas de trabalho se não existirem
+    if (!context.EscalaTrabalho.Any())
+    {
+        var escalas = new[]
+        {
+            new EscalaTrabalho { DtDisponivel = "Segunda-feira", HrInicio = 8, HrFim = 17 },
+            new EscalaTrabalho { DtDisponivel = "Terça-feira", HrInicio = 8, HrFim = 17 },
+            new EscalaTrabalho { DtDisponivel = "Quarta-feira", HrInicio = 8, HrFim = 17 },
+            new EscalaTrabalho { DtDisponivel = "Quinta-feira", HrInicio = 8, HrFim = 17 },
+            new EscalaTrabalho { DtDisponivel = "Sexta-feira", HrInicio = 8, HrFim = 17 },
+            new EscalaTrabalho { DtDisponivel = "Sábado", HrInicio = 8, HrFim = 12 }
+        };
+        
+        context.EscalaTrabalho.AddRange(escalas);
+        context.SaveChanges();
+    }
+}
+
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {

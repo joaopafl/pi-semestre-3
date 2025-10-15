@@ -1,0 +1,110 @@
+@{
+    ViewData["Title"] = "Criar Escala de Trabalho";
+}
+@model Pi_Odonto.Models.EscalaTrabalho
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card shadow-lg">
+                <div class="card-header bg-success text-white text-center">
+                    <h2 class="mb-0">
+                        <i class="fas fa-clock"></i> Criar Nova Escala de Trabalho
+                    </h2>
+                </div>
+
+                <div class="card-body">
+                    <form asp-action="CreateEscala" method="post">
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="mb-3">
+                                    <label asp-for="DtDisponivel" class="form-label fw-bold">
+                                        <i class="fas fa-calendar-day text-primary"></i> Dia da Semana <span class="text-danger">*</span>
+                                    </label>
+                                    <select asp-for="DtDisponivel" class="form-select" required>
+                                        <option value="">Selecione o dia da semana</option>
+                                        <option value="Segunda-feira">Segunda-feira</option>
+                                        <option value="Terça-feira">Terça-feira</option>
+                                        <option value="Quarta-feira">Quarta-feira</option>
+                                        <option value="Quinta-feira">Quinta-feira</option>
+                                        <option value="Sexta-feira">Sexta-feira</option>
+                                        <option value="Sábado">Sábado</option>
+                                        <option value="Domingo">Domingo</option>
+                                    </select>
+                                    <span asp-validation-for="DtDisponivel" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="HrInicio" class="form-label fw-bold">
+                                        <i class="fas fa-play text-primary"></i> Horário de Início <span class="text-danger">*</span>
+                                    </label>
+                                    <select asp-for="HrInicio" class="form-select" required>
+                                        <option value="">Selecione o horário</option>
+                                        @for (int i = 6; i <= 22; i++)
+                                        {
+                                            <option value="@i">@i:00</option>
+                                        }
+                                    </select>
+                                    <span asp-validation-for="HrInicio" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="HrFim" class="form-label fw-bold">
+                                        <i class="fas fa-stop text-primary"></i> Horário de Fim <span class="text-danger">*</span>
+                                    </label>
+                                    <select asp-for="HrFim" class="form-select" required>
+                                        <option value="">Selecione o horário</option>
+                                        @for (int i = 7; i <= 23; i++)
+                                        {
+                                            <option value="@i">@i:00</option>
+                                        }
+                                    </select>
+                                    <span asp-validation-for="HrFim" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i>
+                            <strong>Dica:</strong> Selecione o dia da semana e o bloco de horário que o dentista estará disponível para trabalhar.
+                            Por exemplo: Sábado das 8 às 12 horas.
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="@Url.Action("EscalaTrabalho")" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Voltar para Escalas
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-save"></i> Criar Escala
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
+    <script>
+        // Validação para garantir que o horário de fim seja maior que o de início
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const hrInicio = parseInt(document.querySelector('select[name="HrInicio"]').value);
+            const hrFim = parseInt(document.querySelector('select[name="HrFim"]').value);
+            
+            if (hrInicio >= hrFim) {
+                e.preventDefault();
+                alert('O horário de fim deve ser maior que o horário de início!');
+                return false;
+            }
+        });
+    </script>
+}

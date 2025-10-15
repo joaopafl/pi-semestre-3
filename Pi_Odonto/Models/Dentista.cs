@@ -45,5 +45,16 @@ namespace Pi_Odonto.Models
         [Display(Name = "Telefone")]
         public string Telefone { get; set; } = string.Empty;
 
+        [Column("id_escala")]
+        [Display(Name = "Escala de Trabalho")]
+        public int? IdEscala { get; set; }
+
+        // Navigation property para o relacionamento com EscalaTrabalho
+        [ForeignKey("IdEscala")]
+        public virtual EscalaTrabalho? EscalaTrabalho { get; set; }
+
+        // Navigation property para o relacionamento com DisponibilidadeDentista
+        public virtual ICollection<DisponibilidadeDentista> Disponibilidades { get; set; } = new List<DisponibilidadeDentista>();
+
     }
 }
