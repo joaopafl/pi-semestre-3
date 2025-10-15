@@ -442,21 +442,21 @@ namespace Pi_Odonto.Controllers
         public class ValidarCpfRequest { public string Cpf { get; set; } }
         public class ValidarEmailRequest { public string Email { get; set; } }
         public class ValidarTelefoneRequest { public string Telefone { get; set; } }
-    	}
-    	[HttpGet]
-	[AllowAnonymous]
-	public IActionResult CreateCrianca()
-	{
-    	if (User.Identity?.IsAuthenticated == true)
-    	{
-        return RedirectToAction("CadastrarCrianca", "Perfil");
-    	}
 
-    	var crianca = new Crianca();
-    	ViewBag.OpcoesParentesco = new List<string>
-    	{
+    	[HttpGet]
+        [AllowAnonymous]
+        public IActionResult CreateCrianca()
+        {
+            if (User.Identity?.IsAuthenticated == true)
+            {
+                return RedirectToAction("CadastrarCrianca", "Perfil");
+            }
+
+            var crianca = new Crianca();
+            ViewBag.OpcoesParentesco = new List<string>
+        {
         "Pai", "Mãe", "Avô", "Avó", "Tio", "Tia", "Padrasto", "Madrasta", "Tutor Legal"
-    	};
-    	return View(crianca);
-	}
-}
+        };
+            return View(crianca);
+        }
+    } }
