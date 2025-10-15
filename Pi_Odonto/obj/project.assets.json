@@ -2312,24 +2312,31 @@
     ]
   },
   "packageFolders": {
-    "/Users/salim/.nuget/packages/": {}
+    "C:\\Users\\joaop\\.nuget\\packages\\": {},
+    "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "/Users/salim/Documents/fatec-pi/Pi_Odonto/Pi_Odonto.csproj",
+      "projectUniqueName": "C:\\fatec\\fatec-pi\\Pi_Odonto\\Pi_Odonto.csproj",
       "projectName": "Pi_Odonto",
-      "projectPath": "/Users/salim/Documents/fatec-pi/Pi_Odonto/Pi_Odonto.csproj",
-      "packagesPath": "/Users/salim/.nuget/packages/",
-      "outputPath": "/Users/salim/Documents/fatec-pi/Pi_Odonto/obj/",
+      "projectPath": "C:\\fatec\\fatec-pi\\Pi_Odonto\\Pi_Odonto.csproj",
+      "packagesPath": "C:\\Users\\joaop\\.nuget\\packages\\",
+      "outputPath": "C:\\fatec\\fatec-pi\\Pi_Odonto\\obj\\",
       "projectStyle": "PackageReference",
+      "fallbackFolders": [
+        "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+      ],
       "configFilePaths": [
-        "/Users/salim/.nuget/NuGet/NuGet.Config"
+        "C:\\Users\\joaop\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
       "originalTargetFrameworks": [
         "net8.0"
       ],
       "sources": {
+        "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
         "https://api.nuget.org/v3/index.json": {}
       },
       "frameworks": {
@@ -2384,20 +2391,6 @@
         ],
         "assetTargetFallback": true,
         "warn": true,
-        "downloadDependencies": [
-          {
-            "name": "Microsoft.AspNetCore.App.Ref",
-            "version": "[8.0.20, 8.0.20]"
-          },
-          {
-            "name": "Microsoft.NETCore.App.Host.osx-x64",
-            "version": "[8.0.20, 8.0.20]"
-          },
-          {
-            "name": "Microsoft.NETCore.App.Ref",
-            "version": "[8.0.20, 8.0.20]"
-          }
-        ],
         "frameworkReferences": {
           "Microsoft.AspNetCore.App": {
             "privateAssets": "none"
@@ -2406,7 +2399,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/9.0.305/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.304/PortableRuntimeIdentifierGraph.json"
       }
     }
   }

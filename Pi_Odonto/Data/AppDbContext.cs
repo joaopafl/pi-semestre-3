@@ -9,10 +9,6 @@ namespace Pi_Odonto.Data
         public DbSet<Responsavel> Responsaveis { get; set; }
         public DbSet<Crianca> Criancas { get; set; }
         public DbSet<RecuperacaoSenhaToken> RecuperacaoSenhaTokens { get; set; }
-        
-        // --- NOVO: Adicionado para o Agendamento ---
-        public DbSet<Agendamento> Agendamentos { get; set; } 
-        // ------------------------------------------
 
         // Configurações adicionais do relacionamento (opcional, mas recomendado)
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -33,11 +29,6 @@ namespace Pi_Odonto.Data
             // Configuração da tabela crianca
             modelBuilder.Entity<Crianca>()
                 .ToTable("crianca");
-            
-            // --- NOVO: Mapeamento da tabela agendamento ---
-            modelBuilder.Entity<Agendamento>()
-                .ToTable("agendamento");
-            // -----------------------------------------------
 
             // Configuração da tabela de tokens de recuperação
             modelBuilder.Entity<RecuperacaoSenhaToken>()

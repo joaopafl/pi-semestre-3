@@ -1,7 +1,7 @@
-﻿@model Pi_Odonto.Models.Responsavel
-@{
+﻿@{
     ViewData["Title"] = "Minha Família - Casa Espírita Trabalhadores de Jesus";
 }
+@model Pi_Odonto.Models.Responsavel
 
 <style>
     :root {
@@ -51,7 +51,6 @@
         border: none;
         margin-bottom: 1rem;
         overflow: hidden;
-        position: relative; /* Para o ::before funcionar */
     }
 
         .card-compacto::before {
@@ -100,8 +99,6 @@
         font-weight: 500;
         margin-bottom: 0.4rem;
         border: none;
-        text-align: center;
-        display: block; /* Para d-grid funcionar bem */
     }
 
     .btn-primary-compacto {
@@ -126,9 +123,6 @@
         padding: 0.75rem 1rem;
         font-size: 0.95rem;
         font-weight: 600;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
     }
 
     .card-header-info-compacto {
@@ -279,6 +273,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
 <div class="container-compacto">
+    <!-- Header Compacto -->
     <div class="header-compacto">
         <h1 class="header-title">
             <i class="fas fa-heart me-2"></i> Minha Família Espiritual
@@ -295,6 +290,7 @@
     }
 
     <div class="row">
+        <!-- Sidebar Compacto -->
         <div class="col-lg-3 col-md-4">
             <div class="sidebar-compacto">
                 <i class="fas fa-user-circle avatar-icon-compacto"></i>
@@ -309,7 +305,7 @@
                         <i class="fas fa-child me-1"></i> Crianças
                     </a>
                     <form asp-action="Logout" asp-controller="Auth" method="post" class="d-inline">
-                        <button type="submit" class="btn btn-compacto btn-danger-compacto w-100" id="logoutBtn">
+                        <button type="submit" class="btn btn-compacto btn-danger-compacto w-100">
                             <i class="fas fa-sign-out-alt me-1"></i> Sair
                         </button>
                     </form>
@@ -317,7 +313,9 @@
             </div>
         </div>
 
+        <!-- Conteúdo Principal -->
         <div class="col-lg-9 col-md-8">
+            <!-- Dados Pessoais -->
             <div class="card-compacto">
                 <div class="card-header-compacto">
                     <i class="fas fa-user me-2"></i> Meus Dados
@@ -337,7 +335,7 @@
                                     <i class="fas fa-id-card"></i> CPF
                                 </div>
                                 <div class="info-value-compacto">
-                                    @if (!string.IsNullOrEmpty(Model.Cpf) && Model.Cpf.Length == 11)
+                                    @if (Model.Cpf.Length == 11)
                                     {
                                         @($"{Model.Cpf.Substring(0, 3)}.{Model.Cpf.Substring(3, 3)}.{Model.Cpf.Substring(6, 3)}-{Model.Cpf.Substring(9, 2)}")
                                     }
@@ -353,7 +351,7 @@
                                     <i class="fas fa-phone"></i> Telefone
                                 </div>
                                 <div class="info-value-compacto">
-                                    @if (!string.IsNullOrEmpty(Model.Telefone) && Model.Telefone.Length == 11)
+                                    @if (Model.Telefone.Length == 11)
                                     {
                                         <a href="tel:@Model.Telefone">
                                             @($"({Model.Telefone.Substring(0, 2)}) {Model.Telefone.Substring(2, 5)}-{Model.Telefone.Substring(7, 4)}")
@@ -402,11 +400,10 @@
                 </div>
             </div>
 
+            <!-- Seção de Crianças -->
             <div class="card-compacto">
                 <div class="card-header-compacto card-header-info-compacto">
-                    <span>
-                        <i class="fas fa-child me-2"></i> Nossas Crianças
-                    </span>
+                    <i class="fas fa-child me-2"></i> Nossas Crianças
                     <span class="badge bg-light text-dark ms-2">@(Model.Criancas?.Count ?? 0)</span>
                 </div>
                 <div class="card-body-compacto">
@@ -423,7 +420,7 @@
                                         <div class="child-info-compacto">
                                             <div>
                                                 <strong>CPF:</strong>
-                                                @if (!string.IsNullOrEmpty(crianca.Cpf) && crianca.Cpf.Length == 11)
+                                                @if (crianca.Cpf.Length == 11)
                                                 {
                                                     @($"{crianca.Cpf.Substring(0, 3)}.{crianca.Cpf.Substring(3, 3)}.{crianca.Cpf.Substring(6, 3)}-{crianca.Cpf.Substring(9, 2)}")
                                                 }
@@ -466,6 +463,7 @@
                 </div>
             </div>
 
+            <!-- Seção de Agenda -->
             <div class="card-compacto">
                 <div class="card-header-compacto card-header-warning-compacto">
                     <i class="fas fa-calendar-alt me-2"></i> Minha Agenda
@@ -476,11 +474,10 @@
                         <p class="mb-2">Nenhum agendamento encontrado.</p>
                         <p style="font-size: 0.75rem; margin-bottom: 1rem;">Agende consultas e cuidados para sua família.</p>
 
-                       <div class="d-grid gap-1">
-                            <a asp-action="Index" asp-controller="Agendamento" class="btn btn-compacto btn-primary-compacto">
+                        <div class="d-grid gap-1">
+                            <button class="btn btn-compacto btn-primary-compacto" onclick="agendarConsulta()">
                                 <i class="fas fa-plus me-1"></i> Agendar Consulta
-                            </a>
-
+                            </button>
                             <button class="btn btn-compacto btn-info-compacto" onclick="verAgenda()">
                                 <i class="fas fa-calendar me-1"></i> Ver Agenda Completa
                             </button>
@@ -507,66 +504,22 @@
     </div>
 </div>
 
-@* ========================================================= *@
-@* 1. MODAL DE SUCESSO DE AGENDAMENTO (POP-UP) *@
-@* ========================================================= *@
-<div class="modal fade" id="successModal" tabindex="-1" aria-labelledby="successModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content" style="border-radius: 15px; border: 3px solid var(--cor-secundaria);">
-            
-            <div class="modal-header" style="background-color: var(--cor-secundaria); color: white; border-radius: 12px 12px 0 0;">
-                <h5 class="modal-title" id="successModalLabel">
-                    @(TempData["SuccessMessageTitle"] ?? "Sucesso!")
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
-            </div>
-            
-            <div class="modal-body text-center">
-                <h3 style="color: var(--cor-secundaria); margin-bottom: 20px;">✅ Agendamento Realizado!</h3>
-                <p style="font-size: 1.1rem;">
-                    @(TempData["SuccessMessageBody"] ?? "Nos vemos em breve! Sua consulta foi confirmada.")
-                </p>
-            </div>
-            
-            <div class="modal-footer justify-content-center">
-                <button type="button" class="btn btn-success" data-bs-dismiss="modal" style="background-color: var(--cor-secundaria); border-color: var(--cor-secundaria);">Fechar</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-@* ========================================================= *@
-@* 2. SCRIPTS PARA EXIBIR O MODAL E OUTRAS FUNÇÕES *@
-@* ========================================================= *@
-@section Scripts {
-    <script>
-        // Função para simular a visualização da agenda completa
-        function verAgenda() {
-            alert('Agenda completa em desenvolvimento!\nEm breve você poderá visualizar todos os seus agendamentos.');
+<script>
+    // Confirmação antes de sair
+    document.querySelector('form[action*="Logout"] button').addEventListener('click', function(e) {
+        if (!confirm('Tem certeza que deseja sair da sua família espiritual?')) {
+            e.preventDefault();
         }
+    });
 
-        // Confirmação antes de sair
-        document.getElementById('logoutBtn').addEventListener('click', function(e) {
-            if (!confirm('Tem certeza que deseja sair da sua família espiritual?')) {
-                e.preventDefault();
-            }
-        });
+    // Funções da agenda
+    function agendarConsulta() {
+        // Implementar modal ou redirecionamento para agendamento
+        alert('Funcionalidade em desenvolvimento!\nPor favor, entre em contato pelo telefone (11) 94155-6472 para agendar.');
+    }
 
-        // ======================================================
-        // LÓGICA DE EXIBIÇÃO DO MODAL DE SUCESSO (CHAVE)
-        // O valor do TempData é injetado aqui pelo Razor
-        // ======================================================
-        const agendamentoSucesso = '@TempData["AgendamentoSucesso"]' === 'True';
-
-        if (agendamentoSucesso) {
-            // Verifica se o Bootstrap JS está carregado e mostra o modal
-            if (typeof bootstrap !== 'undefined') {
-                const successModalElement = document.getElementById('successModal');
-                const successModal = new bootstrap.Modal(successModalElement);
-                successModal.show();
-            } else {
-                console.error("Bootstrap JS não carregado. Não foi possível exibir o modal de sucesso.");
-            }
-        }
-    </script>
-}
+    function verAgenda() {
+        // Implementar navegação para página de agenda completa
+        alert('Agenda completa em desenvolvimento!\nEm breve você poderá visualizar todos os seus agendamentos.');
+    }
+</script>
