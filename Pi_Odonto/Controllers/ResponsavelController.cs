@@ -50,114 +50,133 @@ namespace Pi_Odonto.Controllers
         [AllowAnonymous] // Permite acesso público para cadastro
         public async Task<IActionResult> Create(ResponsavelCriancaViewModel viewModel)
         {
-            // Limpa erros da propriedade Responsavel da ViewModel
-            ModelState.Remove("Responsavel");
-
-            // Debug
-            Console.WriteLine($"ModelState.IsValid: {ModelState.IsValid}");
-            Console.WriteLine($"Responsavel é null? {viewModel?.Responsavel == null}");
-            Console.WriteLine($"Nome: {viewModel?.Responsavel?.Nome ?? "NULL"}");
-
-            if (!ModelState.IsValid)
-            {
-                // Debug - mostra erros
-                Console.WriteLine("=== ERROS DE VALIDAÇÃO ===");
-                foreach (var error in ModelState)
-                {
-                    Console.WriteLine($"Campo: {error.Key}");
-                    foreach (var err in error.Value.Errors)
-                    {
-                        Console.WriteLine($"  Erro: {err.ErrorMessage}");
-                    }
-                }
-                Console.WriteLine("=========================");
-            }
+            // Remove validação da propriedade de navegação
+            ModelState.Remove("Responsavel.Criancas");
 
             if (ModelState.IsValid)
             {
-                using (var transaction = _context.Database.BeginTransaction())
+                // Verificações de duplicação antes de salvar
+                var cpfExiste = await _context.Responsaveis
+                    .AnyAsync(r => r.Cpf == viewModel.Responsavel.Cpf);
+
+                var emailExiste = await _context.Responsaveis
+                    .AnyAsync(r => r.Email == viewModel.Responsavel.Email);
+
+                var telefoneExiste = await _context.Responsaveis
+                    .AnyAsync(r => r.Telefone == viewModel.Responsavel.Telefone);
+
+                if (cpfExiste)
                 {
-                    try
+                    ModelState.AddModelError("Responsavel.Cpf", "Este CPF já está cadastrado no sistema.");
+                }
+
+                if (emailExiste)
+                {
+                    ModelState.AddModelError("Responsavel.Email", "Este email já está cadastrado no sistema.");
+                }
+
+                if (telefoneExiste)
+                {
+                    ModelState.AddModelError("Responsavel.Telefone", "Este telefone já está cadastrado no sistema.");
+                }
+
+                // Verificar CPFs das crianças
+                foreach (var crianca in viewModel.Criancas)
+                {
+                    var cpfCriancaExiste = await _context.Criancas
+                        .AnyAsync(c => c.Cpf == crianca.Cpf) ||
+                        await _context.Responsaveis
+                        .AnyAsync(r => r.Cpf == crianca.Cpf);
+
+                    if (cpfCriancaExiste)
                     {
-                        // Define valores padrão
-                        viewModel.Responsavel!.Ativo = false;
-                        viewModel.Responsavel.DataCadastro = DateTime.Now;
-                        viewModel.Responsavel.EmailVerificado = false;
-                        viewModel.Responsavel.TokenVerificacao = Guid.NewGuid().ToString();
+                        ModelState.AddModelError("", $"O CPF {crianca.Cpf} (criança {crianca.Nome}) já está cadastrado no sistema.");
+                    }
+                }
 
-                        // Criptografar a senha
-                        viewModel.Responsavel.Senha = PasswordHelper.HashPassword(viewModel.Responsavel.Senha ?? "");
-
-                        // Debug - mostra SQL gerado
-                        Console.WriteLine("=== DADOS RESPONSÁVEL ===");
-                        Console.WriteLine($"Nome: {viewModel.Responsavel.Nome}");
-                        Console.WriteLine($"CPF: {viewModel.Responsavel.Cpf}");
-                        Console.WriteLine($"Email: {viewModel.Responsavel.Email}");
-                        Console.WriteLine($"Telefone: {viewModel.Responsavel.Telefone}");
-                        Console.WriteLine($"Endereco: {viewModel.Responsavel.Endereco}");
-                        Console.WriteLine($"Ativo: {viewModel.Responsavel.Ativo}");
-                        Console.WriteLine($"DataCadastro: {viewModel.Responsavel.DataCadastro}");
-                        Console.WriteLine("==========================");
-
-                        // Salva o responsável
-                        _context.Responsaveis.Add(viewModel.Responsavel);
-                        Console.WriteLine("Salvando responsável...");
-                        _context.SaveChanges();
-                        Console.WriteLine($"Responsável salvo com ID: {viewModel.Responsavel.Id}");
-
-                        // Debug crianças
-                        Console.WriteLine("=== DADOS CRIANÇAS ===");
-                        foreach (var crianca in viewModel.Criancas)
-                        {
-                            Console.WriteLine($"Nome: {crianca.Nome}");
-                            Console.WriteLine($"CPF: {crianca.Cpf}");
-                            Console.WriteLine($"Data Nasc: {crianca.DataNascimento}");
-                            Console.WriteLine($"Parentesco: {crianca.Parentesco}");
-                            Console.WriteLine("---");
-                        }
-                        Console.WriteLine("======================");
-
-                        // Salva as crianças
-                        foreach (var crianca in viewModel.Criancas)
-                        {
-                            crianca.IdResponsavel = viewModel.Responsavel.Id;
-                            _context.Criancas.Add(crianca);
-                            Console.WriteLine($"Adicionando criança: {crianca.Nome}");
-                        }
-                        Console.WriteLine("Salvando crianças...");
-                        _context.SaveChanges();
-                        Console.WriteLine("Crianças salvas!");
-
-                        // Enviar email de verificação
+                // Se passou por todas as validações, tenta salvar
+                if (ModelState.IsValid)
+                {
+                    using (var transaction = _context.Database.BeginTransaction())
+                    {
                         try
                         {
-                            await _emailService.EnviarEmailVerificacaoAsync(
-                                viewModel.Responsavel.Email,
-                                viewModel.Responsavel.Nome,
-                                viewModel.Responsavel.TokenVerificacao
-                            );
-                            Console.WriteLine("Email de verificação enviado!");
-                        }
-                        catch (Exception emailEx)
-                        {
-                            Console.WriteLine($"Erro ao enviar email: {emailEx.Message}");
-                            // Não falha o cadastro por causa do email
-                        }
+                            // Define valores padrão
+                            viewModel.Responsavel.Ativo = false;
+                            viewModel.Responsavel.DataCadastro = DateTime.Now;
+                            viewModel.Responsavel.EmailVerificado = false;
+                            viewModel.Responsavel.TokenVerificacao = Guid.NewGuid().ToString();
 
-                        transaction.Commit();
-                        return RedirectToAction("EmailEnviado");
-                    }
-                    catch (Exception ex)
-                    {
-                        transaction.Rollback();
-                        Console.WriteLine($"Erro ao salvar: {ex.Message}");
-                        ModelState.AddModelError("", "Erro ao salvar os dados. Tente novamente.");
+                            // Criptografar a senha
+                            viewModel.Responsavel.Senha = PasswordHelper.HashPassword(viewModel.Responsavel.Senha);
+
+                            // Salva o responsável
+                            _context.Responsaveis.Add(viewModel.Responsavel);
+                            await _context.SaveChangesAsync();
+
+                            // Salva as crianças
+                            foreach (var crianca in viewModel.Criancas)
+                            {
+                                crianca.IdResponsavel = viewModel.Responsavel.Id;
+                                crianca.Ativa = true; // Define criança como ativa por padrão
+                                _context.Criancas.Add(crianca);
+                            }
+                            await _context.SaveChangesAsync();
+
+                            // Enviar email de verificação
+                            try
+                            {
+                                await _emailService.EnviarEmailVerificacaoAsync(
+                                    viewModel.Responsavel.Email,
+                                    viewModel.Responsavel.Nome,
+                                    viewModel.Responsavel.TokenVerificacao
+                                );
+                            }
+                            catch (Exception emailEx)
+                            {
+                                Console.WriteLine($"Erro ao enviar email: {emailEx.Message}");
+                                // Não falha o cadastro por causa do email
+                            }
+
+                            transaction.Commit();
+                            return RedirectToAction("EmailEnviado");
+                        }
+                        catch (DbUpdateException ex)
+                        {
+                            transaction.Rollback();
+
+                            // Trata erros específicos do banco
+                            if (ex.InnerException?.Message.Contains("CPF") == true)
+                            {
+                                ModelState.AddModelError("Responsavel.Cpf", "Este CPF já está cadastrado no sistema.");
+                            }
+                            else if (ex.InnerException?.Message.Contains("Email") == true)
+                            {
+                                ModelState.AddModelError("Responsavel.Email", "Este email já está cadastrado no sistema.");
+                            }
+                            else if (ex.InnerException?.Message.Contains("Telefone") == true)
+                            {
+                                ModelState.AddModelError("Responsavel.Telefone", "Este telefone já está cadastrado no sistema.");
+                            }
+                            else
+                            {
+                                ModelState.AddModelError("", "Dados duplicados encontrados. Verifique CPF, email e telefone.");
+                            }
+
+                            Console.WriteLine($"Erro de banco: {ex.InnerException?.Message}");
+                        }
+                        catch (Exception ex)
+                        {
+                            transaction.Rollback();
+                            ModelState.AddModelError("", "Erro ao salvar os dados. Tente novamente.");
+                            Console.WriteLine($"Erro geral: {ex.Message}");
+                        }
                     }
                 }
             }
 
-            // Se deu erro, recarrega as opções
-            if (viewModel.OpcoesParentesco == null || !viewModel.OpcoesParentesco!.Any())
+            // Se chegou até aqui, tem erro - recarrega as opções
+            if (viewModel.OpcoesParentesco == null || !viewModel.OpcoesParentesco.Any())
             {
                 viewModel.OpcoesParentesco = new List<string>
                 {
@@ -166,6 +185,63 @@ namespace Pi_Odonto.Controllers
             }
 
             return View(viewModel);
+        }
+
+        // MÉTODOS DE VALIDAÇÃO AJAX
+        [HttpPost]
+        [AllowAnonymous]
+        public async Task<IActionResult> ValidarCpf([FromBody] ValidarCpfRequest request)
+        {
+            try
+            {
+                var cpfLimpo = request.Cpf.Replace(".", "").Replace("-", "");
+
+                var existeResponsavel = await _context.Responsaveis
+                    .AnyAsync(r => r.Cpf == cpfLimpo);
+
+                var existeCrianca = await _context.Criancas
+                    .AnyAsync(c => c.Cpf == cpfLimpo);
+
+                return Json(new { existe = existeResponsavel || existeCrianca });
+            }
+            catch
+            {
+                return Json(new { existe = false });
+            }
+        }
+
+        [HttpPost]
+        [AllowAnonymous]
+        public async Task<IActionResult> ValidarEmail([FromBody] ValidarEmailRequest request)
+        {
+            try
+            {
+                var existe = await _context.Responsaveis
+                    .AnyAsync(r => r.Email.ToLower() == request.Email.ToLower());
+
+                return Json(new { existe = existe });
+            }
+            catch
+            {
+                return Json(new { existe = false });
+            }
+        }
+
+        [HttpPost]
+        [AllowAnonymous]
+        public async Task<IActionResult> ValidarTelefone([FromBody] ValidarTelefoneRequest request)
+        {
+            try
+            {
+                var existe = await _context.Responsaveis
+                    .AnyAsync(r => r.Telefone == request.Telefone);
+
+                return Json(new { existe = existe });
+            }
+            catch
+            {
+                return Json(new { existe = false });
+            }
         }
 
         [HttpGet]
@@ -237,7 +313,11 @@ namespace Pi_Odonto.Controllers
             var viewModel = new ResponsavelCriancaViewModel
             {
                 Responsavel = responsavel,
-                Criancas = responsavel.Criancas.ToList()
+                Criancas = responsavel.Criancas.ToList(),
+                OpcoesParentesco = new List<string>
+                {
+                    "Pai", "Mãe", "Avô", "Avó", "Tio", "Tia", "Padrasto", "Madrasta", "Tutor Legal"
+                }
             };
 
             return View(viewModel);
@@ -344,54 +424,11 @@ namespace Pi_Odonto.Controllers
             return View(responsavel);
         }
 
-        // Método para adicionar criança via AJAX (será usado no JavaScript)
-        [HttpPost]
-        public IActionResult AdicionarCrianca(int idResponsavel)
-        {
-            var responsavel = _context.Responsaveis.Find(idResponsavel);
-            if (responsavel == null) return NotFound();
-
-            var novaCrianca = new Crianca { IdResponsavel = idResponsavel };
-            return PartialView("_CriancaForm", novaCrianca);
-        }
-
-        // Método para remover criança via AJAX
-        [HttpPost]
-        public IActionResult RemoverCrianca(int idCrianca)
-        {
-            var crianca = _context.Criancas.Find(idCrianca);
-            if (crianca != null)
-            {
-                // Verifica se não é a única criança
-                var qtdCriancas = _context.Criancas.Count(c => c.IdResponsavel == crianca.IdResponsavel);
-                if (qtdCriancas > 1)
-                {
-                    _context.Criancas.Remove(crianca);
-                    _context.SaveChanges();
-                    return Json(new { success = true });
-                }
-                else
-                {
-                    return Json(new { success = false, message = "Todo responsável deve ter pelo menos uma criança." });
-                }
-            }
-            return Json(new { success = false, message = "Criança não encontrada." });
-        }
-
         [HttpGet]
         [AllowAnonymous] // Permite acesso público para cadastro
         public IActionResult Cadastro()
         {
-            var viewModel = new ResponsavelCriancaViewModel
-            {
-                Responsavel = new Responsavel(),
-                Criancas = new List<Crianca> { new Crianca() },
-                OpcoesParentesco = new List<string>
-                {
-                    "Pai", "Mãe", "Avô", "Avó", "Tio", "Tia", "Padrasto", "Madrasta", "Tutor Legal"
-                }
-            };
-            return View("Create", viewModel);
+            return RedirectToAction("Create");
         }
 
         [HttpPost]
@@ -401,25 +438,25 @@ namespace Pi_Odonto.Controllers
             return await Create(viewModel);
         }
 
-        // Adicione estas ações no seu ResponsavelController:
+        // Classes para requests de validação
+        public class ValidarCpfRequest { public string Cpf { get; set; } }
+        public class ValidarEmailRequest { public string Email { get; set; } }
+        public class ValidarTelefoneRequest { public string Telefone { get; set; } }
+    	}
+    	[HttpGet]
+	[AllowAnonymous]
+	public IActionResult CreateCrianca()
+	{
+    	if (User.Identity?.IsAuthenticated == true)
+    	{
+        return RedirectToAction("CadastrarCrianca", "Perfil");
+    	}
 
-        [HttpGet]
-        [AllowAnonymous]
-        public IActionResult CreateCrianca()
-        {
-            // Redireciona para o PerfilController se o usuário estiver logado
-            if (User.Identity?.IsAuthenticated == true)
-            {
-                return RedirectToAction("CadastrarCrianca", "Perfil");
-            }
-
-            // Para cadastro inicial junto com responsável
-            var crianca = new Crianca();
-            ViewBag.OpcoesParentesco = new List<string>
-    {
+    	var crianca = new Crianca();
+    	ViewBag.OpcoesParentesco = new List<string>
+    	{
         "Pai", "Mãe", "Avô", "Avó", "Tio", "Tia", "Padrasto", "Madrasta", "Tutor Legal"
-    };
-            return View(crianca);
-        }
-    }
+    	};
+    	return View(crianca);
+	}
 }
