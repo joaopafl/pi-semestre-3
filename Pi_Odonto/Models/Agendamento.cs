@@ -17,8 +17,9 @@ namespace Pi_Odonto.Models
         [Display(Name = "Data do Agendamento")]
         public DateTime DataAgendamento { get; set; } 
 
+        // Mapeamento explícito para o tipo TIME do MySQL, crucial para resolver o erro
         [Required]
-        [Column("hr_agenda")]
+        [Column("hr_agenda", TypeName = "time")] 
         [Display(Name = "Hora do Agendamento")]
         public TimeSpan HoraAgendamento { get; set; }
 

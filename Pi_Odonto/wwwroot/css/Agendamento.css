@@ -332,3 +332,47 @@ h3 {
     padding: 12px;
   }
 }
+
+/* --- ESTILIZAÇÃO PARA MENSAGENS DE ERRO E SUCESSO DO CONTROLLER (TempData) --- */
+
+.alert-banner {
+    /* Container principal do banner */
+    padding: 15px 20px;
+    margin-bottom: 20px;
+    border-radius: 6px;
+    font-weight: 600;
+    color: white; /* Texto branco */
+    display: flex;
+    align-items: center;
+    /* Faz o banner aparecer no topo do card, se necessário */
+    position: relative; 
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.error-banner {
+    /* Estilo para erro (vermelho) - Como na imagem que você enviou */
+    background-color: #dc3545; /* Vermelho forte do Bootstrap/padrão */
+    border: 1px solid #c82333; 
+}
+
+/* Estiliza o ícone dentro do banner */
+.alert-banner i {
+    font-size: 1.2rem;
+    margin-right: 10px;
+}
+
+/* --- ESTILIZAÇÃO PARA MENSAGEM DE ERRO NA BUSCA AJAX (JavaScript) --- */
+
+.error-agendamento-text {
+    color: #dc3545;
+    font-weight: bold;
+    margin-top: 10px;
+    padding: 5px;
+    /* Estilização para o ícone */
+    display: flex;
+    align-items: center;
+}
+
+.error-agendamento-text i {
+    margin-right: 8px;
+}
