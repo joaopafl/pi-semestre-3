@@ -1,5 +1,3 @@
-// Pi_Odonto.ViewModels/AppointmentViewModel.cs
-
 using System;
 using System.Collections.Generic;
 using Pi_Odonto.Models;
@@ -8,27 +6,22 @@ namespace Pi_Odonto.ViewModels
 {
     public class AppointmentViewModel
     {
+        // ID do Agendamento que está sendo editado (0 para novo)
+        public int AgendamentoId { get; set; } 
+        
         // =======================================================
-        // PROPRIEDADES DE EXIBIÇÃO (GET - Dados para a tela)
+        // PROPRIEDADES DE EXIBIÇÃO (GET)
         // =======================================================
         public List<Crianca> Children { get; set; } = new List<Crianca>();
-        public DateTime SelectedDate { get; set; } = DateTime.Today; 
-        
         public List<DateTime> AvailableDates { get; set; } = new List<DateTime>();
-
-        public List<Dentista> AvailableDentists { get; set; } = new List<Dentista>();
-        
-        // NOVO: Nome do dentista (para exibir no modal)
-        public string SelectedDentistaName { get; set; } = "Não Selecionado";
         
         // =======================================================
         // PROPRIEDADES DE ENVIO (POST - Dados que vêm do formulário)
         // =======================================================
         
-        public int SelectedChildId { get; set; } 
-        public string SelectedDateString { get; set; } = string.Empty; 
-        public string SelectedTime { get; set; } = string.Empty;
-        
-        public int SelectedDentistaId { get; set; }
+        public int SelectedChildId { get; set; } // ID da Criança
+        public string SelectedDateString { get; set; } = string.Empty; // Data selecionada (ex: "2025-10-24")
+        public string SelectedTime { get; set; } = string.Empty; // Horário selecionado (ex: "09:00")
+        public int SelectedDentistaId { get; set; } // ID do Dentista selecionado
     }
 }

@@ -17,7 +17,7 @@ namespace Pi_Odonto.Models
         [Display(Name = "Data do Agendamento")]
         public DateTime DataAgendamento { get; set; } 
 
-        // Mapeamento explícito para o tipo TIME do MySQL, crucial para resolver o erro
+        // Mapeamento explícito para o tipo TIME do MySQL
         [Required]
         [Column("hr_agenda", TypeName = "time")] 
         [Display(Name = "Hora do Agendamento")]
@@ -27,6 +27,10 @@ namespace Pi_Odonto.Models
         [Column("id_dentista")]
         [Display(Name = "Dentista")]
         public int IdDentista { get; set; }
+        
+        // NOVO: Propriedade de Navegação para Dentista (Adicionado para resolver o erro)
+        [ForeignKey("IdDentista")]
+        public virtual Dentista? Dentista { get; set; } 
 
         [Required]
         [Column("id_crianca")]

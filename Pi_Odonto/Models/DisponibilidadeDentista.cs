@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System;
 
 namespace Pi_Odonto.Models
 {
@@ -30,6 +31,7 @@ namespace Pi_Odonto.Models
         [Display(Name = "Hora de Fim")]
         public TimeSpan HoraFim { get; set; }
 
+        // Mapeamento para a coluna 'ativo'
         [Column("ativo")]
         [Display(Name = "Ativo")]
         public bool Ativo { get; set; } = true;
@@ -38,7 +40,7 @@ namespace Pi_Odonto.Models
         [Display(Name = "Data de Cadastro")]
         public DateTime DataCadastro { get; set; } = DateTime.Now;
 
-        // Navigation property para o relacionamento com Dentista
+        // Navigation property
         [ForeignKey("IdDentista")]
         public virtual Dentista? Dentista { get; set; }
     }

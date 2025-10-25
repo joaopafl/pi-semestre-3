@@ -1,5 +1,3 @@
-// Pi_Odonto.Controllers/AgendamentoController.cs
-
 using Microsoft.AspNetCore.Mvc;
 using Pi_Odonto.Data;
 using Pi_Odonto.ViewModels; 
@@ -9,212 +7,122 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Linq; 
 using System.Collections.Generic;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.EntityFrameworkCore;
+using System.Threading.Tasks;
 
 namespace Pi_Odonto.Controllers
 {
-    // Classe Auxiliar para o JSON de retorno (para incluir o ID do Dentista)
+    // Classe Auxiliar para o JSON de retorno (Mantida)
     public class AvailableTimeSlot
     {
-        public string Time { get; set; } // Ex: "08:00"
+        public string Time { get; set; } = string.Empty;
         public int DentistaId { get; set; }
-        public string DentistaName { get; set; }
+        public string DentistaName { get; set; } = string.Empty;
     }
 
-    // [Authorize] 
+    // [Authorize] // Recomendado adicionar para garantir que apenas usuários logados acessem o Controller
     public class AgendamentoController : Controller
     {
         private readonly AppDbContext _context;
-        // Duração da consulta
-        private readonly TimeSpan _slotDuration = TimeSpan.FromHours(1);
+        private readonly TimeSpan _slotDuration = TimeSpan.FromHours(1); 
 
         public AgendamentoController(AppDbContext context)
         {
             _context = context;
         }
 
-        // GET: /Agendamento/Index
-        [HttpGet]
-        public IActionResult Index()
-        {
-            var userIdString = User.FindFirstValue("ResponsavelId");
-
-            if (string.IsNullOrEmpty(userIdString) || !int.TryParse(userIdString, out int responsavelId))
-            {
-                return RedirectToAction("Login", "Auth");
-            }
-
-            // 1. GERA OS PRÓXIMOS 7 DIAS ÚTEIS
-            var availableDates = GetNextAvailableDates(7); 
-
-            // 2. BUSCA A LISTA DE CRIANÇAS
-            var children = _context.Criancas
-                                   .Where(c => c.Ativa && c.IdResponsavel == responsavelId)
-                                   .ToList();
-
-            var vm = new AppointmentViewModel
-            {
-                Children = children,
-                AvailableDates = availableDates,
-            };
-
-            return View(vm);
-        }
+        // ====================================================================
+        // MÉTODOS AUXILIARES CHAVE (AUTORIZAÇÃO POR PERFIL)
+        // ====================================================================
         
-        // MÉTODO: Obter Horários Disponíveis de TODOS os Dentistas (Via AJAX)
-        [HttpGet]
-        public JsonResult GetAvailableTimes(string dateString)
+        // Retorna o ID do usuário/responsável logado.
+        private int GetCurrentUserId()
         {
-            if (!DateTime.TryParse(dateString, out DateTime selectedDate))
+            var userIdString = User.FindFirstValue("ResponsavelId"); // Tenta a claim customizada
+            if (userIdString != null && int.TryParse(userIdString, out int id))
             {
-                return Json(new { success = false, message = "Formato de data inválido." });
+                return id;
+            }
+            userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier); // Fallback: Tenta a claim padrão
+            if (userIdString != null && int.TryParse(userIdString, out int fallbackId))
+            {
+                 return fallbackId;
+            }
+            return 0;
+        }
+
+        // NOVO: Retorna a Query de Crianças já filtrada pela Role do usuário
+        private IQueryable<Crianca> GetChildrenQueryBase()
+        {
+            // 1. Inicia a query base
+            IQueryable<Crianca> query = _context.Criancas.Where(c => c.Ativa);
+            
+            // 2. Define as Roles de alto nível (acesso a TODAS as crianças)
+            bool isAdminOrDentista = User.IsInRole("Admin") || User.IsInRole("Dentista");
+            
+            // 3. Aplica a Lógica de Filtragem:
+            if (isAdminOrDentista)
+            {
+                // Admin e Dentista veem TODAS as crianças ativas
+                return query; 
+            }
+            
+            // Se não for Admin/Dentista (assumindo que seja Responsável ou similar)
+            var responsavelId = GetCurrentUserId();
+            if (responsavelId == 0)
+            {
+                // Usuário sem ID válido não deve ver nenhuma criança
+                return query.Where(c => false);
+            }
+            
+            // Responsável vê APENAS suas crianças
+            return query.Where(c => c.IdResponsavel == responsavelId);
+        }
+
+        // NOVO: Retorna a Query de Agendamentos já filtrada pela Role do usuário
+        private IQueryable<Agendamento> GetAgendamentosQueryBase()
+        {
+            // 1. Inicia a query base com os includes
+            IQueryable<Agendamento> query = _context.Agendamentos
+                .Include(a => a.Crianca)
+                .Include(a => a.Dentista);
+
+            // 2. Define as Roles de alto nível (acesso a TODOS os agendamentos)
+            bool isAdminOrDentista = User.IsInRole("Admin") || User.IsInRole("Dentista");
+            
+            // 3. Aplica a Lógica de Filtragem:
+            if (isAdminOrDentista)
+            {
+                // Admin e Dentista veem TODOS os agendamentos
+                return query;
             }
 
-            var dayOfWeekString = GetDayOfWeekString(selectedDate.DayOfWeek);
-            
-            // 1. BUSCA TODAS AS DISPONIBILIDADES ATIVAS PARA O DIA SELECIONADO
-            var allDisponibilidades = _context.DisponibilidadesDentista
-                                              .Include(d => d.Dentista) 
-                                              .Where(d => d.DiaSemana == dayOfWeekString && d.Ativo)
-                                              .ToList();
-            
-            if (!allDisponibilidades.Any())
+            // Se for Responsável ou similar
+            var responsavelId = GetCurrentUserId();
+            if (responsavelId == 0)
             {
-                return Json(new { success = true, times = new List<AvailableTimeSlot>() }); 
+                // Usuário sem ID válido não deve ver nenhum agendamento
+                return query.Where(a => false);
             }
-
-            // 2. BUSCA TODOS OS AGENDAMENTOS JÁ EXISTENTES PARA A DATA E CRIA O DICIONÁRIO
-            var bookedTimes = _context.Agendamentos
-                              .Where(a => a.DataAgendamento.Date == selectedDate.Date)
-                              // *** CORREÇÃO DEFINITIVA (Resolve FormatException na linha 101) ***
-                              .ToDictionary(a => $"{a.HoraAgendamento.Hours:D2}:{a.HoraAgendamento.Minutes:D2}-{a.IdDentista}", a => true);
             
-            // 3. GERA OS SLOTS DISPONÍVEIS, INCLUINDO O ID E NOME DO DENTISTA
-            var finalAvailableSlots = new List<AvailableTimeSlot>();
+            // Responsável vê APENAS os agendamentos das suas crianças
+            return query.Where(a => a.Crianca!.IdResponsavel == responsavelId);
+        }
 
-            foreach (var disp in allDisponibilidades)
+        private List<DateTime> GetNextAvailableDates(int count)
+        {
+            var dates = new List<DateTime>();
+            var currentDate = DateTime.Today.AddDays(1); 
+
+            while (dates.Count < count)
             {
-                var current = disp.HoraInicio;
-                while (current.Add(_slotDuration) <= disp.HoraFim)
+                if (currentDate.DayOfWeek != DayOfWeek.Saturday && currentDate.DayOfWeek != DayOfWeek.Sunday)
                 {
-                    // Usa a mesma formatação segura para o slotKey
-                    var timeString = $"{current.Hours:D2}:{current.Minutes:D2}"; 
-                    var slotKey = $"{timeString}-{disp.IdDentista}";
-                    
-                    // Verifica se o slot jÁ está agendado para ESTE dentista
-                    if (!bookedTimes.ContainsKey(slotKey))
-                    {
-                        finalAvailableSlots.Add(new AvailableTimeSlot
-                        {
-                            Time = timeString,
-                            DentistaId = disp.IdDentista,
-                            DentistaName = disp.Dentista.Nome 
-                        });
-                    }
-                    current = current.Add(_slotDuration);
+                    dates.Add(currentDate);
                 }
+                currentDate = currentDate.AddDays(1);
             }
-            
-            // 4. ORDENA POR HORÁRIO e depois por Nome do Dentista
-            var orderedSlots = finalAvailableSlots
-                                .OrderBy(s => TimeSpan.Parse(s.Time))
-                                .ToList();
-
-            return Json(new { success = true, times = orderedSlots });
+            return dates;
         }
-
-        // POST: /Agendamento/Confirmar
-        [HttpPost]
-        public IActionResult Confirmar(AppointmentViewModel model)
-        {
-            // 1. VALIDAÇÃO DE USUÁRIO E DADOS BÁSICOS
-            var userIdString = User.FindFirstValue("ResponsavelId");
-            if (string.IsNullOrEmpty(userIdString) || !int.TryParse(userIdString, out int responsavelId))
-            {
-                TempData["ErrorMessage"] = "Sessão expirada. Faça login novamente.";
-                return RedirectToAction("Login", "Auth");
-            }
-
-            if (model.SelectedChildId <= 0 || string.IsNullOrEmpty(model.SelectedDateString) || string.IsNullOrEmpty(model.SelectedTime) || model.SelectedDentistaId <= 0)
-            {
-                TempData["ErrorMessage"] = "Por favor, selecione a criança, a data, o horário e o dentista para agendar.";
-                return RedirectToAction("Index"); 
-            }
-            
-            // 2. CONVERSÃO DE DATA E HORA
-            if (!DateTime.TryParse(model.SelectedDateString, out DateTime dataConsulta))
-            {
-                TempData["ErrorMessage"] = "Formato de data inválido.";
-                return RedirectToAction("Index");
-            }
-
-            if (!TimeSpan.TryParse(model.SelectedTime, out TimeSpan horaConsulta))
-            {
-                TempData["ErrorMessage"] = "Formato de hora inválido.";
-                return RedirectToAction("Index");
-            }
-
-            // 3. VALIDAÇÃO DE POSSE DA CRIANÇA E BUSCA DOS DADOS
-            var crianca = _context.Criancas
-                                  .FirstOrDefault(c => c.Id == model.SelectedChildId && c.IdResponsavel == responsavelId);
-                              
-            if (crianca == null)
-            {
-                TempData["ErrorMessage"] = "Operação inválida. A criança selecionada não pertence à sua conta.";
-                return RedirectToAction("Index");
-            }
-            
-            // 4. VALIDAÇÃO: CRIANÇA JÁ AGENDADA NO DIA
-            var agendamentoExistente = _context.Agendamentos
-                                                .Where(a => a.IdCrianca == model.SelectedChildId && 
-                                                            a.DataAgendamento.Date == dataConsulta.Date)
-                                                .FirstOrDefault();
-            
-            if (agendamentoExistente != null)
-            {
-                TempData["ErrorMessage"] = $"A criança {crianca.Nome} já possui um agendamento confirmado para o dia {dataConsulta:dd/MM/yyyy}. Por favor, escolha outra data.";
-                return RedirectToAction("Index"); 
-            }
-            
-
-            // 5. LÓGICA DE SALVAMENTO NO BANCO DE DADOS
-            try
-            {
-                var novoAgendamento = new Agendamento
-                {
-                    IdCrianca = model.SelectedChildId,
-                    DataAgendamento = dataConsulta.Date,
-                    HoraAgendamento = horaConsulta, 
-                    IdDentista = model.SelectedDentistaId,
-                };
-
-                _context.Agendamentos.Add(novoAgendamento);
-                _context.SaveChanges(); 
-            }
-            catch (DbUpdateException ex)
-            {
-                // Tratamento de falha de concorrência ou Unique Constraint
-                TempData["ErrorMessage"] = "Erro: O horário selecionado não está mais disponível. Por favor, escolha outro horário.";
-                return RedirectToAction("Index");
-            }
-            catch (Exception)
-            {
-                TempData["ErrorMessage"] = "Erro interno ao finalizar o agendamento. Tente novamente.";
-                return RedirectToAction("Index");
-            }
-            
-            // 6. REDIRECIONAMENTO DE SUCESSO
-            TempData["AgendamentoSucesso"] = true;
-            TempData["SuccessMessageTitle"] = "Agendamento Confirmado!";
-            TempData["SuccessMessageBody"] = $"A consulta para a criança {crianca.Nome} foi agendada com sucesso para {dataConsulta.ToString("dd/MM/yyyy")} às {model.SelectedTime}.";
-            
-            return RedirectToAction("Index", "Perfil");
-        }
-        
-        // =======================================================
-        // MÉTODOS AUXILIARES
-        // =======================================================
 
         private string GetDayOfWeekString(DayOfWeek day)
         {
@@ -231,21 +139,353 @@ namespace Pi_Odonto.Controllers
             };
         }
 
-        private List<DateTime> GetNextAvailableDates(int count)
-        {
-            var dates = new List<DateTime>();
-            var currentDate = DateTime.Today.AddDays(1); // Começa a partir de amanhã
+        // ====================================================================
+        // 1. TELA DE NOVO AGENDAMENTO (INDEX - GET) - REVISADO
+        // ====================================================================
 
-            while (dates.Count < count)
+        // GET: /Agendamento/Index
+        [HttpGet]
+        public async Task<IActionResult> Index()
+        {
+            if (!User.Identity.IsAuthenticated) return RedirectToAction("Login", "Auth");
+            
+            try
             {
-                // Pega apenas dias úteis (Segunda a Sexta).
-                if (currentDate.DayOfWeek != DayOfWeek.Saturday && currentDate.DayOfWeek != DayOfWeek.Sunday)
+                var availableDates = GetNextAvailableDates(7); 
+
+                // *** ALTERADO: Usa o GetChildrenQueryBase para filtrar as crianças ***
+                var children = await GetChildrenQueryBase().ToListAsync();
+
+                if (!children.Any())
                 {
-                    dates.Add(currentDate);
+                    TempData["ErrorMessage"] = "Nenhuma criança ativa encontrada para agendamento.";
+                    return RedirectToAction("MinhaAgenda");
                 }
-                currentDate = currentDate.AddDays(1);
+
+                var vm = new AppointmentViewModel
+                {
+                    Children = children,
+                    AvailableDates = availableDates,
+                };
+
+                ViewBag.IsEditing = false; 
+                ViewBag.Action = "Confirmar";
+                return View(vm);
             }
-            return dates;
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = "Erro ao carregar a tela de agendamento. " + ex.Message;
+                return RedirectToAction("MinhaAgenda"); 
+            }
+        }
+        
+        // ====================================================================
+        // 2. ACTION API PARA CARREGAR HORÁRIOS (AJAX) - MANTIDO
+        // ====================================================================
+
+        // MÉTODO: Obter Horários Disponíveis de TODOS os Dentistas
+        [HttpGet]
+        public JsonResult GetAvailableTimes(string dateString)
+        {
+            if (!DateTime.TryParse(dateString, out DateTime selectedDate))
+            {
+                return Json(new { success = false, message = "Formato de data inválido." });
+            }
+
+            var dayOfWeekString = GetDayOfWeekString(selectedDate.DayOfWeek);
+            
+            var allDisponibilidades = _context.DisponibilidadesDentista
+                    .Include(d => d.Dentista) 
+                    .Where(d => d.DiaSemana == dayOfWeekString && d.Ativo)
+                    .ToList();
+            
+            if (!allDisponibilidades.Any())
+            {
+                return Json(new { success = true, times = new List<AvailableTimeSlot>() }); 
+            }
+
+            var bookedTimes = _context.Agendamentos
+                             .Where(a => a.DataAgendamento.Date == selectedDate.Date)
+                             .ToDictionary(a => $"{a.HoraAgendamento.Hours:D2}:{a.HoraAgendamento.Minutes:D2}-{a.IdDentista}", a => true);
+            
+            var finalAvailableSlots = new List<AvailableTimeSlot>();
+
+            foreach (var disp in allDisponibilidades)
+            {
+                var current = disp.HoraInicio;
+                var horaFim = disp.HoraFim;
+
+                while (current.Add(_slotDuration) <= horaFim)
+                {
+                    var timeString = $"{current.Hours:D2}:{current.Minutes:D2}"; 
+                    var slotKey = $"{timeString}-{disp.IdDentista}";
+                    
+                    if (!bookedTimes.ContainsKey(slotKey))
+                    {
+                        finalAvailableSlots.Add(new AvailableTimeSlot
+                        {
+                            Time = timeString,
+                            DentistaId = disp.IdDentista,
+                            DentistaName = disp.Dentista?.Nome ?? "Dentista Não Encontrado" 
+                        });
+                    }
+                    current = current.Add(_slotDuration);
+                }
+            }
+            
+            var orderedSlots = finalAvailableSlots
+                                .OrderBy(s => TimeSpan.Parse(s.Time))
+                                .ToList();
+
+            return Json(new { success = true, times = orderedSlots });
+        }
+
+        // ====================================================================
+        // 3. CONFIRMAR NOVO AGENDAMENTO (POST) - REVISADO (Validação de Criança)
+        // ====================================================================
+
+        // POST: /Agendamento/Confirmar
+        [HttpPost]
+        public async Task<IActionResult> Confirmar(AppointmentViewModel model)
+        {
+            if (model.AgendamentoId > 0) return BadRequest("Action Inválida para Edição.");
+            if (!User.Identity.IsAuthenticated) return RedirectToAction("Login", "Auth");
+
+            if (!DateTime.TryParse(model.SelectedDateString, out DateTime dataConsulta) ||
+                !TimeSpan.TryParse(model.SelectedTime, out TimeSpan horaConsulta))
+            {
+                TempData["ErrorMessage"] = "Formato de data ou hora inválido.";
+                return RedirectToAction("Index");
+            }
+
+            // *** ALTERADO: Usa o GetChildrenQueryBase para validar que a criança pertence ao usuário ***
+            var crianca = await GetChildrenQueryBase()
+                .FirstOrDefaultAsync(c => c.Id == model.SelectedChildId);
+            
+            if (crianca == null)
+            {
+                TempData["ErrorMessage"] = "Operação inválida. A criança selecionada não existe ou não pode ser agendada por este perfil.";
+                return RedirectToAction("Index");
+            }
+
+            // ... (Restante da lógica de validação de agendamento existente)
+            var agendamentoExistente = await _context.Agendamentos
+                .Where(a => a.IdCrianca == model.SelectedChildId && a.DataAgendamento.Date == dataConsulta.Date)
+                .FirstOrDefaultAsync();
+            
+            if (agendamentoExistente != null)
+            {
+                TempData["ErrorMessage"] = $"A criança {crianca.Nome} já possui um agendamento para o dia {dataConsulta:dd/MM/yyyy}.";
+                return RedirectToAction("Index");
+            }
+
+            try
+            {
+                var novoAgendamento = new Agendamento
+                {
+                    IdCrianca = model.SelectedChildId,
+                    DataAgendamento = dataConsulta.Date,
+                    HoraAgendamento = horaConsulta, 
+                    IdDentista = model.SelectedDentistaId,
+                };
+
+                _context.Agendamentos.Add(novoAgendamento);
+                await _context.SaveChangesAsync(); 
+                
+                TempData["SuccessMessageTitle"] = "Agendamento Confirmado!";
+                TempData["SuccessMessageBody"] = $"A consulta para {crianca.Nome} foi agendada para {dataConsulta.ToString("dd/MM/yyyy")} às {model.SelectedTime}.";
+                
+                return RedirectToAction("MinhaAgenda");
+            }
+            catch (Exception)
+            {
+                TempData["ErrorMessage"] = "Erro: O horário selecionado não está mais disponível ou houve uma falha de conexão.";
+                return RedirectToAction("Index");
+            }
+        }
+
+        // ====================================================================
+        // 4. EDIÇÃO DE AGENDAMENTO (EDITAR - GET) - REVISADO (Filtro Agendamento)
+        // ====================================================================
+
+        // GET: /Agendamento/Editar/5
+        [HttpGet]
+        public async Task<IActionResult> Editar(int id)
+        {
+            if (!User.Identity.IsAuthenticated) return RedirectToAction("Login", "Auth");
+
+            // *** ALTERADO: Usa o GetAgendamentosQueryBase para garantir o acesso ao agendamento ***
+            var agendamento = await GetAgendamentosQueryBase()
+                .FirstOrDefaultAsync(a => a.Id == id);
+
+            if (agendamento == null)
+            {
+                TempData["ErrorMessage"] = "Agendamento não encontrado ou você não tem permissão para editar.";
+                return RedirectToAction("MinhaAgenda");
+            }
+
+            var availableDates = GetNextAvailableDates(7);
+
+            // *** ALTERADO: Usa o GetChildrenQueryBase para listar as crianças ***
+            var children = await GetChildrenQueryBase().ToListAsync();
+
+            var vm = new AppointmentViewModel
+            {
+                AgendamentoId = agendamento.Id,
+                SelectedChildId = agendamento.IdCrianca,
+                SelectedDateString = agendamento.DataAgendamento.ToString("yyyy-MM-dd"), 
+                SelectedTime = agendamento.HoraAgendamento.ToString(@"hh\:mm"), 
+                SelectedDentistaId = agendamento.IdDentista,
+                
+                Children = children,
+                AvailableDates = availableDates,
+            };
+            
+            ViewBag.IsEditing = true; 
+            ViewBag.Action = "Atualizar";
+            
+            return View("Index", vm);
+        }
+
+        // ====================================================================
+        // 5. SALVAR EDIÇÃO DE AGENDAMENTO (ATUALIZAR - POST) - REVISADO (Validação)
+        // ====================================================================
+
+        // POST: /Agendamento/Atualizar
+        [HttpPost]
+        public async Task<IActionResult> Atualizar(AppointmentViewModel model)
+        {
+            if (model.AgendamentoId <= 0) return BadRequest("ID de agendamento inválido.");
+            if (!User.Identity.IsAuthenticated) return RedirectToAction("Login", "Auth");
+            
+            // 1. Verifica se o usuário tem permissão para editar ESTE agendamento
+            var agendamentoToUpdate = await GetAgendamentosQueryBase()
+                .FirstOrDefaultAsync(a => a.Id == model.AgendamentoId);
+
+            if (agendamentoToUpdate == null)
+            {
+                TempData["ErrorMessage"] = "Agendamento não encontrado ou você não tem permissão para atualizar.";
+                return RedirectToAction("MinhaAgenda");
+            }
+
+            // 2. Verifica se o usuário tem permissão para usar a NOVA criança selecionada
+            var novaCrianca = await GetChildrenQueryBase()
+                .FirstOrDefaultAsync(c => c.Id == model.SelectedChildId);
+
+            if (novaCrianca == null)
+            {
+                TempData["ErrorMessage"] = "A criança selecionada para edição não é válida para este perfil.";
+                return RedirectToAction("Editar", new { id = model.AgendamentoId });
+            }
+            
+            // ... (Restante da lógica de parsing de data/hora e validações)
+            if (!DateTime.TryParse(model.SelectedDateString, out DateTime novaData) || 
+                !TimeSpan.TryParse(model.SelectedTime, out TimeSpan novaHora))
+            {
+                TempData["ErrorMessage"] = "Formato de data ou hora inválido.";
+                return RedirectToAction("Editar", new { id = model.AgendamentoId });
+            }
+            
+            // ... (Restante da lógica de validação de agendamento existente)
+            var agendamentoExistente = await _context.Agendamentos
+                .Where(a => a.Id != model.AgendamentoId) 
+                .Where(a => a.IdCrianca == model.SelectedChildId && a.DataAgendamento.Date == novaData.Date)
+                .FirstOrDefaultAsync();
+            
+            if (agendamentoExistente != null)
+            {
+                TempData["ErrorMessage"] = $"A criança já possui outro agendamento para o dia {novaData:dd/MM/yyyy}.";
+                return RedirectToAction("Editar", new { id = model.AgendamentoId });
+            }
+
+            // ... (Aplicação das mudanças e save)
+            agendamentoToUpdate.IdCrianca = model.SelectedChildId;
+            agendamentoToUpdate.DataAgendamento = novaData.Date;
+            agendamentoToUpdate.HoraAgendamento = novaHora;
+            agendamentoToUpdate.IdDentista = model.SelectedDentistaId;
+            
+            try
+            {
+                _context.Agendamentos.Update(agendamentoToUpdate);
+                await _context.SaveChangesAsync();
+                
+                TempData["SuccessMessageTitle"] = "Agendamento Atualizado!";
+                TempData["SuccessMessageBody"] = $"O agendamento foi alterado com sucesso para {novaData.ToString("dd/MM/yyyy")} às {model.SelectedTime}.";
+            }
+            catch (Exception)
+            {
+                TempData["ErrorMessage"] = "Erro interno ao atualizar o agendamento. Tente novamente.";
+                return RedirectToAction("Editar", new { id = model.AgendamentoId });
+            }
+            
+            return RedirectToAction("MinhaAgenda");
+        }
+
+        // ====================================================================
+        // 6. MINHA AGENDA (LISTAGEM) - REVISADO (Filtro Agendamento)
+        // ====================================================================
+
+        // GET: /Agendamento/MinhaAgenda
+        [HttpGet]
+        public async Task<IActionResult> MinhaAgenda()
+        {
+            if (!User.Identity.IsAuthenticated) return RedirectToAction("Login", "Auth");
+            
+            // *** ALTERADO: Usa o GetAgendamentosQueryBase para obter a lista filtrada ***
+            IQueryable<Agendamento> query = GetAgendamentosQueryBase()
+                .OrderByDescending(a => a.DataAgendamento)
+                .ThenBy(a => a.HoraAgendamento);
+            
+            var agendamentos = await query.ToListAsync();
+
+            return View(agendamentos); 
+        }
+
+        // ====================================================================
+        // 7. CANCELAR AGENDAMENTO (CANCELAR - POST) - REVISADO (Filtro Agendamento)
+        // ====================================================================
+
+        // POST: /Agendamento/Cancelar/5
+        [HttpPost]
+        [ValidateAntiForgeryToken] 
+        public async Task<IActionResult> Cancelar(int id)
+        {
+            if (!User.Identity.IsAuthenticated) 
+            {
+                TempData["ErrorMessage"] = "Sessão expirada. Faça login novamente.";
+                return RedirectToAction("Login", "Auth");
+            }
+
+            // *** ALTERADO: Usa o GetAgendamentosQueryBase para garantir o acesso ao agendamento ***
+            var agendamento = await GetAgendamentosQueryBase()
+                .FirstOrDefaultAsync(a => a.Id == id);
+
+            if (agendamento == null)
+            {
+                TempData["ErrorMessage"] = "Agendamento não encontrado.";
+                return RedirectToAction("MinhaAgenda");
+            }
+            
+            if (agendamento.DataAgendamento.Date.Add(agendamento.HoraAgendamento) < DateTime.Now)
+            {
+                TempData["ErrorMessage"] = "Não é possível cancelar agendamentos passados.";
+                return RedirectToAction("MinhaAgenda");
+            }
+            
+            try
+            {
+                _context.Agendamentos.Remove(agendamento);
+                await _context.SaveChangesAsync();
+
+                TempData["SuccessMessageTitle"] = "Agendamento Cancelado!";
+                TempData["SuccessMessageBody"] = $"A consulta da criança {agendamento.Crianca?.Nome} para {agendamento.DataAgendamento:dd/MM/yyyy} foi cancelada com sucesso.";
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Erro ao tentar cancelar o agendamento: {ex.Message}";
+            }
+
+            return RedirectToAction("MinhaAgenda");
         }
     }
 }

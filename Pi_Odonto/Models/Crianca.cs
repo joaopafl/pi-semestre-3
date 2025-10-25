@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System;
 
 namespace Pi_Odonto.Models
 {
@@ -38,9 +39,13 @@ namespace Pi_Odonto.Models
         [Display(Name = "Responsável")]
         public int IdResponsavel { get; set; }
 
-        // Navegação - SEM [Required] e nullable
+        // Mapeamento CRÍTICO para a coluna 'ativa' (bit(1) ou tinyint(1) no MySQL)
+        [Column("ativa")] 
+        [Display(Name = "Ativa")]
+        public bool Ativa { get; set; } = true;
+
+        // Navegação
         [ForeignKey("IdResponsavel")]
         public virtual Responsavel? Responsavel { get; set; }
-        public bool Ativa { get; set; } = true;
     }
 }
