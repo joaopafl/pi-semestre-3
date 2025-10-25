@@ -1,51 +1,86 @@
 @model Pi_Odonto.ViewModels.AppointmentViewModel
+@using Pi_Odonto.Models
+
 @{
     ViewBag.Title = "Agendamento de Consulta Odontológica";
-    Layout = "~/Views/Shared/_Layout.cshtml";
+    // Define as variáveis de controle (semelhante ao que estava no Controller)
+    var actionName = ViewBag.Action ?? "Confirmar"; // Confirmar ou Atualizar
+    var isEditing = ViewBag.IsEditing ?? false;
 }
 
 <link rel="stylesheet" href="~/css/Agendamento.css" asp-append-version="true" />
-<div class="card-wp">
-    <h1 class="page-title">Agendamento de Consulta Odontológica <span class="calendar-emoji">📅</span></h1>
 
-    <form method="post" asp-action="Confirmar" asp-controller="Agendamento" id="agendamentoForm">
+<div class="card-wp">
+    
+    @if(TempData["ErrorMessage"] != null)
+    {
+        <div class="alert-banner error-banner">
+            <i class="bi bi-x-octagon-fill"></i>
+            <p>@TempData["ErrorMessage"]</p>
+        </div>
+    }
+    
+    <h1 class="page-title">
+        @(isEditing ? "Editar Agendamento" : "Agendamento de Consulta Odontológica") 
+        <i class="bi bi-calendar-heart-fill"></i>
+    </h1>
+
+    <form method="post" asp-action="@actionName" asp-controller="Agendamento" id="agendamentoForm">
+        
+        <input type="hidden" id="childInput" asp-for="SelectedChildId" />
+        <input type="hidden" id="dateInput" asp-for="SelectedDateString" />
+        <input type="hidden" id="timeInput" asp-for="SelectedTime" />
+        <input type="hidden" id="dentistInput" asp-for="SelectedDentistaId" />
+        
+        @if (isEditing)
+        {
+            <input type="hidden" asp-for="AgendamentoId" />
+        }
+        
         <h3>Selecione a criança a ser atendida:</h3>
         <div class="select-row">
-            <select name="SelectedChildId" id="childSelect" class="styled-select" onchange="enableDates()">
+            <select id="childSelect" class="styled-select" onchange="enableDates()">
                 <option value="">Selecione uma criança</option>
                 @foreach(Crianca c in Model.Children)
                 {
-                    <option value="@c.Id" data-name="@c.Nome">@c.Nome</option>
+                    var isSelected = isEditing && Model.SelectedChildId == c.Id;
+                    <option 
+                        value="@c.Id" 
+                        data-name="@c.Nome"
+                        selected="@isSelected">
+                        @c.Nome
+                    </option>
                 }
             </select>
         </div>
+        
 
         <div id="datesSection" style="display:none;">
             <h3>Selecione o dia do atendimento:</h3>
             <div class="dates-row">
-                @foreach(var d in Model.AvailableSaturdays)
+                @foreach(var d in Model.AvailableDates)
                 {
-                    <button type="button" class="date-btn" onclick="selectDateAndShowTimes('@d.ToString("yyyy-MM-dd")', this)">@d.ToString("dd/MM")</button>
+                    var dateStr = d.ToString("yyyy-MM-dd");
+                    var isSelected = isEditing && Model.SelectedDateString == dateStr;
+                    
+                    <button 
+                        type="button" 
+                        class="date-btn @(isSelected ? "selected" : "")" 
+                        data-date="@dateStr"
+                        onclick="selectDateAndLoadTimes('@dateStr', this)">
+                        @d.ToString("dd/MM")
+                    </button>
                 }
             </div>
         </div>
 
         <div id="timesSection" style="display:none;">
             <h3>Selecione o horário do atendimento:</h3>
-            <div class="times-grid">
+            <div id="timesGrid" class="times-grid">
                 </div>
         </div>
         
-        <input type="hidden" name="SelectedDateString" id="dateInput" />
-        <input type="hidden" name="SelectedTime" id="timeInput" />
-        <input type="hidden" name="SelectedChildId" id="childInput" /> @* Adicionado para garantir que o ID da criança seja enviado *@
-
     </form>
-    
-    @if(TempData["ErrorMessage"] != null)
-    {
-        <div class="error" style="color: red; font-weight: bold; margin-top: 15px;">@TempData["ErrorMessage"]</div>
-    }
 </div>
 
 
@@ -53,23 +88,36 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content" style="border-radius: 12px;">
             <div class="modal-header" style="background-color: var(--green-main); color: white; border-radius: 12px 12px 0 0;">
+                
                 <h5 class="modal-title" id="summaryModalLabel">
-                    <span class="calendar-emoji">📅</span> Resumo do Agendamento
+                    <i class="bi bi-calendar-heart-fill"></i> 
+                    @(isEditing ? "Confirmar Edição" : "Resumo do Agendamento")
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <div class="summary-details" style="text-align: left;">
                     <p><span class="sq-icon"></span> <strong>Criança selecionada:</strong> <span id="summaryChildNameModal"></span></p>
-                    <p><span class="sq-icon"></span> <strong>Responsável:</strong> Ana Silva</p>
-                    <p><span class="sq-icon"></span> <strong>Dentista:</strong> Dr. João Oliveira</p>
+                    
+                    <p><span class="sq-icon"></span> <strong>Responsável:</strong> @User.Identity.Name</p>
+                    
+                    <p>
+                        <span class="sq-icon"></span> 
+                        <strong>Dentista:</strong> 
+                        <div id="summaryDentistSelectDiv" class="d-inline-block">
+                            <span id="summaryDentistNameModal"></span>
+                        </div>
+                    </p>
+                    
                     <hr>
                     <p style="font-size: 1.2rem;"><span class="sq-icon" style="background-color: var(--blue-main);"></span> <strong>Data:</strong> <span id="summaryDateModal" style="font-weight: bold;"></span></p>
                     <p style="font-size: 1.2rem;"><span class="sq-icon" style="background-color: var(--blue-main);"></span> <strong>Horário:</strong> <span id="summaryTimeModal" style="font-weight: bold;"></span></p>
                 </div>
             </div>
             <div class="modal-footer actions" style="justify-content: space-around; border-top: none;">
-                <button type="button" class="confirm-btn" onclick="confirmAndSubmit()">Confirmar agendamento</button>
+                <button type="button" class="confirm-btn" onclick="confirmAndSubmit()">
+                    @(isEditing ? "Atualizar Agendamento" : "Confirmar Agendamento")
+                </button>
                 <button type="button" class="btn-outline" data-bs-dismiss="modal">Revisar</button>
             </div>
         </div>
@@ -79,16 +127,18 @@
 
 @section Scripts {
     <script>
-        // A lista de horários simulados (mock)
-        const availableTimes = ["08:00", "09:00", "10:00", "11:00", "13:00", "14:00"];
-        
-        // As variáveis para armazenar os valores de exibição
+        // Variáveis globais para armazenar o estado
         let selectedDateDisplay = ''; 
         let selectedChildName = '';
-
-        // Variável para controlar o modal
+        
+        // Estrutura para armazenar todos os slots por horário (Chave: '09:00', Valor: [slot1, slot2])
+        let availableSlotsByTime = {}; 
+        
         const summaryModal = new bootstrap.Modal(document.getElementById('summaryModal'));
 
+        // =======================================================
+        // FUNÇÕES DE EXIBIÇÃO E SELEÇÃO
+        // =======================================================
 
         function enableDates() {
             const childSelect = document.getElementById('childSelect');
@@ -97,7 +147,7 @@
             
             selectedChildName = childSelect.options[childSelect.selectedIndex]?.dataset.name || '';
             
-            // 1. ATUALIZA O INPUT OCULTO DO ID DA CRIANÇA
+            // Preenche o input oculto para o POST
             document.getElementById('childInput').value = childSelect.value;
             
             if (childSelect.value !== "") {
@@ -109,55 +159,190 @@
             }
         }
 
-        function selectDateAndShowTimes(selectedDate, button) {
-            // Limpa o estado 'selected' dos botões de data
+        async function selectDateAndLoadTimes(selectedDate, button) {
+            // Remove a classe 'selected' de todos os botões de data e adiciona ao clicado
             document.querySelectorAll('.dates-row .date-btn').forEach(btn => btn.classList.remove('selected'));
             button.classList.add('selected');
 
-            // 1. SALVA O VALOR DA DATA DO FORMATO YYYY-MM-DD NO INPUT OCULTO
             document.getElementById('dateInput').value = selectedDate;
-
-            // 2. SALVA O TEXTO DO BOTÃO (EX: "15/10") NA VARIÁVEL DE EXIBIÇÃO
             selectedDateDisplay = button.textContent; 
-            
-            const timesGrid = document.querySelector('.times-grid');
-            timesGrid.innerHTML = '';
-            
-            // Preenche o grid com os horários disponíveis (Mock)
-            availableTimes.forEach(time => {
-                const timeButton = document.createElement('button');
-                timeButton.type = 'button'; 
-                timeButton.className = 'time-btn';
-                timeButton.textContent = time;
-                timeButton.onclick = () => showSummaryModal(time, timeButton);
-                timesGrid.appendChild(timeButton);
-            });
-            
+
+            const timesGrid = document.getElementById('timesGrid');
+            timesGrid.innerHTML = '<h4>Carregando horários...</h4>'; 
             document.getElementById('timesSection').style.display = 'block';
             summaryModal.hide();
+            
+            const url = `/Agendamento/GetAvailableTimes?dateString=${selectedDate}`;
+            
+            // Variáveis Razor avaliadas no lado do servidor
+            const isEditing = @(ViewBag.IsEditing ? "true" : "false");
+            const selectedTimeForEdit = isEditing && '@Model.SelectedTime' ? '@Model.SelectedTime' : null;
+
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                timesGrid.innerHTML = ''; 
+                availableSlotsByTime = {}; // Limpa slots antigos
+
+                if (data.success && data.times.length > 0) {
+                    
+                    // 1. AGRUPAR OS SLOTS PELO HORÁRIO
+                    data.times.forEach(slot => {
+                        const timeKey = slot.time;
+                        if (!availableSlotsByTime[timeKey]) {
+                            availableSlotsByTime[timeKey] = [];
+                        }
+                        availableSlotsByTime[timeKey].push(slot);
+                    });
+
+                    // 2. CRIAR BOTÕES APENAS PARA OS HORÁRIOS ÚNICOS
+                    Object.keys(availableSlotsByTime).forEach(time => {
+                        const slots = availableSlotsByTime[time];
+                        const timeButton = document.createElement('button');
+                        timeButton.type = 'button'; 
+                        timeButton.className = 'time-btn'; // Classe customizada
+                        timeButton.textContent = time; 
+                        
+                        // Envia TODOS os slots daquele horário para o modal
+                        timeButton.onclick = () => showSummaryModal(slots, timeButton);
+                        
+                        // LÓGICA DE EDIÇÃO: Pré-selecionar o horário
+                        if (isEditing && time === selectedTimeForEdit) {
+                            timeButton.classList.add('selected');
+                            // Aciona o modal para pré-selecionar o dentista correto
+                            showSummaryModal(slots, timeButton, true); 
+                        }
+                        
+                        timesGrid.appendChild(timeButton);
+                    });
+                    
+                } else {
+                    timesGrid.innerHTML = '<p class="error-agendamento-text">Nenhum horário disponível para este dia.</p>';
+                }
+            } catch (error) {
+                console.error('Erro ao buscar horários:', error);
+                timesGrid.innerHTML = `
+                    <p class="error-agendamento-text">
+                        <i class="bi bi-exclamation-triangle-fill"></i> Falha ao carregar horários. Tente selecionar outra data.
+                    </p>
+                `;
+            }
         }
         
-        function showSummaryModal(timeValue, button) {
-            document.querySelectorAll('.times-grid .time-btn').forEach(btn => btn.classList.remove('selected'));
-            button.classList.add('selected');
+        // Recebe um ARRAY de slots para o mesmo horário
+        function showSummaryModal(slots, button, isInitialLoad = false) {
+            const isEditing = @(ViewBag.IsEditing ? "true" : "false");
+            // Valor do dentista selecionado para edição (0 ou null se for novo)
+            const currentDentistIdForEdit = isEditing && @Model.SelectedDentistaId ? @Model.SelectedDentistaId : null;
             
-            // Preenche os inputs ocultos para o Controller
-            document.getElementById('timeInput').value = timeValue;
+            // 1. PREPARAÇÃO DA SELEÇÃO DE HORÁRIO
+            if (!isInitialLoad) {
+                // Remove seleção dos botões de horário e seleciona o clicado
+                document.querySelectorAll('.times-grid .time-btn').forEach(btn => btn.classList.remove('selected'));
+                button.classList.add('selected');
+            }
+
+            // 2. SELEÇÃO E EXIBIÇÃO DO DENTISTA
+            const dentistSelectDiv = document.getElementById('summaryDentistSelectDiv');
+            dentistSelectDiv.innerHTML = ''; // Limpa a div
+
+            // Determina qual slot deve ser o padrão/selecionado
+            let selectedSlot = slots.find(s => s.dentistaId === currentDentistIdForEdit) || slots[0];
+
+            if (slots.length > 1) {
+                // Múltiplos dentistas: cria um dropdown
+                let selectHtml = '<select id="dentistSelection" class="form-select" onchange="updateDentistInputs(this.value)">';
+                
+                slots.forEach(slot => {
+                    // O `form-select` é do Bootstrap, mas deve funcionar dentro do seu modal
+                    const selected = (isEditing && slot.dentistaId === currentDentistIdForEdit) || (!isEditing && slots.indexOf(slot) === 0);
+                    selectHtml += `<option value="${slot.dentistaId}" data-name="${slot.dentistaName}" ${selected ? 'selected' : ''}>${slot.dentistaName}</option>`;
+                });
+                selectHtml += '</select>';
+                dentistSelectDiv.innerHTML = selectHtml;
+                
+            } else {
+                // Apenas um dentista: exibe o nome no span
+                dentistSelectDiv.innerHTML = `<span id="summaryDentistNameModal">${selectedSlot.dentistaName}</span>`;
+            }
             
-            // Preenche os detalhes no modal, USANDO A VARIÁVEL CORRIGIDA
+            // 3. PREENCHIMENTO DOS INPUTS OCULTOS
+            document.getElementById('timeInput').value = slots[0].time; 
+            document.getElementById('dentistInput').value = selectedSlot.dentistaId; 
+            
+            // 4. PREENCHE OS DETALHES NO MODAL DISPLAY
             document.getElementById('summaryChildNameModal').textContent = selectedChildName;
             document.getElementById('summaryDateModal').textContent = selectedDateDisplay; 
-            document.getElementById('summaryTimeModal').textContent = timeValue;
+            document.getElementById('summaryTimeModal').textContent = slots[0].time;
             
-            summaryModal.show();
+            // Se for caso de apenas um dentista, garante que o span tenha o valor
+            if (slots.length === 1) {
+                 const nameSpan = document.getElementById('summaryDentistNameModal');
+                 if(nameSpan) nameSpan.textContent = selectedSlot.dentistaName;
+            }
+            
+
+            if (!isInitialLoad) {
+                summaryModal.show();
+            } else if (isEditing && slots.length > 1) {
+                // Se for edição com dropdown, garante que o input oculto está correto
+                updateDentistInputs(selectedSlot.dentistaId);
+            }
+        }
+        
+        // Atualiza os inputs ocultos se o usuário mudar o dentista no dropdown do modal
+        function updateDentistInputs(selectedDentistId) {
+            const timeKey = document.getElementById('timeInput').value;
+            const slotsForTime = availableSlotsByTime[timeKey];
+            
+            if (slotsForTime) {
+                const selectedSlot = slotsForTime.find(s => s.dentistaId == selectedDentistId);
+                if (selectedSlot) {
+                    document.getElementById('dentistInput').value = selectedSlot.dentistaId;
+                    
+                    // Atualiza o display do nome do dentista no modal, se houver
+                    const nameSpan = document.getElementById('summaryDentistNameModal');
+                    if(nameSpan) nameSpan.textContent = selectedSlot.dentistaName;
+                }
+            }
         }
 
         function confirmAndSubmit() {
+            // Última checagem antes de submeter
+            if (document.getElementById('childInput').value === "" || document.getElementById('dateInput').value === "" || document.getElementById('timeInput').value === "" || document.getElementById('dentistInput').value === "") {
+                alert("Por favor, complete a seleção de Criança, Data, Horário e Dentista.");
+                return;
+            }
             summaryModal.hide();
+            // Submete o formulário C# (POST para Confirmar ou Atualizar)
             document.getElementById('agendamentoForm').submit();
         }
 
-        // Garante que o estado inicial é avaliado ao carregar a página
+        // =======================================================
+        // INICIALIZAÇÃO E EDIÇÃO
+        // =======================================================
+
         enableDates();
+        
+        document.addEventListener('DOMContentLoaded', () => {
+             const childSelect = document.getElementById('childSelect');
+             const dateInput = document.getElementById('dateInput');
+             
+             // Lógica de Edição: Se os inputs estiverem pré-preenchidos, simula o clique na data
+             if (childSelect.value && dateInput.value) {
+                 // 1. Garante que a seção de datas e crianças esteja visível e inputs populados
+                 enableDates();
+                 
+                 // 2. Simular o clique no botão de data para carregar os horários disponíveis
+                 const dateButton = document.querySelector(`.date-btn[data-date="${dateInput.value}"]`);
+                 if (dateButton) {
+                     // Adiciona um pequeno delay para garantir que o DOM renderize antes do clique
+                     setTimeout(() => {
+                         dateButton.click(); 
+                     }, 10);
+                 }
+             }
+        });
     </script>
 }

@@ -481,9 +481,9 @@
                                 <i class="fas fa-plus me-1"></i> Agendar Consulta
                             </a>
 
-                            <button class="btn btn-compacto btn-info-compacto" onclick="verAgenda()">
+                            <a asp-action="MinhaAgenda" asp-controller="Agendamento" class="btn btn-compacto btn-info-compacto">
                                 <i class="fas fa-calendar me-1"></i> Ver Agenda Completa
-                            </button>
+                            </a>
                         </div>
 
                         <div class="contact-info-compacto mt-3">
@@ -503,9 +503,6 @@
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
-</div>
 
 @* ========================================================= *@
 @* 1. MODAL DE SUCESSO DE AGENDAMENTO (POP-UP) *@
@@ -541,9 +538,7 @@
 @section Scripts {
     <script>
         // Função para simular a visualização da agenda completa
-        function verAgenda() {
-            alert('Agenda completa em desenvolvimento!\nEm breve você poderá visualizar todos os seus agendamentos.');
-        }
+       
 
         // Confirmação antes de sair
         document.getElementById('logoutBtn').addEventListener('click', function(e) {

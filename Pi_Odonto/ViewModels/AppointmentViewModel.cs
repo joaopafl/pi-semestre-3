@@ -6,33 +6,22 @@ namespace Pi_Odonto.ViewModels
 {
     public class AppointmentViewModel
     {
+        // ID do Agendamento que está sendo editado (0 para novo)
+        public int AgendamentoId { get; set; } 
+        
         // =======================================================
-        // PROPRIEDADES DE EXIBIÇÃO (GET - Dados para a tela)
+        // PROPRIEDADES DE EXIBIÇÃO (GET)
         // =======================================================
         public List<Crianca> Children { get; set; } = new List<Crianca>();
-        public DateTime SelectedDate { get; set; } = DateTime.Today; 
-        public List<DateTime> AvailableSaturdays { get; set; } = new List<DateTime>();
-        public List<string> AvailableTimes { get; set; } = new List<string>
-        {
-            "08:00", "09:00", "10:00", "11:00", 
-            "13:00", "14:00"
-        };
+        public List<DateTime> AvailableDates { get; set; } = new List<DateTime>();
         
         // =======================================================
         // PROPRIEDADES DE ENVIO (POST - Dados que vêm do formulário)
         // =======================================================
         
-        // Recebe o ID da criança selecionada
-        public int SelectedChildId { get; set; } 
-
-        // Recebe a data selecionada do input oculto (formato YYYY-MM-DD)
-        // O nome foi ajustado para SelectedDateString para evitar conflito com SelectedDate (DateTime)
-        public string SelectedDateString { get; set; } = string.Empty; 
-
-        // Recebe o horário selecionado do input oculto (formato HH:mm)
-        public string SelectedTime { get; set; } = string.Empty;
-        
-        // PROPRIEDADE PARA FUTURA INTEGRAÇÃO DO DENTISTA
-        public int SelectedDentistaId { get; set; }
+        public int SelectedChildId { get; set; } // ID da Criança
+        public string SelectedDateString { get; set; } = string.Empty; // Data selecionada (ex: "2025-10-24")
+        public string SelectedTime { get; set; } = string.Empty; // Horário selecionado (ex: "09:00")
+        public int SelectedDentistaId { get; set; } // ID do Dentista selecionado
     }
 }
