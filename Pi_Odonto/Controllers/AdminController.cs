@@ -326,7 +326,286 @@ namespace Pi_Odonto.Controllers
         }
 
         // ========================================
-        // NOVAS FUNCIONALIDADES - VOLUNTÁRIOS
+        // GERENCIAMENTO DE DENTISTAS
+        // ========================================
+
+        // GET: Lista de Dentistas
+        [Route("Dentistas")]
+        public IActionResult Dentistas()
+        {
+            if (!IsAdmin())
+            {
+                return RedirectToAction("AdminLogin", "Auth");
+            }
+
+            var dentistas = _context.Dentistas
+                .Include(d => d.EscalaTrabalho)
+                .Include(d => d.Disponibilidades)
+                .OrderBy(d => d.Nome)
+                .ToList();
+
+            return View(dentistas);
+        }
+
+        // GET: Criar Dentista
+        [Route("CriarDentista")]
+        public IActionResult CriarDentista()
+        {
+            if (!IsAdmin())
+            {
+                return RedirectToAction("AdminLogin", "Auth");
+            }
+
+            ViewBag.Escalas = _context.EscalaTrabalho.ToList();
+
+            var viewModel = new DentistaViewModel
+            {
+                Disponibilidades = ObterDisponibilidadesPadrao()
+            };
+
+            return View(viewModel);
+        }
+
+        // POST: Criar Dentista
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Route("CriarDentista")]
+        public IActionResult CriarDentista(DentistaViewModel viewModel, int? IdEscala)
+        {
+            if (!IsAdmin())
+            {
+                return RedirectToAction("AdminLogin", "Auth");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                ViewBag.Escalas = _context.EscalaTrabalho.ToList();
+                viewModel.Disponibilidades = ObterDisponibilidadesPadrao();
+                return View(viewModel);
+            }
+
+            var dentista = new Dentista
+            {
+                Nome = viewModel.Nome,
+                Cpf = viewModel.Cpf,
+                Cro = viewModel.Cro,
+                Endereco = viewModel.Endereco,
+                Email = viewModel.Email,
+                Telefone = viewModel.Telefone,
+                IdEscala = IdEscala,
+                Ativo = true,
+                Senha = PasswordHelper.HashPassword(viewModel.Cro + "123")
+            };
+
+            _context.Dentistas.Add(dentista);
+            _context.SaveChanges();
+
+            // Vincular disponibilidades selecionadas
+            foreach (var disp in viewModel.Disponibilidades.Where(d => d.Selecionado))
+            {
+                _context.DisponibilidadesDentista.Add(new DisponibilidadeDentista
+                {
+                    IdDentista = dentista.Id,
+                    DiaSemana = disp.DiaSemana,
+                    HoraInicio = disp.HoraInicio,
+                    HoraFim = disp.HoraFim
+                });
+            }
+
+            _context.SaveChanges();
+
+            TempData["Sucesso"] = $"Dentista cadastrado com sucesso! Senha inicial: {viewModel.Cro}123";
+            return RedirectToAction("Dentistas");
+        }
+
+        // GET: Editar Dentista
+        [Route("EditarDentista/{id}")]
+        public IActionResult EditarDentista(int id)
+        {
+            if (!IsAdmin())
+            {
+                return RedirectToAction("AdminLogin", "Auth");
+            }
+
+            var dentista = _context.Dentistas
+                .Include(d => d.Disponibilidades)
+                .Include(d => d.EscalaTrabalho)
+                .FirstOrDefault(d => d.Id == id);
+
+            if (dentista == null)
+            {
+                TempData["Erro"] = "Dentista não encontrado.";
+                return RedirectToAction("Dentistas");
+            }
+
+            ViewBag.Escalas = _context.EscalaTrabalho.ToList();
+
+            var viewModel = new DentistaViewModel
+            {
+                Id = dentista.Id,
+                Nome = dentista.Nome,
+                Cpf = dentista.Cpf,
+                Cro = dentista.Cro,
+                Endereco = dentista.Endereco,
+                Email = dentista.Email,
+                Telefone = dentista.Telefone,
+                IdEscala = dentista.IdEscala,
+                Disponibilidades = ObterDisponibilidadesComSelecoes(dentista.Disponibilidades)
+            };
+
+            return View(viewModel);
+        }
+
+        // POST: Editar Dentista
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Route("EditarDentista/{id}")]
+        public IActionResult EditarDentista(DentistaViewModel viewModel, int? IdEscala)
+        {
+            if (!IsAdmin())
+            {
+                return RedirectToAction("AdminLogin", "Auth");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                ViewBag.Escalas = _context.EscalaTrabalho.ToList();
+                return View(viewModel);
+            }
+
+            var dentista = _context.Dentistas
+                .Include(d => d.Disponibilidades)
+                .FirstOrDefault(d => d.Id == viewModel.Id);
+
+            if (dentista == null)
+            {
+                TempData["Erro"] = "Dentista não encontrado.";
+                return RedirectToAction("Dentistas");
+            }
+
+            // Atualizar dados
+            dentista.Nome = viewModel.Nome;
+            dentista.Cpf = viewModel.Cpf;
+            dentista.Cro = viewModel.Cro;
+            dentista.Endereco = viewModel.Endereco;
+            dentista.Email = viewModel.Email;
+            dentista.Telefone = viewModel.Telefone;
+            dentista.IdEscala = IdEscala;
+
+            // Atualizar disponibilidades
+            _context.DisponibilidadesDentista.RemoveRange(dentista.Disponibilidades);
+
+            foreach (var disp in viewModel.Disponibilidades.Where(d => d.Selecionado))
+            {
+                _context.DisponibilidadesDentista.Add(new DisponibilidadeDentista
+                {
+                    IdDentista = dentista.Id,
+                    DiaSemana = disp.DiaSemana,
+                    HoraInicio = disp.HoraInicio,
+                    HoraFim = disp.HoraFim
+                });
+            }
+
+            _context.SaveChanges();
+
+            TempData["Sucesso"] = "Dentista atualizado com sucesso!";
+            return RedirectToAction("Dentistas");
+        }
+
+        // POST: Deletar Dentista
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Route("DeletarDentista/{id}")]
+        public IActionResult DeletarDentista(int id)
+        {
+            if (!IsAdmin())
+            {
+                return RedirectToAction("AdminLogin", "Auth");
+            }
+
+            var dentista = _context.Dentistas.Find(id);
+
+            if (dentista == null)
+            {
+                TempData["Erro"] = "Dentista não encontrado.";
+                return RedirectToAction("Dentistas");
+            }
+
+            // Desativar em vez de deletar (soft delete)
+            dentista.Ativo = false;
+            _context.SaveChanges();
+
+            TempData["Sucesso"] = "Dentista desativado com sucesso!";
+            return RedirectToAction("Dentistas");
+        }
+
+        // GET: Detalhes do Dentista
+        [Route("DetalhesDentista/{id}")]
+        public IActionResult DetalhesDentista(int id)
+        {
+            if (!IsAdmin())
+            {
+                return RedirectToAction("AdminLogin", "Auth");
+            }
+
+            var dentista = _context.Dentistas
+                .Include(d => d.Disponibilidades)
+                .Include(d => d.EscalaTrabalho)
+                .FirstOrDefault(d => d.Id == id);
+
+            if (dentista == null)
+            {
+                TempData["Erro"] = "Dentista não encontrado.";
+                return RedirectToAction("Dentistas");
+            }
+
+            return View(dentista);
+        }
+
+        // ========================================
+        // MÉTODOS AUXILIARES - DENTISTAS
+        // ========================================
+
+        private List<DisponibilidadeItem> ObterDisponibilidadesPadrao()
+        {
+            var diasSemana = new[] { "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado" };
+            var horarios = new[] {
+                (TimeSpan.FromHours(8), TimeSpan.FromHours(12)),
+                (TimeSpan.FromHours(14), TimeSpan.FromHours(18))
+            };
+
+            var lista = new List<DisponibilidadeItem>();
+            foreach (var dia in diasSemana)
+            {
+                foreach (var (inicio, fim) in horarios)
+                {
+                    lista.Add(new DisponibilidadeItem
+                    {
+                        DiaSemana = dia,
+                        HoraInicio = inicio,
+                        HoraFim = fim,
+                        Selecionado = false
+                    });
+                }
+            }
+            return lista;
+        }
+
+        private List<DisponibilidadeItem> ObterDisponibilidadesComSelecoes(ICollection<DisponibilidadeDentista> existentes)
+        {
+            var todas = ObterDisponibilidadesPadrao();
+            foreach (var item in todas)
+            {
+                item.Selecionado = existentes.Any(d =>
+                    d.DiaSemana == item.DiaSemana &&
+                    d.HoraInicio == item.HoraInicio &&
+                    d.HoraFim == item.HoraFim);
+            }
+            return todas;
+        }
+
+        // ========================================
+        // FUNCIONALIDADES - VOLUNTÁRIOS
         // ========================================
 
         // GET: Solicitações de Voluntários

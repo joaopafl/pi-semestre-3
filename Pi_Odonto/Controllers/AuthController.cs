@@ -323,14 +323,17 @@ namespace Pi_Odonto.Controllers
         [Route("Auth/DentistaLogin")]
         public IActionResult DentistaLogin()
         {
+            // SE JÁ ESTIVER LOGADO COMO DENTISTA, vai direto pro Dashboard
             if (User.Identity?.IsAuthenticated == true && User.HasClaim("TipoUsuario", "Dentista"))
             {
                 return RedirectToAction("Dashboard", "Dentista");
             }
+
+            // Se não estiver logado, mostra a tela de login
             return View();
         }
 
-        // POST: Login de Dentista
+        // POST: Login de Dentista (não precisa mudar, já está correto)
         [HttpPost]
         [Route("Auth/DentistaLogin")]
         public async Task<IActionResult> DentistaLogin(DentistaLoginViewModel model)
@@ -343,12 +346,12 @@ namespace Pi_Odonto.Controllers
                 if (dentista != null && PasswordHelper.VerifyPassword(model.Senha, dentista.Senha ?? ""))
                 {
                     var claims = new List<Claim>
-                    {
-                        new Claim(ClaimTypes.Name, dentista.Nome),
-                        new Claim(ClaimTypes.Email, dentista.Email),
-                        new Claim("DentistaId", dentista.Id.ToString()),
-                        new Claim("TipoUsuario", "Dentista")
-                    };
+            {
+                new Claim(ClaimTypes.Name, dentista.Nome),
+                new Claim(ClaimTypes.Email, dentista.Email),
+                new Claim("DentistaId", dentista.Id.ToString()),
+                new Claim("TipoUsuario", "Dentista")
+            };
 
                     var claimsIdentity = new ClaimsIdentity(claims, "DentistaAuth");
 
@@ -385,6 +388,22 @@ namespace Pi_Odonto.Controllers
                     .Replace("=", "")
                     .Substring(0, 32);
             }
+        }
+        // Metodo para verificar se determinado ususario possui direitos de acesso
+
+        [HttpGet]
+        [Route("Auth/AcessoNegado")]
+        public IActionResult AcessoNegado()
+        {
+            // Identificar de onde veio
+            var returnUrl = Request.Query["ReturnUrl"].ToString();
+            ViewBag.ReturnUrl = returnUrl;
+
+            // Identificar tipo de usuário logado
+            var tipoUsuario = User.FindFirst("TipoUsuario")?.Value;
+            ViewBag.TipoUsuario = tipoUsuario;
+
+            return View();
         }
 
         // Método para limpeza de tokens expirados (execute periodicamente)

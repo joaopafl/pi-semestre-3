@@ -30,7 +30,6 @@ builder.Services.AddScoped<IEmailCadastroService, EmailCadastroService>();
 builder.Services.AddScoped<EmailService>();
 
 // === Autenticação com múltiplos cookies ===
-// DEFININDO AdminAuth como esquema PADRÃO
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultScheme = "AdminAuth";
@@ -40,23 +39,25 @@ builder.Services.AddAuthentication(options =>
     {
         options.LoginPath = "/Auth/Login";
         options.LogoutPath = "/Auth/Logout";
-        options.AccessDeniedPath = "/Auth/Login";
+        options.AccessDeniedPath = "/Auth/AcessoNegado";
         options.ExpireTimeSpan = TimeSpan.FromHours(8);
         options.SlidingExpiration = true;
         options.Cookie.Name = "AdminAuth";
         options.Cookie.HttpOnly = true;
-        options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest; // Mais flexível que Always
+        options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
     })
     .AddCookie("DentistaAuth", options =>
     {
         options.LoginPath = "/Auth/DentistaLogin";
         options.LogoutPath = "/Auth/Logout";
-        options.AccessDeniedPath = "/Auth/DentistaLogin";
+        options.AccessDeniedPath = "/Auth/AcessoNegado";
         options.ExpireTimeSpan = TimeSpan.FromHours(8);
         options.SlidingExpiration = true;
         options.Cookie.Name = "DentistaAuth";
         options.Cookie.HttpOnly = true;
-        options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest; // Mais flexível que Always
+        options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+        options.Cookie.SameSite = SameSiteMode.Lax; // Adicionar isso
+        options.Cookie.IsEssential = true; // Adicionar isso
     });
 
 // === Políticas de autorização ===
@@ -68,7 +69,7 @@ builder.Services.AddAuthorization(options =>
 
     options.AddPolicy("ResponsavelOnly", policy =>
         policy.RequireClaim("TipoUsuario", "Responsavel")
-              .AddAuthenticationSchemes("AdminAuth")); // Responsável também usa AdminAuth
+              .AddAuthenticationSchemes("AdminAuth"));
 
     options.AddPolicy("DentistaOnly", policy =>
         policy.RequireClaim("TipoUsuario", "Dentista")
@@ -115,48 +116,12 @@ app.UseStaticFiles();
 app.UseRouting();
 
 // === IMPORTANTE: A ORDEM IMPORTA! ===
-app.UseAuthentication();    // DEVE vir ANTES de UseAuthorization
+app.UseAuthentication();
 app.UseAuthorization();
 
 // === ROTAS ESPECÍFICAS PRIMEIRO (ANTES DA ROTA PADRÃO) ===
 
-// Rotas de Cadastro de Crianças
-app.MapControllerRoute(
-    name: "cadastro_crianca",
-    pattern: "Cadastro_crianca",
-    defaults: new { controller = "Responsavel", action = "CreateCrianca" });
-
-app.MapControllerRoute(
-    name: "create_crianca",
-    pattern: "Responsavel/CreateCrianca",
-    defaults: new { controller = "Responsavel", action = "CreateCrianca" });
-
-app.MapControllerRoute(
-    name: "cadastrar_crianca",
-    pattern: "Perfil/CadastrarCrianca",
-    defaults: new { controller = "Perfil", action = "CadastrarCrianca" });
-
-app.MapControllerRoute(
-    name: "minhas_criancas",
-    pattern: "Perfil/MinhasCriancas",
-    defaults: new { controller = "Perfil", action = "MinhasCriancas" });
-
-app.MapControllerRoute(
-    name: "detalhes_crianca",
-    pattern: "Perfil/DetalhesCrianca/{id}",
-    defaults: new { controller = "Perfil", action = "DetalhesCrianca" });
-
-app.MapControllerRoute(
-    name: "editar_crianca",
-    pattern: "Perfil/EditarCrianca/{id}",
-    defaults: new { controller = "Perfil", action = "EditarCrianca" });
-
-// Rotas de Autenticação
-app.MapControllerRoute(
-    name: "cadastro",
-    pattern: "Cadastro",
-    defaults: new { controller = "Responsavel", action = "Create" });
-
+// ========== Rotas de Autenticação ==========
 app.MapControllerRoute(
     name: "login",
     pattern: "Login",
@@ -187,19 +152,62 @@ app.MapControllerRoute(
     pattern: "Auth/RedefinirSenha",
     defaults: new { controller = "Auth", action = "RedefinirSenha" });
 
-// Rotas Admin
 app.MapControllerRoute(
-    name: "admin",
-    pattern: "Admin/{action=Dashboard}",
+    name: "acessoNegado",
+    pattern: "Auth/AcessoNegado",
+    defaults: new { controller = "Auth", action = "AcessoNegado" });
+
+// ========== Rotas de Cadastro ==========
+app.MapControllerRoute(
+    name: "cadastro",
+    pattern: "Cadastro",
+    defaults: new { controller = "Responsavel", action = "Create" });
+
+// ========== Rotas de Responsável/Perfil ==========
+app.MapControllerRoute(
+    name: "cadastro_crianca",
+    pattern: "Cadastro_crianca",
+    defaults: new { controller = "Responsavel", action = "CreateCrianca" });
+
+app.MapControllerRoute(
+    name: "create_crianca",
+    pattern: "Responsavel/CreateCrianca",
+    defaults: new { controller = "Responsavel", action = "CreateCrianca" });
+
+app.MapControllerRoute(
+    name: "cadastrar_crianca",
+    pattern: "Perfil/CadastrarCrianca",
+    defaults: new { controller = "Perfil", action = "CadastrarCrianca" });
+
+app.MapControllerRoute(
+    name: "minhas_criancas",
+    pattern: "Perfil/MinhasCriancas",
+    defaults: new { controller = "Perfil", action = "MinhasCriancas" });
+
+app.MapControllerRoute(
+    name: "detalhes_crianca",
+    pattern: "Perfil/DetalhesCrianca/{id}",
+    defaults: new { controller = "Perfil", action = "DetalhesCrianca" });
+
+app.MapControllerRoute(
+    name: "editar_crianca",
+    pattern: "Perfil/EditarCrianca/{id}",
+    defaults: new { controller = "Perfil", action = "EditarCrianca" });
+
+// ========== Rotas Admin ==========
+app.MapControllerRoute(
+    name: "admin_dashboard",
+    pattern: "Admin",
+    defaults: new { controller = "Admin", action = "Dashboard" });
+
+app.MapControllerRoute(
+    name: "admin_actions",
+    pattern: "Admin/{action}/{id?}",
     defaults: new { controller = "Admin" });
 
-// Rotas Dentista
-app.MapControllerRoute(
-    name: "dentista",
-    pattern: "Dentista/{action=Dashboard}/{id?}",
-    defaults: new { controller = "Dentista" });
-
-// === ROTA PADRÃO POR ÚLTIMO ===
+// === ROTA PADRÃO (ÚLTIMA) ===
+// Esta rota cobre todos os controllers e actions não especificados acima
+// Incluindo: Dentista, Atendimento, Odontograma, Disponibilidade, etc.
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");

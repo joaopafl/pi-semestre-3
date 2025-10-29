@@ -1,102 +1,209 @@
+@model Pi_Odonto.Models.Dentista
+
 @{
-    ViewData["Title"] = "Escalas de Trabalho";
+    ViewData["Title"] = "Minha Escala de Trabalho";
 }
-@model IEnumerable<Pi_Odonto.Models.EscalaTrabalho>
+
+<style>
+    .escala-header {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+        padding: 30px;
+        border-radius: 15px;
+        margin-bottom: 30px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+
+    .disponibilidade-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        padding: 25px;
+        margin-bottom: 20px;
+        transition: all 0.3s ease;
+        border-left: 5px solid #4a90e2;
+    }
+
+        .disponibilidade-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+    .day-badge {
+        background: linear-gradient(135deg, #4a90e2, #2c5282);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 25px;
+        font-weight: 600;
+        font-size: 1.1rem;
+        display: inline-block;
+        margin-bottom: 15px;
+    }
+
+    .time-info {
+        font-size: 1.2rem;
+        color: #2d3748;
+        margin: 15px 0;
+    }
+
+        .time-info i {
+            color: #48bb78;
+            margin-right: 10px;
+        }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+        .empty-state i {
+            font-size: 5rem;
+            color: #cbd5e0;
+            margin-bottom: 20px;
+        }
+
+    .btn-action {
+        padding: 10px 25px;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+
+        .btn-action:hover {
+            transform: translateY(-2px);
+        }
+</style>
 
 <div class="container mt-4">
-    <div class="row mb-4">
-        <div class="col-md-8">
-            <h1 class="text-primary">
-                <i class="fas fa-clock"></i> Escalas de Trabalho
-            </h1>
-            <p class="text-muted">Gerenciar escalas de trabalho disponíveis para os dentistas</p>
-        </div>
-        <div class="col-md-4 text-end">
-            <div class="btn-group">
-                <a href="@Url.Action("Index")" class="btn btn-secondary me-2">
-                    <i class="fas fa-arrow-left"></i> Voltar para Dentistas
+    <!-- Header -->
+    <div class="escala-header">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h2><i class="fas fa-calendar-week"></i> Minha Escala de Trabalho</h2>
+                <p class="mb-0 opacity-75">Gerencie seus horários de atendimento</p>
+            </div>
+            <div class="col-md-4 text-end">
+                <a href="/Dentista/CreateEscala" class="btn btn-light btn-lg me-2">
+                    <i class="fas fa-plus"></i> Adicionar Horário
                 </a>
-                <a href="@Url.Action("CreateEscala")" class="btn btn-success">
-                    <i class="fas fa-plus"></i> Nova Escala
+                <a href="/Dentista/Dashboard" class="btn btn-outline-light">
+                    <i class="fas fa-arrow-left"></i> Dashboard
                 </a>
             </div>
         </div>
     </div>
 
-    @if (Model != null && Model.Any())
+    @if (TempData["Sucesso"] != null)
     {
-        <div class="card">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0">
-                    <i class="fas fa-list"></i> Escalas Cadastradas
-                    <span class="badge bg-light text-dark">@Model.Count()</span>
-                </h5>
-            </div>
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-hover mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th>ID</th>
-                                <th>Dia da Semana</th>
-                                <th>Horário de Início</th>
-                                <th>Horário de Fim</th>
-                                <th>Duração</th>
-                                <th width="200">Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var escala in Model)
-                            {
-                                <tr>
-                                    <td>
-                                        <span class="badge bg-info">#@escala.IdEscala</span>
-                                    </td>
-                                    <td>
-                                        <div class="d-flex align-items-center">
-                                            <i class="fas fa-calendar-day text-primary me-2"></i>
-                                            <strong>@escala.DtDisponivel</strong>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-success">@escala.HrInicio:00</span>
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-danger">@escala.HrFim:00</span>
-                                    </td>
-                                    <td>
-                                        @{
-                                            var duracao = escala.HrFim - escala.HrInicio;
-                                        }
-                                        <span class="badge bg-info">@duracao horas</span>
-                                    </td>
-                                    <td>
-                                        <div class="btn-group btn-group-sm" role="group">
-                                            <a href="@Url.Action("EditEscala", new { id = escala.IdEscala })" class="btn btn-outline-warning" title="Editar">
-                                                <i class="fas fa-edit"></i> Editar
-                                            </a>
-                                            <a href="@Url.Action("DeleteEscala", new { id = escala.IdEscala })" class="btn btn-outline-danger" title="Excluir">
-                                                <i class="fas fa-trash"></i> Excluir
-                                            </a>
-                                        </div>
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle"></i> @TempData["Sucesso"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["Erro"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-circle"></i> @TempData["Erro"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Disponibilidades -->
+    @if (Model.Disponibilidades != null && Model.Disponibilidades.Any())
+    {
+        <div class="row">
+            <div class="col-12 mb-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h4><i class="fas fa-clock"></i> Minhas Disponibilidades</h4>
+                    <span class="badge bg-primary" style="font-size: 1rem; padding: 10px 20px;">
+                        @Model.Disponibilidades.Count() @(Model.Disponibilidades.Count() == 1 ? "horário" : "horários") cadastrado@(Model.Disponibilidades.Count() == 1 ? "" : "s")
+                    </span>
                 </div>
             </div>
         </div>
 
-        <!-- Resumo -->
+        <div class="row">
+            @foreach (var disp in Model.Disponibilidades.OrderBy(d => d.DiaSemana))
+            {
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="disponibilidade-card">
+                        <div class="day-badge">
+                            <i class="fas fa-calendar-day"></i> @disp.DiaSemana
+                        </div>
+
+                        <div class="time-info">
+                            <i class="fas fa-clock"></i>
+                            <strong>@disp.HoraInicio.ToString(@"hh\:mm")</strong>
+                            <span class="text-muted">às</span>
+                            <strong>@disp.HoraFim.ToString(@"hh\:mm")</strong>
+                        </div>
+
+                        @{
+                            var duracao = disp.HoraFim.Subtract(disp.HoraInicio);
+                        }
+
+                        <div class="mb-3">
+                            <small class="text-muted">
+                                <i class="fas fa-hourglass-half"></i>
+                                Duração: @duracao.Hours hora@(duracao.Hours != 1 ? "s" : "")
+                                @if (duracao.Minutes > 0)
+                                {
+                                    <text> e @duracao.Minutes minuto@(duracao.Minutes != 1 ? "s" : "")</text>
+                                }
+                            </small>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <a href="/Dentista/EditEscala/@disp.Id" class="btn btn-sm btn-warning btn-action flex-grow-1">
+                                <i class="fas fa-edit"></i> Editar
+                            </a>
+                            <form asp-action="DeleteEscala" asp-route-id="@disp.Id" method="post" class="flex-grow-1"
+                                  onsubmit="return confirm('Tem certeza que deseja remover este horário?');">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-sm btn-danger btn-action w-100">
+                                    <i class="fas fa-trash"></i> Remover
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- Resumo por Dia da Semana -->
         <div class="row mt-4">
-            <div class="col-md-12">
-                <div class="card bg-light">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="fas fa-chart-bar"></i> Resumo Semanal</h5>
+                    </div>
                     <div class="card-body">
                         <div class="row text-center">
-                            <div class="col-md-12">
-                                <h5 class="text-primary">@Model.Count()</h5>
-                                <small class="text-muted">Total de Escalas Cadastradas</small>
+                            @{
+                                var diasUnicos = Model.Disponibilidades
+                                .Select(d => d.DiaSemana)
+                                .Distinct()
+                                .Count();
+
+                                var totalHoras = Model.Disponibilidades
+                                .Sum(d => d.HoraFim.Subtract(d.HoraInicio).TotalHours);
+                            }
+
+                            <div class="col-md-4">
+                                <h3 class="text-primary">@diasUnicos</h3>
+                                <p class="text-muted mb-0">Dia@(diasUnicos != 1 ? "s" : "") da Semana</p>
+                            </div>
+                            <div class="col-md-4">
+                                <h3 class="text-success">@Model.Disponibilidades.Count()</h3>
+                                <p class="text-muted mb-0">Período@(Model.Disponibilidades.Count() != 1 ? "s" : "") de Trabalho</p>
+                            </div>
+                            <div class="col-md-4">
+                                <h3 class="text-info">@totalHoras.ToString("F1")h</h3>
+                                <p class="text-muted mb-0">Total Semanal</p>
                             </div>
                         </div>
                     </div>
@@ -106,19 +213,35 @@
     }
     else
     {
-        <div class="card">
-            <div class="card-body text-center py-5">
-                <i class="fas fa-clock fa-3x text-muted mb-3"></i>
-                <h4 class="text-muted">Nenhuma escala de trabalho cadastrada</h4>
-                <p class="text-muted">Comece criando a primeira escala de trabalho para os dentistas.</p>
-                <a href="@Url.Action("CreateEscala")" class="btn btn-success">
-                    <i class="fas fa-plus"></i> Criar Primeira Escala
-                </a>
+        <!-- Estado Vazio -->
+        <div class="empty-state">
+            <i class="fas fa-calendar-times"></i>
+            <h3 class="text-muted mb-3">Nenhuma disponibilidade cadastrada</h3>
+            <p class="text-muted mb-4">
+                Você ainda não possui horários de atendimento cadastrados.<br>
+                Comece adicionando seus horários disponíveis.
+            </p>
+            <a href="/Dentista/CreateEscala" class="btn btn-primary btn-lg">
+                <i class="fas fa-plus"></i> Cadastrar Primeiro Horário
+            </a>
+        </div>
+    }
+
+    <!-- Informações Adicionais -->
+    @if (Model.EscalaTrabalho != null)
+    {
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="alert alert-info">
+                    <h5 class="alert-heading">
+                        <i class="fas fa-info-circle"></i> Escala Base
+                    </h5>
+                    <p class="mb-0">
+                        <strong>@Model.EscalaTrabalho.DtDisponivel</strong> -
+                        @Model.EscalaTrabalho.HrInicio:00 às @Model.EscalaTrabalho.HrFim:00
+                    </p>
+                </div>
             </div>
         </div>
     }
 </div>
-
-@section Scripts {
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
-}

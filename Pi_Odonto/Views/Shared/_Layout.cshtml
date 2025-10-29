@@ -202,38 +202,44 @@
 
         /* Responsivo */
         @@media (max-width: 768px) {
-            .navbar-brand-custom {
-                font-size: 1rem;
-            }
+            .navbar-brand-custom
 
-            .brand-main {
-                font-size: 1rem;
-            }
+        {
+            font-size: 1rem;
+        }
 
-            .brand-sub {
-                font-size: 0.7rem;
-            }
+        .brand-main {
+            font-size: 1rem;
+        }
 
-            .footer-content {
-                flex-direction: column;
-                text-align: center;
-                gap: 1rem;
-            }
+        .brand-sub {
+            font-size: 0.7rem;
+        }
 
-            .footer-links {
-                justify-content: center;
-            }
+        .footer-content {
+            flex-direction: column;
+            text-align: center;
+            gap: 1rem;
+        }
+
+        .footer-links {
+            justify-content: center;
+        }
+
         }
 
         @@media (max-width: 576px) {
-            .navbar-custom {
-                padding: 0.75rem 0;
-            }
+            .navbar-custom
 
-            .nav-link-custom {
-                margin: 0.25rem 0;
-                text-align: left;
-            }
+        {
+            padding: 0.75rem 0;
+        }
+
+        .nav-link-custom {
+            margin: 0.25rem 0;
+            text-align: left;
+        }
+
         }
     </style>
 </head>
@@ -271,7 +277,7 @@
                                     </a>
                                 </li>
                                 <li class="nav-item">
-                                    <a class="nav-link nav-link-custom" href="/Dentista">
+                                    <a class="nav-link nav-link-custom" href="/Admin/Dentistas">
                                         <i class="fas fa-user-md"></i> Dentistas
                                     </a>
                                 </li>
@@ -283,6 +289,25 @@
                                 <li class="nav-item">
                                     <a class="nav-link nav-link-custom" href="/Admin/Relatorios">
                                         <i class="fas fa-chart-bar"></i> Relatórios
+                                    </a>
+                                </li>
+                            }
+
+                            @if (User.HasClaim("TipoUsuario", "Dentista"))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link nav-link-custom" href="/Dentista/Dashboard">
+                                        <i class="fas fa-tachometer-alt"></i> Meu Dashboard
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link nav-link-custom" href="/Dentista/EscalaTrabalho">
+                                        <i class="fas fa-calendar-week"></i> Minha Escala
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link nav-link-custom" href="/Atendimento">
+                                        <i class="fas fa-clipboard-list"></i> Atendimentos
                                     </a>
                                 </li>
                             }
@@ -310,8 +335,8 @@
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link nav-link-custom" href="/Dentista">
-                                    <i class="fas fa-user-md"></i> Dentistas
+                                <a class="nav-link nav-link-custom" href="/Auth/DentistaLogin">
+                                    <i class="fas fa-user-md"></i> Área do Dentista
                                 </a>
                             </li>
                             <li class="nav-item">
@@ -349,6 +374,20 @@
                                         </li>
                                         <li><hr class="dropdown-divider dropdown-divider-custom"></li>
                                     }
+                                    @if (User.HasClaim("TipoUsuario", "Dentista"))
+                                    {
+                                        <li>
+                                            <a class="dropdown-item dropdown-item-custom" href="/Dentista/MeuPerfil">
+                                                <i class="fas fa-user"></i> Meu Perfil
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item dropdown-item-custom" href="/Dentista/Dashboard">
+                                                <i class="fas fa-tachometer-alt"></i> Dashboard
+                                            </a>
+                                        </li>
+                                        <li><hr class="dropdown-divider dropdown-divider-custom"></li>
+                                    }
                                     @if (User.HasClaim("TipoUsuario", "Admin"))
                                     {
                                         <li>
@@ -361,7 +400,7 @@
                                     <li>
                                         <form asp-action="Logout" asp-controller="Auth" method="post" class="d-inline">
                                             <button type="submit" class="dropdown-item dropdown-item-custom border-0 bg-transparent w-100 text-start">
-                                                <i class="fas fa-sign-out-alt"></i> Sair da Família
+                                                <i class="fas fa-sign-out-alt"></i> Sair
                                             </button>
                                         </form>
                                     </li>

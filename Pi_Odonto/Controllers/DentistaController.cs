@@ -2,12 +2,12 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Pi_Odonto.Data;
+using Pi_Odonto.Helpers;
 using Pi_Odonto.Models;
 using Pi_Odonto.ViewModels;
-using Pi_Odonto.Helpers;
 using System;
-using System.Linq;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Pi_Odonto.Controllers
 {
@@ -25,8 +25,6 @@ namespace Pi_Odonto.Controllers
         // MÉTODOS DE SUPORTE
         // ==========================================================
 
-        private bool IsAdmin() => User.HasClaim("TipoUsuario", "Admin");
-
         private bool IsDentista() => User.HasClaim("TipoUsuario", "Dentista");
 
         private int GetCurrentDentistaId()
@@ -42,10 +40,13 @@ namespace Pi_Odonto.Controllers
         [HttpGet]
         public IActionResult Dashboard()
         {
-            if (!IsDentista())
-                return RedirectToAction("DentistaLogin", "Auth");
-
             var dentistaId = GetCurrentDentistaId();
+
+            if (dentistaId == 0)
+            {
+                Console.WriteLine("DentistaId não encontrado nos claims");
+                return RedirectToAction("DentistaLogin", "Auth");
+            }
 
             var dentista = _context.Dentistas
                 .Include(d => d.Disponibilidades)
@@ -53,7 +54,10 @@ namespace Pi_Odonto.Controllers
                 .FirstOrDefault(d => d.Id == dentistaId);
 
             if (dentista == null)
+            {
+                Console.WriteLine($"Dentista com ID {dentistaId} não encontrado no banco");
                 return RedirectToAction("DentistaLogin", "Auth");
+            }
 
             // Estatísticas gerais
             ViewBag.TotalAgendamentos = _context.Agendamentos
@@ -80,44 +84,41 @@ namespace Pi_Odonto.Controllers
         }
 
         // ==========================================================
-        // ÁREA ADMINISTRATIVA (Apenas Admin)
+        // ESCALA DE TRABALHO DO DENTISTA
         // ==========================================================
 
         [HttpGet]
-        public IActionResult Index()
+        public IActionResult EscalaTrabalho()
         {
-            if (!IsAdmin())
-            {
-                TempData["Erro"] = "Acesso negado. Apenas administradores podem gerenciar dentistas.";
-                return RedirectToAction("Index", "Home");
-            }
+            if (!IsDentista())
+                return RedirectToAction("DentistaLogin", "Auth");
 
-            var dentistas = _context.Dentistas
-                .Include(d => d.EscalaTrabalho)
+            var dentistaId = GetCurrentDentistaId();
+
+            var dentista = _context.Dentistas
                 .Include(d => d.Disponibilidades)
-                .ToList();
+                .Include(d => d.EscalaTrabalho)
+                .FirstOrDefault(d => d.Id == dentistaId);
 
-            return View(dentistas);
+            if (dentista == null)
+                return RedirectToAction("DentistaLogin", "Auth");
+
+            return View(dentista);
         }
 
         // ==========================================================
-        // CADASTRO DE DENTISTAS (Admin)
+        // CRIAR DISPONIBILIDADE
         // ==========================================================
 
         [HttpGet]
-        public IActionResult Create()
+        public IActionResult CreateEscala()
         {
-            if (!IsAdmin())
-            {
-                TempData["Erro"] = "Acesso negado. Apenas administradores podem cadastrar dentistas.";
-                return RedirectToAction("Index", "Home");
-            }
+            if (!IsDentista())
+                return RedirectToAction("DentistaLogin", "Auth");
 
-            ViewBag.Escalas = _context.EscalaTrabalho.ToList();
-
-            var viewModel = new DentistaViewModel
+            var viewModel = new DisponibilidadeDentista
             {
-                Disponibilidades = ObterDisponibilidadesPadrao()
+                IdDentista = GetCurrentDentistaId()
             };
 
             return View(viewModel);
@@ -125,95 +126,234 @@ namespace Pi_Odonto.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Create(DentistaViewModel viewModel, int? IdEscala)
+        public IActionResult CreateEscala(DisponibilidadeDentista model)
         {
-            if (!IsAdmin())
+            if (!IsDentista())
+                return RedirectToAction("DentistaLogin", "Auth");
+
+            var dentistaId = GetCurrentDentistaId();
+            model.IdDentista = dentistaId;
+
+            if (ModelState.IsValid)
             {
-                TempData["Erro"] = "Acesso negado.";
-                return RedirectToAction("Index", "Home");
+                _context.DisponibilidadesDentista.Add(model);
+                _context.SaveChanges();
+
+                TempData["Sucesso"] = "Disponibilidade cadastrada com sucesso!";
+                return RedirectToAction("EscalaTrabalho");
             }
 
-            if (!ModelState.IsValid)
-            {
-                ViewBag.Escalas = _context.EscalaTrabalho.ToList();
-                viewModel.Disponibilidades = ObterDisponibilidadesPadrao();
-                return View(viewModel);
-            }
-
-            var dentista = new Dentista
-            {
-                Nome = viewModel.Nome,
-                Cpf = viewModel.Cpf,
-                Cro = viewModel.Cro,
-                Endereco = viewModel.Endereco,
-                Email = viewModel.Email,
-                Telefone = viewModel.Telefone,
-                IdEscala = IdEscala,
-                Ativo = true,
-                Senha = PasswordHelper.HashPassword(viewModel.Cro + "123")
-            };
-
-            _context.Dentistas.Add(dentista);
-            _context.SaveChanges();
-
-            // Vincular disponibilidades selecionadas
-            foreach (var disp in viewModel.Disponibilidades.Where(d => d.Selecionado))
-            {
-                _context.DisponibilidadesDentista.Add(new DisponibilidadeDentista
-                {
-                    IdDentista = dentista.Id,
-                    DiaSemana = disp.DiaSemana,
-                    HoraInicio = disp.HoraInicio,
-                    HoraFim = disp.HoraFim
-                });
-            }
-
-            _context.SaveChanges();
-
-            TempData["Sucesso"] = $"Dentista cadastrado com sucesso! Senha inicial: {viewModel.Cro}123";
-            return RedirectToAction("Index");
+            return View(model);
         }
 
         // ==========================================================
-        // MÉTODOS AUXILIARES
+        // EDITAR DISPONIBILIDADE
         // ==========================================================
 
-        private List<DisponibilidadeItem> ObterDisponibilidadesPadrao()
+        [HttpGet]
+        public IActionResult EditEscala(int id)
         {
-            var diasSemana = new[] { "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado" };
-            var horarios = new[] {
-                (TimeSpan.FromHours(8), TimeSpan.FromHours(12)),
-                (TimeSpan.FromHours(14), TimeSpan.FromHours(18))
+            if (!IsDentista())
+                return RedirectToAction("DentistaLogin", "Auth");
+
+            var dentistaId = GetCurrentDentistaId();
+
+            var disponibilidade = _context.DisponibilidadesDentista
+                .FirstOrDefault(d => d.Id == id && d.IdDentista == dentistaId);
+
+            if (disponibilidade == null)
+            {
+                TempData["Erro"] = "Disponibilidade não encontrada.";
+                return RedirectToAction("EscalaTrabalho");
+            }
+
+            return View(disponibilidade);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult EditEscala(DisponibilidadeDentista model)
+        {
+            if (!IsDentista())
+                return RedirectToAction("DentistaLogin", "Auth");
+
+            var dentistaId = GetCurrentDentistaId();
+
+            // Verificar se a disponibilidade pertence ao dentista logado
+            var disponibilidade = _context.DisponibilidadesDentista
+                .FirstOrDefault(d => d.Id == model.Id && d.IdDentista == dentistaId);
+
+            if (disponibilidade == null)
+            {
+                TempData["Erro"] = "Disponibilidade não encontrada.";
+                return RedirectToAction("EscalaTrabalho");
+            }
+
+            if (ModelState.IsValid)
+            {
+                disponibilidade.DiaSemana = model.DiaSemana;
+                disponibilidade.HoraInicio = model.HoraInicio;
+                disponibilidade.HoraFim = model.HoraFim;
+
+                _context.SaveChanges();
+
+                TempData["Sucesso"] = "Disponibilidade atualizada com sucesso!";
+                return RedirectToAction("EscalaTrabalho");
+            }
+
+            return View(model);
+        }
+
+        // ==========================================================
+        // DELETAR DISPONIBILIDADE
+        // ==========================================================
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult DeleteEscala(int id)
+        {
+            if (!IsDentista())
+                return RedirectToAction("DentistaLogin", "Auth");
+
+            var dentistaId = GetCurrentDentistaId();
+
+            var disponibilidade = _context.DisponibilidadesDentista
+                .FirstOrDefault(d => d.Id == id && d.IdDentista == dentistaId);
+
+            if (disponibilidade == null)
+            {
+                TempData["Erro"] = "Disponibilidade não encontrada.";
+                return RedirectToAction("EscalaTrabalho");
+            }
+
+            _context.DisponibilidadesDentista.Remove(disponibilidade);
+            _context.SaveChanges();
+
+            TempData["Sucesso"] = "Disponibilidade removida com sucesso!";
+            return RedirectToAction("EscalaTrabalho");
+        }
+
+        // ==========================================================
+        // MEU PERFIL (DENTISTA)
+        // ==========================================================
+
+        [HttpGet]
+        public IActionResult MeuPerfil()
+        {
+            if (!IsDentista())
+                return RedirectToAction("DentistaLogin", "Auth");
+
+            var dentistaId = GetCurrentDentistaId();
+
+            var dentista = _context.Dentistas
+                .Include(d => d.Disponibilidades)
+                .Include(d => d.EscalaTrabalho)
+                .FirstOrDefault(d => d.Id == dentistaId);
+
+            if (dentista == null)
+                return RedirectToAction("DentistaLogin", "Auth");
+
+            return View(dentista);
+        }
+
+        // ==========================================================
+        // EDITAR MEU PERFIL (DENTISTA)
+        // ==========================================================
+
+        [HttpGet]
+        public IActionResult EditarMeuPerfil()
+        {
+            if (!IsDentista())
+                return RedirectToAction("DentistaLogin", "Auth");
+
+            var dentistaId = GetCurrentDentistaId();
+
+            var dentista = _context.Dentistas
+                .FirstOrDefault(d => d.Id == dentistaId);
+
+            if (dentista == null)
+                return RedirectToAction("DentistaLogin", "Auth");
+
+            var viewModel = new EditarPerfilDentistaViewModel
+            {
+                Nome = dentista.Nome,
+                Email = dentista.Email,
+                Telefone = dentista.Telefone,
+                Endereco = dentista.Endereco
             };
 
-            var lista = new List<DisponibilidadeItem>();
-            foreach (var dia in diasSemana)
+            return View(viewModel);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult EditarMeuPerfil(EditarPerfilDentistaViewModel model)
+        {
+            if (!IsDentista())
+                return RedirectToAction("DentistaLogin", "Auth");
+
+            var dentistaId = GetCurrentDentistaId();
+
+            var dentista = _context.Dentistas
+                .FirstOrDefault(d => d.Id == dentistaId);
+
+            if (dentista == null)
+                return RedirectToAction("DentistaLogin", "Auth");
+
+            // Remove validação de senha se estiver vazia
+            if (string.IsNullOrEmpty(model.NovaSenha))
             {
-                foreach (var (inicio, fim) in horarios)
+                ModelState.Remove(nameof(model.NovaSenha));
+                ModelState.Remove(nameof(model.ConfirmarSenha));
+            }
+
+            if (ModelState.IsValid)
+            {
+                // Atualizar apenas os campos permitidos
+                dentista.Nome = model.Nome;
+                dentista.Email = model.Email;
+                dentista.Telefone = model.Telefone;
+                dentista.Endereco = model.Endereco;
+
+                // Se forneceu nova senha
+                if (!string.IsNullOrEmpty(model.NovaSenha))
                 {
-                    lista.Add(new DisponibilidadeItem
-                    {
-                        DiaSemana = dia,
-                        HoraInicio = inicio,
-                        HoraFim = fim,
-                        Selecionado = false
-                    });
+                    dentista.Senha = PasswordHelper.HashPassword(model.NovaSenha);
                 }
+
+                _context.SaveChanges();
+
+                TempData["MensagemSucesso"] = "Perfil atualizado com sucesso!";
+                return RedirectToAction("PerfilAtualizado");
             }
-            return lista;
+
+            return View(model);
         }
 
-        private List<DisponibilidadeItem> ObterDisponibilidadesComSelecoes(ICollection<DisponibilidadeDentista> existentes)
+        // View de confirmação com redirecionamento automático
+        [HttpGet]
+        public IActionResult PerfilAtualizado()
         {
-            var todas = ObterDisponibilidadesPadrao();
-            foreach (var item in todas)
+            if (TempData["MensagemSucesso"] == null)
             {
-                item.Selecionado = existentes.Any(d =>
-                    d.DiaSemana == item.DiaSemana &&
-                    d.HoraInicio == item.HoraInicio &&
-                    d.HoraFim == item.HoraFim);
+                return RedirectToAction("MeuPerfil");
             }
-            return todas;
+
+            ViewBag.Mensagem = TempData["MensagemSucesso"];
+            return View();
         }
+    }
+
+    // ==========================================================
+    // VIEW MODEL PARA EDITAR PERFIL DO DENTISTA
+    // ==========================================================
+    public class EditarPerfilDentistaViewModel
+    {
+        public string Nome { get; set; }
+        public string Email { get; set; }
+        public string Telefone { get; set; }
+        public string Endereco { get; set; }
+        public string? NovaSenha { get; set; }
+        public string? ConfirmarSenha { get; set; }
     }
 }
