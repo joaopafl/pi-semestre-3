@@ -82,7 +82,7 @@ namespace Pi_Odonto.Controllers
             }
 
             var responsaveis = query
-                .Include(r => r.Criancas) // ← LINHA ADICIONADA AQUI!
+                .Include(r => r.Criancas)
                 .OrderByDescending(r => r.DataCadastro)
                 .ToList();
 
@@ -323,6 +323,149 @@ namespace Pi_Odonto.Controllers
             ViewBag.CadastrosPorMes = cadastrosPorMes;
 
             return View();
+        }
+
+        // ========================================
+        // NOVAS FUNCIONALIDADES - VOLUNTÁRIOS
+        // ========================================
+
+        // GET: Solicitações de Voluntários
+        [Route("Solicitacoes")]
+        public async Task<IActionResult> Solicitacoes(string filtro = "todas")
+        {
+            if (!IsAdmin())
+            {
+                return RedirectToAction("AdminLogin", "Auth");
+            }
+
+            var query = _context.SolicitacoesVoluntario.AsQueryable();
+
+            switch (filtro.ToLower())
+            {
+                case "pendentes":
+                    query = query.Where(s => s.Status == "Pendente");
+                    break;
+                case "aprovadas":
+                    query = query.Where(s => s.Status == "Aprovado");
+                    break;
+                case "rejeitadas":
+                    query = query.Where(s => s.Status == "Rejeitado");
+                    break;
+                case "nao_visualizadas":
+                    query = query.Where(s => !s.Visualizado);
+                    break;
+            }
+
+            var solicitacoes = await query
+                .OrderByDescending(s => s.DataSolicitacao)
+                .ToListAsync();
+
+            ViewBag.Filtro = filtro;
+            ViewBag.TotalNaoVisualizadas = await _context.SolicitacoesVoluntario.CountAsync(s => !s.Visualizado);
+            ViewBag.TotalPendentes = await _context.SolicitacoesVoluntario.CountAsync(s => s.Status == "Pendente");
+
+            return View(solicitacoes);
+        }
+
+        // POST: Marcar como visualizado
+        [HttpPost]
+        [Route("Solicitacoes/MarcarVisualizado/{id}")]
+        public async Task<IActionResult> MarcarComoVisualizado(int id)
+        {
+            if (!IsAdmin())
+            {
+                return Json(new { success = false, message = "Acesso negado" });
+            }
+
+            var solicitacao = await _context.SolicitacoesVoluntario.FindAsync(id);
+            if (solicitacao == null)
+            {
+                return Json(new { success = false, message = "Solicitação não encontrada" });
+            }
+
+            solicitacao.Visualizado = true;
+            solicitacao.DataResposta = DateTime.Now;
+            await _context.SaveChangesAsync();
+
+            return Json(new { success = true });
+        }
+
+        // POST: Aprovar solicitação
+        [HttpPost]
+        [Route("Solicitacoes/Aprovar/{id}")]
+        public async Task<IActionResult> AprovarSolicitacao(int id, string? observacao)
+        {
+            if (!IsAdmin())
+            {
+                return Json(new { success = false, message = "Acesso negado" });
+            }
+
+            var solicitacao = await _context.SolicitacoesVoluntario.FindAsync(id);
+            if (solicitacao == null)
+            {
+                return Json(new { success = false, message = "Solicitação não encontrada" });
+            }
+
+            solicitacao.Status = "Aprovado";
+            solicitacao.Visualizado = true;
+            solicitacao.DataResposta = DateTime.Now;
+            solicitacao.ObservacaoAdmin = observacao;
+
+            await _context.SaveChangesAsync();
+
+            return Json(new { success = true, message = "Solicitação aprovada com sucesso!" });
+        }
+
+        // POST: Rejeitar solicitação
+        [HttpPost]
+        [Route("Solicitacoes/Rejeitar/{id}")]
+        public async Task<IActionResult> RejeitarSolicitacao(int id, string? observacao)
+        {
+            if (!IsAdmin())
+            {
+                return Json(new { success = false, message = "Acesso negado" });
+            }
+
+            var solicitacao = await _context.SolicitacoesVoluntario.FindAsync(id);
+            if (solicitacao == null)
+            {
+                return Json(new { success = false, message = "Solicitação não encontrada" });
+            }
+
+            solicitacao.Status = "Rejeitado";
+            solicitacao.Visualizado = true;
+            solicitacao.DataResposta = DateTime.Now;
+            solicitacao.ObservacaoAdmin = observacao;
+
+            await _context.SaveChangesAsync();
+
+            return Json(new { success = true, message = "Solicitação rejeitada." });
+        }
+
+        // POST: Excluir solicitação
+        [HttpPost]
+        [Route("Solicitacoes/Excluir/{id}")]
+        public async Task<IActionResult> ExcluirSolicitacao(int id)
+        {
+            if (!IsAdmin())
+            {
+                TempData["Erro"] = "Acesso negado.";
+                return RedirectToAction("Solicitacoes");
+            }
+
+            var solicitacao = await _context.SolicitacoesVoluntario.FindAsync(id);
+            if (solicitacao != null)
+            {
+                _context.SolicitacoesVoluntario.Remove(solicitacao);
+                await _context.SaveChangesAsync();
+                TempData["Sucesso"] = "Solicitação excluída com sucesso.";
+            }
+            else
+            {
+                TempData["Erro"] = "Solicitação não encontrada.";
+            }
+
+            return RedirectToAction("Solicitacoes");
         }
     }
 }

@@ -1,19 +1,20 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.EntityFrameworkCore;
 using Pi_Odonto.Data;
 using Pi_Odonto.Services;
 using Pi_Odonto.Models;
-using Microsoft.AspNetCore.Authentication.Cookies;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// === Serviços MVC ===
 builder.Services.AddControllersWithViews();
 
-// Configurar Entity Framework
+// === Entity Framework ===
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
     options.UseMySql(builder.Configuration.GetConnectionString("DefaultConnection"),
         new MySqlServerVersion(new Version(8, 0, 21)));
+
     // Ativar log SQL em desenvolvimento
     if (builder.Environment.IsDevelopment())
     {
@@ -23,47 +24,67 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     }
 });
 
-// === CONFIGURAÇÃO DE EMAIL ===
-builder.Services.Configure<EmailSettings>(
-    builder.Configuration.GetSection("EmailSettings"));
-
-// Registrar os serviços de email
+// === Email ===
+builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
 builder.Services.AddScoped<IEmailCadastroService, EmailCadastroService>();
 builder.Services.AddScoped<EmailService>();
 
-// === CONFIGURAÇÃO DE AUTENTICAÇÃO (CORRIGIDA) ===
-builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-    .AddCookie(options =>
+// === Autenticação com múltiplos cookies ===
+// DEFININDO AdminAuth como esquema PADRÃO
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultScheme = "AdminAuth";
+    options.DefaultChallengeScheme = "AdminAuth";
+})
+    .AddCookie("AdminAuth", options =>
     {
-        options.LoginPath = "/Auth/Login";           // ✅ CORRIGIDO
-        options.LogoutPath = "/Auth/Logout";         // ✅ CORRIGIDO
-        options.AccessDeniedPath = "/Auth/Login";    // ✅ CORRIGIDO
-        options.ExpireTimeSpan = TimeSpan.FromHours(2);    // Sessão expira em 2 horas
-        options.SlidingExpiration = true;       // Renova automaticamente se usuario ativo
-        options.Cookie.Name = "PiOdontoAuth";   // Nome do cookie
-        options.Cookie.HttpOnly = true;         // Segurança - só server acessa
-        options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest; // HTTPS em produção
+        options.LoginPath = "/Auth/Login";
+        options.LogoutPath = "/Auth/Logout";
+        options.AccessDeniedPath = "/Auth/Login";
+        options.ExpireTimeSpan = TimeSpan.FromHours(8);
+        options.SlidingExpiration = true;
+        options.Cookie.Name = "AdminAuth";
+        options.Cookie.HttpOnly = true;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest; // Mais flexível que Always
+    })
+    .AddCookie("DentistaAuth", options =>
+    {
+        options.LoginPath = "/Auth/DentistaLogin";
+        options.LogoutPath = "/Auth/Logout";
+        options.AccessDeniedPath = "/Auth/DentistaLogin";
+        options.ExpireTimeSpan = TimeSpan.FromHours(8);
+        options.SlidingExpiration = true;
+        options.Cookie.Name = "DentistaAuth";
+        options.Cookie.HttpOnly = true;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest; // Mais flexível que Always
     });
 
-// Configurar políticas de autorização (opcional)
+// === Políticas de autorização ===
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("AdminOnly", policy =>
-        policy.RequireClaim("TipoUsuario", "Admin"));
+        policy.RequireClaim("TipoUsuario", "Admin")
+              .AddAuthenticationSchemes("AdminAuth"));
+
     options.AddPolicy("ResponsavelOnly", policy =>
-        policy.RequireClaim("TipoUsuario", "Responsavel"));
+        policy.RequireClaim("TipoUsuario", "Responsavel")
+              .AddAuthenticationSchemes("AdminAuth")); // Responsável também usa AdminAuth
+
+    options.AddPolicy("DentistaOnly", policy =>
+        policy.RequireClaim("TipoUsuario", "Dentista")
+              .AddAuthenticationSchemes("DentistaAuth"));
 });
 
 var app = builder.Build();
 
-// Popular dados iniciais se necessário
+// === Popular dados iniciais se necessário ===
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    
+
     // Garantir que o banco existe
     context.Database.EnsureCreated();
-    
+
     // Popular escalas de trabalho se não existirem
     if (!context.EscalaTrabalho.Any())
     {
@@ -76,13 +97,13 @@ using (var scope = app.Services.CreateScope())
             new EscalaTrabalho { DtDisponivel = "Sexta-feira", HrInicio = 8, HrFim = 17 },
             new EscalaTrabalho { DtDisponivel = "Sábado", HrInicio = 8, HrFim = 12 }
         };
-        
+
         context.EscalaTrabalho.AddRange(escalas);
         context.SaveChanges();
     }
 }
 
-// Configure the HTTP request pipeline.
+// === Pipeline ===
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
@@ -97,9 +118,9 @@ app.UseRouting();
 app.UseAuthentication();    // DEVE vir ANTES de UseAuthorization
 app.UseAuthorization();
 
-// Substitua a seção de rotas no seu Program.cs por esta:
-
 // === ROTAS ESPECÍFICAS PRIMEIRO (ANTES DA ROTA PADRÃO) ===
+
+// Rotas de Cadastro de Crianças
 app.MapControllerRoute(
     name: "cadastro_crianca",
     pattern: "Cadastro_crianca",
@@ -130,6 +151,7 @@ app.MapControllerRoute(
     pattern: "Perfil/EditarCrianca/{id}",
     defaults: new { controller = "Perfil", action = "EditarCrianca" });
 
+// Rotas de Autenticação
 app.MapControllerRoute(
     name: "cadastro",
     pattern: "Cadastro",
@@ -141,6 +163,21 @@ app.MapControllerRoute(
     defaults: new { controller = "Auth", action = "Login" });
 
 app.MapControllerRoute(
+    name: "admin_login",
+    pattern: "Auth/Login",
+    defaults: new { controller = "Auth", action = "Login" });
+
+app.MapControllerRoute(
+    name: "dentista_login",
+    pattern: "Auth/DentistaLogin",
+    defaults: new { controller = "Auth", action = "DentistaLogin" });
+
+app.MapControllerRoute(
+    name: "logout",
+    pattern: "Auth/Logout",
+    defaults: new { controller = "Auth", action = "Logout" });
+
+app.MapControllerRoute(
     name: "esqueceuSenha",
     pattern: "Auth/EsqueceuSenha",
     defaults: new { controller = "Auth", action = "EsqueceuSenha" });
@@ -150,13 +187,21 @@ app.MapControllerRoute(
     pattern: "Auth/RedefinirSenha",
     defaults: new { controller = "Auth", action = "RedefinirSenha" });
 
+// Rotas Admin
 app.MapControllerRoute(
     name: "admin",
     pattern: "Admin/{action=Dashboard}",
     defaults: new { controller = "Admin" });
 
+// Rotas Dentista
+app.MapControllerRoute(
+    name: "dentista",
+    pattern: "Dentista/{action=Dashboard}/{id?}",
+    defaults: new { controller = "Dentista" });
+
 // === ROTA PADRÃO POR ÚLTIMO ===
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
+
 app.Run();

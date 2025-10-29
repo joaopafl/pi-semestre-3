@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Collections.Generic; 
+using System.Collections.Generic;
 using System;
 
 namespace Pi_Odonto.Models
@@ -51,15 +51,17 @@ namespace Pi_Odonto.Models
         [Display(Name = "Escala de Trabalho")]
         public int? IdEscala { get; set; }
 
-        // MUDANÇA CRÍTICA: REMOÇÃO TEMPORÁRIA DA PROPRIEDADE ATIVO
-        // [Column("ativo")] 
-        // public bool Ativo { get; set; } = true; 
-        
-        // Se você precisar da propriedade, mas ela não está no banco:
-        // [NotMapped]
-        // public bool Ativo { get; set; } = true;
-        
-        // Omitindo a propriedade "Ativo" por enquanto para forçar o EF a parar de procurá-la
+        // ========================================
+        // NOVOS CAMPOS PARA LOGIN
+        // ========================================
+
+        [Column("senha_dent")]
+        [Display(Name = "Senha")]
+        public string? Senha { get; set; }
+
+        [Column("ativo")]
+        [Display(Name = "Ativo")]
+        public bool Ativo { get; set; } = true;
 
         // Navigation property
         [ForeignKey("IdEscala")]

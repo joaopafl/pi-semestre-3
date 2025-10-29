@@ -1,0 +1,671 @@
+﻿@model Pi_Odonto.ViewModels.DentistaLoginViewModel
+@{
+    ViewData["Title"] = "Login Dentista - Pi Odonto";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"]</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            /* Cores específicas para área do dentista */
+            --cor-primaria-dentista: #7E57C2;
+            --cor-secundaria-dentista: #9575CD;
+            --cor-accent-dentista: #FFD700;
+            --cor-fundo1: #F3E5F5;
+            --cor-fundo2: #EDE7F6;
+            --cor-texto: #2C3E50;
+            --cor-texto-suave: #5D6D7E;
+            --cor-sucesso: #66BB6A;
+            --cor-info: #5C6BC0;
+            --cor-hover: #673AB7;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, var(--cor-fundo1) 0%, var(--cor-fundo2) 100%);
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Padrão de fundo com ícones de dente */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="teeth" patternUnits="userSpaceOnUse" width="30" height="30"><path d="M15,10 Q15,5 10,5 Q5,5 5,10 Q5,15 10,20 Q15,15 15,10" fill="rgba(126,87,194,0.03)"/><path d="M25,10 Q25,5 20,5 Q15,5 15,10 Q15,15 20,20 Q25,15 25,10" fill="rgba(126,87,194,0.03)"/></pattern></defs><rect width="100" height="100" fill="url(%23teeth)"/></svg>') repeat;
+            animation: float 40s infinite linear;
+            z-index: -1;
+        }
+
+        @@keyframes float {
+            0% { transform: translateX(0) translateY(0); }
+            100% { transform: translateX(-30px) translateY(-30px); }
+        }
+
+        .login-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem 1rem;
+        }
+
+        .login-card {
+            background: white;
+            border-radius: 25px;
+            box-shadow: 0 20px 50px rgba(126, 87, 194, 0.15);
+            overflow: hidden;
+            border: none;
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            margin-left: 20%;
+        }
+
+        /* Barra superior colorida */
+        .login-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, 
+                var(--cor-primaria-dentista) 0%, 
+                var(--cor-secundaria-dentista) 50%, 
+                var(--cor-accent-dentista) 100%);
+        }
+
+        .card-header-custom {
+            background: linear-gradient(135deg, var(--cor-primaria-dentista), var(--cor-secundaria-dentista));
+            color: white;
+            text-align: center;
+            padding: 2rem 2rem 1.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Decoração do header */
+        .card-header-custom::after {
+            content: '';
+            position: absolute;
+            bottom: -50%;
+            left: -10%;
+            width: 120%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            transform: rotate(-5deg);
+        }
+
+        .dentista-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            color: white;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
+            animation: pulse 2s infinite;
+        }
+
+        @@keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .welcome-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            position: relative;
+            z-index: 2;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .welcome-subtitle {
+            opacity: 0.95;
+            font-weight: 300;
+            font-size: 1rem;
+            position: relative;
+            z-index: 2;
+            line-height: 1.4;
+        }
+
+        .professional-badge {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 0.3rem 1rem;
+            border-radius: 20px;
+            margin-top: 0.5rem;
+            font-size: 0.85rem;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .card-body-custom {
+            padding: 2.5rem;
+        }
+
+        .form-label-custom {
+            font-weight: 500;
+            color: var(--cor-texto);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            font-size: 0.95rem;
+        }
+
+        .form-label-custom i {
+            color: var(--cor-primaria-dentista);
+            margin-right: 0.5rem;
+            font-size: 1rem;
+        }
+
+        .form-control-custom {
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            padding: 0.9rem 1.2rem;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: #fafbfc;
+        }
+
+        .form-control-custom:focus {
+            border-color: var(--cor-primaria-dentista);
+            box-shadow: 0 0 20px rgba(126, 87, 194, 0.15);
+            background: white;
+            transform: translateY(-1px);
+            outline: none;
+        }
+
+        .btn-login-dentista {
+            background: linear-gradient(135deg, var(--cor-primaria-dentista), var(--cor-secundaria-dentista));
+            border: none;
+            border-radius: 12px;
+            padding: 1rem 2rem;
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: white;
+            transition: all 0.3s ease;
+            box-shadow: 0 6px 20px rgba(126, 87, 194, 0.3);
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .btn-login-dentista:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(126, 87, 194, 0.4);
+            background: linear-gradient(135deg, var(--cor-hover), var(--cor-primaria-dentista));
+            color: white;
+        }
+
+        .btn-back {
+            background: transparent;
+            border: 2px solid var(--cor-primaria-dentista);
+            color: var(--cor-primaria-dentista);
+            border-radius: 12px;
+            padding: 0.8rem 1.5rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-back:hover {
+            background: var(--cor-primaria-dentista);
+            color: white;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(126, 87, 194, 0.3);
+            text-decoration: none;
+        }
+
+        .link-esqueceu-senha {
+            color: var(--cor-info);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .link-esqueceu-senha:hover {
+            color: var(--cor-primaria-dentista);
+            text-decoration: underline;
+        }
+
+        .info-box {
+            background: linear-gradient(135deg, #F3E5F5, #EDE7F6);
+            border-left: 4px solid var(--cor-primaria-dentista);
+            padding: 1rem;
+            border-radius: 10px;
+            margin-top: 1.5rem;
+        }
+
+        .info-box i {
+            color: var(--cor-primaria-dentista);
+            margin-right: 0.5rem;
+        }
+
+        .alert-custom {
+            border-radius: 12px;
+            padding: 1rem 1.2rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .alert-success-custom {
+            background: #E8F5E9;
+            border: 1px solid #A5D6A7;
+            color: #2E7D32;
+        }
+
+        .alert-danger-custom {
+            background: #FFEBEE;
+            border: 1px solid #EF9A9A;
+            color: #C62828;
+        }
+
+        .form-check-custom {
+            margin: 1.2rem 0;
+        }
+
+        .form-check-input-custom {
+            border-radius: 5px;
+            border: 2px solid #dee2e6;
+            width: 1.2em;
+            height: 1.2em;
+        }
+
+        .form-check-input-custom:checked {
+            background-color: var(--cor-primaria-dentista);
+            border-color: var(--cor-primaria-dentista);
+        }
+
+        .fade-in {
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeInUp 0.6s ease forwards;
+        }
+
+        @@keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Footer com informações adicionais */
+        .login-footer {
+            text-align: center;
+            margin-top: 2rem;
+            padding: 0 1rem;
+        }
+
+        .login-footer p {
+            color: var(--cor-texto-suave);
+            font-size: 0.85rem;
+            line-height: 1.5;
+        }
+
+        /* Responsividade */
+        @@media (max-width: 767px) {
+            .login-container {
+                padding: 1.5rem 0.5rem;
+            }
+
+            .login-card {
+                max-width: 100%;
+                margin: 0 auto;
+            }
+
+            .card-body-custom {
+                padding: 1.5rem;
+            }
+
+            .card-header-custom {
+                padding: 1.5rem 1.5rem 1.2rem;
+            }
+
+            .welcome-title {
+                font-size: 1.5rem;
+            }
+
+            .dentista-icon {
+                font-size: 2.5rem;
+            }
+        }
+
+        @@media (max-width: 480px) {
+            .card-body-custom {
+                padding: 1.2rem;
+            }
+
+            .welcome-title {
+                font-size: 1.3rem;
+            }
+
+            .form-control-custom {
+                padding: 0.75rem 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="container-fluid">
+            <div class="row justify-content-center">
+                <div class="col-12 col-sm-10 col-md-8 col-lg-6 col-xl-5">
+                    <div class="login-card shadow-lg fade-in">
+                        <div class="card-header-custom">
+                            <div class="dentista-icon">
+                                <i class="fas fa-user-md"></i>
+                            </div>
+                            <h1 class="welcome-title">Portal do Dentista</h1>
+                            <p class="welcome-subtitle mb-0">
+                                Sistema Pi Odonto - Acesso Profissional
+                            </p>
+                            <div class="professional-badge">
+                                <i class="fas fa-tooth me-1"></i>
+                                Área Exclusiva para Dentistas Voluntários
+                            </div>
+                        </div>
+
+                        <div class="card-body-custom">
+                            <!-- Mensagens do TempData -->
+                            @if (TempData["SuccessMessage"] != null)
+                            {
+                                <div class="alert-custom alert-success-custom fade-in">
+                                    <i class="fas fa-check-circle"></i>
+                                    @TempData["SuccessMessage"]
+                                </div>
+                            }
+
+                            @if (TempData["ErrorMessage"] != null)
+                            {
+                                <div class="alert-custom alert-danger-custom fade-in">
+                                    <i class="fas fa-exclamation-circle"></i>
+                                    @TempData["ErrorMessage"]
+                                </div>
+                            }
+
+                            <!-- Validação Summary -->
+                            <div asp-validation-summary="All" class="alert-custom alert-danger-custom" 
+                                 style="display: @(ViewData.ModelState.IsValid ? "none" : "flex")">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <div>Por favor, corrija os erros abaixo.</div>
+                            </div>
+
+                            <!-- Formulário de Login -->
+                            <form asp-action="DentistaLogin" asp-controller="Auth" method="post" 
+                                  id="dentistaLoginForm" class="fade-in">
+                                @Html.AntiForgeryToken()
+                                
+                                <div class="mb-4">
+                                    <label asp-for="Email" class="form-label-custom">
+                                        <i class="fas fa-envelope"></i>
+                                        Email Profissional
+                                    </label>
+                                    <input asp-for="Email" type="email" 
+                                           class="form-control form-control-custom"
+                                           placeholder="seuemail@exemplo.com" 
+                                           autocomplete="email" required />
+                                    <span asp-validation-for="Email" class="text-danger small"></span>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label asp-for="Senha" class="form-label-custom">
+                                        <i class="fas fa-lock"></i>
+                                        Senha
+                                    </label>
+                                    <input asp-for="Senha" type="password" 
+                                           class="form-control form-control-custom"
+                                           placeholder="••••••••" 
+                                           autocomplete="current-password" required />
+                                    <span asp-validation-for="Senha" class="text-danger small"></span>
+                                </div>
+
+                                <div class="text-end mb-3">
+                                    <a href="#" class="link-esqueceu-senha" 
+                                       data-bs-toggle="modal" 
+                                       data-bs-target="#forgotPasswordModal">
+                                        <i class="fas fa-key"></i>
+                                        Esqueceu sua senha?
+                                    </a>
+                                </div>
+
+                                <div class="form-check form-check-custom">
+                                    <input asp-for="LembrarMe" type="checkbox" 
+                                           class="form-check-input form-check-input-custom" />
+                                    <label asp-for="LembrarMe" class="form-check-label">
+                                        Manter-me conectado
+                                    </label>
+                                </div>
+
+                                <button type="submit" class="btn btn-login-dentista">
+                                    <i class="fas fa-sign-in-alt"></i>
+                                    Acessar Sistema
+                                </button>
+
+                                <div class="info-box">
+                                    <small>
+                                        <i class="fas fa-info-circle"></i>
+                                        <strong>Primeiro acesso?</strong> Utilize as credenciais enviadas 
+                                        para seu email após a aprovação do cadastro.
+                                    </small>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div class="login-footer fade-in">
+                        <a href="/" class="btn btn-back mb-3">
+                            <i class="fas fa-arrow-left"></i>
+                            Voltar ao Início
+                        </a>
+                        
+                        <p>
+                            <strong>Não é dentista voluntário?</strong><br>
+                            <a href="/Login" style="color: var(--cor-primaria-dentista); text-decoration: none;">
+                                <i class="fas fa-users me-1"></i>
+                                Acesse o portal dos responsáveis
+                            </a>
+                        </p>
+                        
+                        <p class="mt-3">
+                            <i class="fas fa-heart" style="color: var(--cor-sucesso);"></i>
+                            Obrigado por fazer parte do Pi Odonto!
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Esqueceu a Senha -->
+    <div class="modal fade" id="forgotPasswordModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="border-radius: 20px; overflow: hidden;">
+                <div class="modal-header" style="background: linear-gradient(135deg, var(--cor-primaria-dentista), var(--cor-secundaria-dentista)); color: white; border: none;">
+                    <h5 class="modal-title">
+                        <i class="fas fa-key me-2"></i>
+                        Recuperar Senha - Dentista
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" style="padding: 2rem;">
+                    <form id="forgotPasswordForm" method="post" action="/Auth/EsqueceuSenhaDentista">
+                        @Html.AntiForgeryToken()
+                        
+                        <div class="text-center mb-4">
+                            <div style="font-size: 3rem; color: var(--cor-primaria-dentista); margin-bottom: 1rem;">
+                                <i class="fas fa-user-md"></i>
+                            </div>
+                            <p class="text-muted">
+                                Digite o email cadastrado no sistema para receber as instruções 
+                                de recuperação de senha.
+                            </p>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label-custom">
+                                <i class="fas fa-envelope"></i>
+                                Email Profissional
+                            </label>
+                            <input type="email" name="Email" 
+                                   class="form-control form-control-custom"
+                                   placeholder="seuemail@exemplo.com" 
+                                   id="forgotEmail" required />
+                            <span class="text-danger small" id="forgot-email-error"></span>
+                        </div>
+
+                        <button type="submit" class="btn btn-login-dentista">
+                            <i class="fas fa-paper-plane"></i>
+                            Enviar Instruções
+                        </button>
+
+                        <div class="text-center mt-3">
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Verifique sua caixa de entrada e spam
+                            </small>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    @section Scripts {
+        <partial name="_ValidationScriptsPartial" />
+    }
+    <script>
+        // Auto-hide das mensagens após 5 segundos
+        document.addEventListener('DOMContentLoaded', function() {
+            const alerts = document.querySelectorAll('.alert-custom');
+            alerts.forEach(alert => {
+                if (alert && alert.style.display !== 'none') {
+                    setTimeout(() => {
+                        alert.style.transition = 'opacity 0.5s ease';
+                        alert.style.opacity = '0';
+                        setTimeout(() => alert.style.display = 'none', 500);
+                    }, 5000);
+                }
+            });
+
+            // Foco no campo email
+            const emailInput = document.querySelector('input[type="email"]');
+            if (emailInput) {
+                emailInput.focus();
+            }
+        });
+
+        // Validação do formulário principal
+        document.getElementById('dentistaLoginForm').addEventListener('submit', function(e) {
+            const email = document.querySelector('input[name="Email"]').value;
+            const senha = document.querySelector('input[name="Senha"]').value;
+            let isValid = true;
+            
+            // Limpar erros anteriores
+            document.querySelectorAll('.field-error').forEach(el => el.remove());
+            
+            // Validar email
+            if (!email || !isValidEmail(email)) {
+                showFieldError('input[name="Email"]', 'Por favor, insira um email válido');
+                isValid = false;
+            }
+            
+            // Validar senha
+            if (!senha || senha.length < 6) {
+                showFieldError('input[name="Senha"]', 'A senha deve ter pelo menos 6 caracteres');
+                isValid = false;
+            }
+            
+            if (!isValid) {
+                e.preventDefault();
+                return false;
+            }
+            
+            // Mostrar loading
+            const submitBtn = this.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Entrando...';
+        });
+
+        // Validação do formulário de recuperação
+        document.getElementById('forgotPasswordForm').addEventListener('submit', function(e) {
+            const email = document.getElementById('forgotEmail').value;
+            document.getElementById('forgot-email-error').textContent = '';
+            
+            if (!email || !isValidEmail(email)) {
+                document.getElementById('forgot-email-error').textContent = 'Por favor, insira um email válido';
+                e.preventDefault();
+                return false;
+            }
+            
+            // Mostrar loading
+            const submitBtn = this.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Enviando...';
+        });
+
+        // Função auxiliar para validar email
+        function isValidEmail(email) {
+            const emailRegex = /^[a-zA-Z0-9._%+-]+@@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+            return emailRegex.test(email);
+        }
+
+        // Função para mostrar erro no campo
+        function showFieldError(selector, message) {
+            const field = document.querySelector(selector);
+            if (field) {
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'text-danger small mt-1 field-error';
+                errorDiv.textContent = message;
+                field.parentElement.appendChild(errorDiv);
+                field.classList.add('is-invalid');
+            }
+        }
+
+        // Remover classe de erro ao digitar
+        document.querySelectorAll('.form-control-custom').forEach(input => {
+            input.addEventListener('input', function() {
+                this.classList.remove('is-invalid');
+                const errorMsg = this.parentElement.querySelector('.field-error');
+                if (errorMsg) errorMsg.remove();
+            });
+        });
+
+        // Efeito visual ao focar nos campos
+        document.querySelectorAll('.form-control-custom').forEach(input => {
+            input.addEventListener('focus', function() {
+                this.parentElement.style.transform = 'translateY(-2px)';
+                this.parentElement.style.transition = 'transform 0.3s ease';
+            });
+            
+            input.addEventListener('blur', function() {
+                this.parentElement.style.transform = 'translateY(0)';
+            });
+        });
+    </script>
+</body>
+</html>

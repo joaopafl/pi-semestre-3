@@ -59,7 +59,7 @@ namespace Pi_Odonto.Controllers
                         new Claim("TipoUsuario", "Responsavel")
                     };
 
-                    var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+                    var claimsIdentity = new ClaimsIdentity(claims, "AdminAuth");
 
                     var authProperties = new AuthenticationProperties
                     {
@@ -67,7 +67,7 @@ namespace Pi_Odonto.Controllers
                         ExpiresUtc = model.LembrarMe ? DateTimeOffset.UtcNow.AddDays(30) : DateTimeOffset.UtcNow.AddHours(2)
                     };
 
-                    await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme,
+                    await HttpContext.SignInAsync("AdminAuth",
                         new ClaimsPrincipal(claimsIdentity), authProperties);
 
                     return RedirectToAction("Index", "Perfil");
@@ -258,9 +258,9 @@ namespace Pi_Odonto.Controllers
                         new Claim("TipoUsuario", "Admin")
                     };
 
-                    var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+                    var claimsIdentity = new ClaimsIdentity(claims, "AdminAuth");
 
-                    await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme,
+                    await HttpContext.SignInAsync("AdminAuth",
                         new ClaimsPrincipal(claimsIdentity));
 
                     return RedirectToAction("Dashboard", "Admin");
@@ -272,12 +272,36 @@ namespace Pi_Odonto.Controllers
             return View(model);
         }
 
-        // Logout
+        // POST: Logout universal (detecta automaticamente o tipo de usuário)
         [HttpPost]
         [Route("Logout")]
         public async Task<IActionResult> Logout()
         {
-            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            // Verifica qual tipo de usuário está logado
+            var tipoUsuario = User.FindFirst("TipoUsuario")?.Value;
+
+            if (tipoUsuario == "Admin")
+            {
+                // Faz logout do esquema AdminAuth
+                await HttpContext.SignOutAsync("AdminAuth");
+                return RedirectToAction("AdminLogin", "Auth");
+            }
+            else if (tipoUsuario == "Responsavel")
+            {
+                // Faz logout do esquema AdminAuth (Responsável também usa AdminAuth)
+                await HttpContext.SignOutAsync("AdminAuth");
+                return RedirectToAction("Login", "Auth");
+            }
+            else if (tipoUsuario == "Dentista")
+            {
+                // Faz logout do esquema DentistaAuth
+                await HttpContext.SignOutAsync("DentistaAuth");
+                return RedirectToAction("DentistaLogin", "Auth");
+            }
+
+            // Fallback: se não detectar o tipo, faz logout de ambos os esquemas
+            await HttpContext.SignOutAsync("AdminAuth");
+            await HttpContext.SignOutAsync("DentistaAuth");
             return RedirectToAction("Index", "Home");
         }
 
@@ -292,6 +316,60 @@ namespace Pi_Odonto.Controllers
             }
 
             return View();
+        }
+
+        // GET: Login de Dentista
+        [HttpGet]
+        [Route("Auth/DentistaLogin")]
+        public IActionResult DentistaLogin()
+        {
+            if (User.Identity?.IsAuthenticated == true && User.HasClaim("TipoUsuario", "Dentista"))
+            {
+                return RedirectToAction("Dashboard", "Dentista");
+            }
+            return View();
+        }
+
+        // POST: Login de Dentista
+        [HttpPost]
+        [Route("Auth/DentistaLogin")]
+        public async Task<IActionResult> DentistaLogin(DentistaLoginViewModel model)
+        {
+            if (ModelState.IsValid)
+            {
+                var dentista = _context.Dentistas
+                    .FirstOrDefault(d => d.Email == model.Email && d.Ativo);
+
+                if (dentista != null && PasswordHelper.VerifyPassword(model.Senha, dentista.Senha ?? ""))
+                {
+                    var claims = new List<Claim>
+                    {
+                        new Claim(ClaimTypes.Name, dentista.Nome),
+                        new Claim(ClaimTypes.Email, dentista.Email),
+                        new Claim("DentistaId", dentista.Id.ToString()),
+                        new Claim("TipoUsuario", "Dentista")
+                    };
+
+                    var claimsIdentity = new ClaimsIdentity(claims, "DentistaAuth");
+
+                    var principal = new ClaimsPrincipal(claimsIdentity);
+
+                    var authProperties = new AuthenticationProperties
+                    {
+                        IsPersistent = model.LembrarMe,
+                        ExpiresUtc = model.LembrarMe ?
+                            DateTimeOffset.UtcNow.AddDays(30) : DateTimeOffset.UtcNow.AddHours(8)
+                    };
+
+                    await HttpContext.SignInAsync("DentistaAuth", principal, authProperties);
+
+                    return RedirectToAction("Dashboard", "Dentista");
+                }
+
+                ModelState.AddModelError("", "Email ou senha inválidos");
+            }
+
+            return View(model);
         }
 
         // Método privado para gerar token seguro

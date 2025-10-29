@@ -14,15 +14,15 @@
         </div>
         <div class="col-md-4 text-end">
             <div class="dropdown">
-                <button class="btn btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                <button class="btn btn-outline-primary dropdown-toggle" type="button" id="dropdownMenuButtonAdmin" data-bs-toggle="dropdown" aria-expanded="false">
                     <i class="fas fa-user-shield"></i> @User.Identity.Name
                 </button>
-                <ul class="dropdown-menu">
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButtonAdmin">
                     <li><a class="dropdown-item" href="/Admin/Responsaveis"><i class="fas fa-users"></i> Gerenciar Responsáveis</a></li>
                     <li><a class="dropdown-item" href="/Admin/Relatorios"><i class="fas fa-chart-bar"></i> Relatórios</a></li>
                     <li><hr class="dropdown-divider"></li>
                     <li>
-                        <form asp-action="Logout" asp-controller="Auth" method="post" class="d-inline">
+                        <form asp-action="Logout" asp-controller="Auth" method="post" class="d-inline w-100">
                             <button type="submit" class="dropdown-item text-danger">
                                 <i class="fas fa-sign-out-alt"></i> Sair
                             </button>
@@ -252,5 +252,49 @@
 </div>
 
 @section Scripts {
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
+    <script>
+        // Script específico para o dropdown do Dashboard Admin
+        // Executa DEPOIS do script global do layout
+        window.addEventListener('load', function() {
+            // Aguardar 300ms para garantir que o script do layout já executou
+            setTimeout(function() {
+                const dropdownButton = document.getElementById('dropdownMenuButtonAdmin');
+                
+                if (!dropdownButton) {
+                    console.error('[Dashboard Admin] Botão do dropdown não encontrado');
+                    return;
+                }
+                
+                // Verificar se Bootstrap está disponível
+                if (typeof bootstrap === 'undefined') {
+                    console.error('[Dashboard Admin] Bootstrap não está carregado');
+                    return;
+                }
+                
+                console.log('[Dashboard Admin] Inicializando dropdown...');
+                
+                // Remover qualquer instância anterior
+                const existingInstance = bootstrap.Dropdown.getInstance(dropdownButton);
+                if (existingInstance) {
+                    console.log('[Dashboard Admin] Removendo instância anterior');
+                    existingInstance.dispose();
+                }
+                
+                // Criar nova instância do dropdown
+                const dropdownInstance = new bootstrap.Dropdown(dropdownButton, {
+                    autoClose: true,
+                    boundary: 'viewport'
+                });
+                
+                console.log('[Dashboard Admin] Dropdown inicializado com sucesso!');
+                
+                // Garantir que o click funciona
+                dropdownButton.addEventListener('click', function(e) {
+                    console.log('[Dashboard Admin] Click detectado no dropdown');
+                    // Não prevenir default, deixar o Bootstrap trabalhar naturalmente
+                });
+                
+            }, 300);
+        });
+    </script>
 }

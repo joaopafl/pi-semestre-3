@@ -15,6 +15,11 @@ namespace Pi_Odonto.Data
         public DbSet<Agendamento> Agendamentos { get; set; }
         public DbSet<Atendimento> Atendimentos { get; set; }
 
+        // NOVOS DbSets - ADICIONE ESTAS 3 LINHAS
+        public DbSet<SolicitacaoVoluntario> SolicitacoesVoluntario { get; set; }
+        public DbSet<Odontograma> Odontogramas { get; set; }
+        public DbSet<TratamentoDente> TratamentosDente { get; set; }
+
         // Configurações adicionais do relacionamento
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -27,7 +32,7 @@ namespace Pi_Odonto.Data
                 .HasForeignKey(c => c.IdResponsavel)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // Configuração das tabelas
+            // Configuração das tabelas existentes
             modelBuilder.Entity<Responsavel>()
                 .ToTable("responsavel");
 
@@ -52,6 +57,16 @@ namespace Pi_Odonto.Data
             modelBuilder.Entity<RecuperacaoSenhaToken>()
                 .ToTable("RecuperacaoSenhaTokens");
 
+            // NOVAS TABELAS
+            modelBuilder.Entity<SolicitacaoVoluntario>()
+                .ToTable("solicitacao_voluntario");
+
+            modelBuilder.Entity<Odontograma>()
+                .ToTable("odontograma");
+
+            modelBuilder.Entity<TratamentoDente>()
+                .ToTable("tratamento_dente");
+
             // Configuração do relacionamento Dentista -> EscalaTrabalho
             modelBuilder.Entity<Dentista>()
                 .HasOne(d => d.EscalaTrabalho)
@@ -65,6 +80,37 @@ namespace Pi_Odonto.Data
                 .WithMany(d => d.Disponibilidades)
                 .HasForeignKey(d => d.IdDentista)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // NOVO: Configuração do relacionamento Odontograma -> Crianca
+            modelBuilder.Entity<Odontograma>()
+                .HasOne(o => o.Crianca)
+                .WithMany()
+                .HasForeignKey(o => o.IdCrianca)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // NOVO: Configuração do relacionamento TratamentoDente -> Odontograma
+            modelBuilder.Entity<TratamentoDente>()
+                .HasOne(t => t.Odontograma)
+                .WithMany(o => o.Tratamentos)
+                .HasForeignKey(t => t.IdOdontograma)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // NOVO: Configuração do relacionamento TratamentoDente -> Dentista
+            modelBuilder.Entity<TratamentoDente>()
+                .HasOne(t => t.Dentista)
+                .WithMany()
+                .HasForeignKey(t => t.IdDentista)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // Configuração dos índices únicos para SolicitacaoVoluntario
+            modelBuilder.Entity<SolicitacaoVoluntario>()
+                .HasIndex(s => s.Email);
+
+            modelBuilder.Entity<SolicitacaoVoluntario>()
+                .HasIndex(s => s.Cpf);
+
+            modelBuilder.Entity<SolicitacaoVoluntario>()
+                .HasIndex(s => s.Cro);
         }
     }
 }
