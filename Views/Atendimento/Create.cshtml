@@ -1,0 +1,177 @@
+﻿@{
+    ViewData["Title"] = "Cadastrar Atendimento";
+}
+@model Pi_Odonto.ViewModels.AtendimentoViewModel
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card shadow-lg">
+                <div class="card-header bg-success text-white text-center">
+                    <h2 class="mb-0">
+                        <i class="fas fa-calendar-plus"></i> Cadastrar Novo Atendimento
+                    </h2>
+                </div>
+
+                <div class="card-body">
+                    <form asp-action="Create" method="post">
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="DataAtendimento" class="form-label fw-bold">
+                                        <i class="fas fa-calendar text-primary"></i> Data do Atendimento <span class="text-danger">*</span>
+                                    </label>
+                                    <input asp-for="DataAtendimento" class="form-control" type="date" required />
+                                    <span asp-validation-for="DataAtendimento" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="HorarioAtendimento" class="form-label fw-bold">
+                                        <i class="fas fa-clock text-primary"></i> Horário do Atendimento <span class="text-danger">*</span>
+                                    </label>
+                                    <input asp-for="HorarioAtendimento" class="form-control" type="time" required />
+                                    <span asp-validation-for="HorarioAtendimento" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="DuracaoAtendimento" class="form-label fw-bold">
+                                        <i class="fas fa-hourglass-half text-primary"></i> Duração (minutos) <span class="text-danger">*</span>
+                                    </label>
+                                    <select asp-for="DuracaoAtendimento" class="form-select" required>
+                                        <option value="">Selecione a duração</option>
+                                        <option value="15">15 minutos</option>
+                                        <option value="30" selected>30 minutos</option>
+                                        <option value="45">45 minutos</option>
+                                        <option value="60">1 hora</option>
+                                        <option value="90">1h 30min</option>
+                                        <option value="120">2 horas</option>
+                                    </select>
+                                    <span asp-validation-for="DuracaoAtendimento" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <!-- Campo removido temporariamente -->
+                                <div class="mb-3">
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-info-circle"></i>
+                                        <strong>Agenda:</strong> Funcionalidade será implementada posteriormente
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="IdCrianca" class="form-label fw-bold">
+                                        <i class="fas fa-child text-primary"></i> Criança <span class="text-danger">*</span>
+                                    </label>
+                                    <select asp-for="IdCrianca" class="form-select" required>
+                                        <option value="0">Selecione uma criança</option>
+                                        @if (Model.CriancasDisponiveis != null)
+                                        {
+                                            @foreach (var crianca in Model.CriancasDisponiveis)
+                                            {
+                                                <option value="@crianca.Id">@crianca.Nome - @crianca.DataNascimento.ToString("dd/MM/yyyy")</option>
+                                            }
+                                        }
+                                    </select>
+                                    <span asp-validation-for="IdCrianca" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="IdDentista" class="form-label fw-bold">
+                                        <i class="fas fa-user-md text-primary"></i> Dentista <span class="text-danger">*</span>
+                                    </label>
+                                    <select asp-for="IdDentista" class="form-select" required>
+                                        <option value="0">Selecione um dentista</option>
+                                        @if (Model.DentistasDisponiveis != null)
+                                        {
+                                            @foreach (var dentista in Model.DentistasDisponiveis)
+                                            {
+                                                <option value="@dentista.Id">@dentista.Nome - CRO: @dentista.Cro</option>
+                                            }
+                                        }
+                                    </select>
+                                    <span asp-validation-for="IdDentista" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="mb-3">
+                                    <label asp-for="Observacao" class="form-label fw-bold">
+                                        <i class="fas fa-sticky-note text-primary"></i> Observações
+                                    </label>
+                                    <textarea asp-for="Observacao" class="form-control" rows="4"
+                                              placeholder="Observações sobre o atendimento..." maxlength="100"></textarea>
+                                    <span asp-validation-for="Observacao" class="text-danger"></span>
+                                    <div class="form-text">Máximo de 100 caracteres. Informações complementares sobre o atendimento.</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Info box sobre Odontograma -->
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i>
+                            <strong>Nota:</strong> O odontograma será vinculado posteriormente através de módulo específico.
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="@Url.Action("Index")" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Voltar para Lista
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-check-circle"></i> Salvar Atendimento
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script>
+        // Script para calcular e exibir horário de término
+        document.addEventListener('DOMContentLoaded', function() {
+            const horarioInput = document.querySelector('input[name="HorarioAtendimento"]');
+            const duracaoSelect = document.querySelector('select[name="DuracaoAtendimento"]');
+
+            function calcularHorarioTermino() {
+                if (horarioInput.value && duracaoSelect.value) {
+                    const [horas, minutos] = horarioInput.value.split(':');
+                    const inicio = new Date();
+                    inicio.setHours(parseInt(horas), parseInt(minutos), 0, 0);
+
+                    const duracao = parseInt(duracaoSelect.value);
+                    const termino = new Date(inicio.getTime() + (duracao * 60000));
+
+                    const horaTermino = termino.getHours().toString().padStart(2, '0');
+                    const minutoTermino = termino.getMinutes().toString().padStart(2, '0');
+
+                    // Exibir o horário de término (você pode personalizar onde mostrar)
+                    console.log(`Término: ${horaTermino}:${minutoTermino}`);
+                }
+            }
+
+            horarioInput.addEventListener('change', calcularHorarioTermino);
+            duracaoSelect.addEventListener('change', calcularHorarioTermino);
+        });
+    </script>
+}

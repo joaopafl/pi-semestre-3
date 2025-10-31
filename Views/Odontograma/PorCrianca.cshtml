@@ -1,0 +1,1044 @@
+﻿@model Pi_Odonto.Models.Odontograma
+
+@{
+    ViewData["Title"] = "Odontograma - " + ViewBag.Crianca.Nome;
+    var crianca = ViewBag.Crianca as Pi_Odonto.Models.Crianca;
+    var isAdmin = (bool)ViewBag.IsAdmin;
+    var dentistas = ViewBag.Dentistas as List<Pi_Odonto.Models.Dentista>;
+}
+
+<style>
+    :root {
+        --cor-primaria: #2c5282;
+        --cor-secundaria: #4a90e2;
+        --cor-esperanca: #48bb78;
+        --cor-amor: #f56565;
+        --cor-dente-sadio: #ffffff;
+        --cor-dente-carie: #ef4444;
+        --cor-dente-restauracao: #3b82f6;
+        --cor-dente-extracao: #6b7280;
+        --cor-dente-canal: #f59e0b;
+        --cor-dente-ausente: #1f2937;
+    }
+
+    .odontograma-container {
+        padding: 20px;
+        background: #f7fafc;
+        min-height: 100vh;
+    }
+
+    .header-odonto {
+        background: linear-gradient(135deg, var(--cor-primaria), var(--cor-secundaria));
+        color: white;
+        padding: 30px;
+        border-radius: 15px;
+        margin-bottom: 30px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    .info-paciente {
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 30px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .info-item {
+        display: inline-block;
+        margin-right: 30px;
+        margin-bottom: 10px;
+    }
+
+        .info-item strong {
+            color: var(--cor-primaria);
+        }
+
+    /* Arcadas Dentárias */
+    .arcada-container {
+        background: white;
+        padding: 30px;
+        border-radius: 15px;
+        margin-bottom: 30px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    .arcada-title {
+        text-align: center;
+        color: var(--cor-primaria);
+        font-size: 1.5rem;
+        font-weight: bold;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid var(--cor-secundaria);
+    }
+
+    .dentes-grid {
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+
+    .dente {
+        width: 60px;
+        height: 80px;
+        background: var(--cor-dente-sadio);
+        border: 3px solid #cbd5e0;
+        border-radius: 8px;
+        cursor: pointer;
+        position: relative;
+        transition: all 0.3s;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+        .dente:hover {
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            border-color: var(--cor-secundaria);
+        }
+
+        .dente.selecionado {
+            border-color: var(--cor-primaria);
+            border-width: 4px;
+            box-shadow: 0 0 20px rgba(74, 144, 226, 0.5);
+        }
+
+    .dente-numero {
+        font-weight: bold;
+        font-size: 1.1rem;
+        color: #2d3748;
+        margin-bottom: 5px;
+    }
+
+    .dente-icon {
+        font-size: 1.8rem;
+    }
+
+    /* Status dos dentes */
+    .dente.carie {
+        background: var(--cor-dente-carie);
+        border-color: #dc2626;
+        color: white;
+    }
+
+    .dente.restauracao {
+        background: var(--cor-dente-restauracao);
+        border-color: #2563eb;
+        color: white;
+    }
+
+    .dente.extracao {
+        background: var(--cor-dente-extracao);
+        border-color: #4b5563;
+        color: white;
+    }
+
+    .dente.canal {
+        background: var(--cor-dente-canal);
+        border-color: #d97706;
+        color: white;
+    }
+
+    .dente.ausente {
+        background: var(--cor-dente-ausente);
+        border-color: #111827;
+        color: white;
+        opacity: 0.7;
+    }
+
+    .dente.higido {
+        background: #d1fae5;
+        border-color: var(--cor-esperanca);
+    }
+
+    /* Badge de contagem de tratamentos */
+    .dente-badge {
+        position: absolute;
+        top: -8px;
+        right: -8px;
+        background: #ef4444;
+        color: white;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.7rem;
+        font-weight: bold;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    }
+
+    /* Legenda */
+    .legenda-container {
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 30px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .legenda-title {
+        color: var(--cor-primaria);
+        font-weight: bold;
+        margin-bottom: 15px;
+        font-size: 1.1rem;
+    }
+
+    .legenda-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 15px;
+    }
+
+    .legenda-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .legenda-cor {
+        width: 30px;
+        height: 30px;
+        border-radius: 5px;
+        border: 2px solid #cbd5e0;
+    }
+
+    /* Painel de tratamentos */
+    .tratamentos-panel {
+        background: white;
+        padding: 25px;
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        margin-bottom: 30px;
+    }
+
+    .tratamentos-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #e2e8f0;
+    }
+
+    .tratamento-card {
+        background: #f7fafc;
+        border-left: 4px solid var(--cor-secundaria);
+        padding: 15px;
+        margin-bottom: 15px;
+        border-radius: 8px;
+        transition: all 0.3s;
+    }
+
+        .tratamento-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transform: translateX(5px);
+        }
+
+    .tratamento-tipo {
+        font-weight: bold;
+        color: var(--cor-primaria);
+        font-size: 1.1rem;
+        margin-bottom: 8px;
+    }
+
+    .tratamento-info {
+        font-size: 0.9rem;
+        color: #4a5568;
+        margin-bottom: 5px;
+    }
+
+    .status-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 15px;
+        font-size: 0.8rem;
+        font-weight: bold;
+        margin-top: 8px;
+    }
+
+    .status-planejado {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .status-andamento {
+        background: #dbeafe;
+        color: #1e40af;
+    }
+
+    .status-concluido {
+        background: #d1fae5;
+        color: #065f46;
+    }
+
+    /* Botões */
+    .btn-odonto {
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.3s;
+        border: none;
+        cursor: pointer;
+    }
+
+        .btn-odonto:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+    .btn-adicionar {
+        background: linear-gradient(135deg, var(--cor-esperanca), #38a169);
+        color: white;
+    }
+
+    .btn-editar {
+        background: #f59e0b;
+        color: white;
+        padding: 6px 12px;
+        font-size: 0.85rem;
+    }
+
+    .btn-excluir {
+        background: #ef4444;
+        color: white;
+        padding: 6px 12px;
+        font-size: 0.85rem;
+    }
+
+    /* Observações */
+    .observacoes-container {
+        background: white;
+        padding: 25px;
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        margin-bottom: 30px;
+    }
+
+        .observacoes-container textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 120px;
+        }
+
+            .observacoes-container textarea:focus {
+                border-color: var(--cor-secundaria);
+                outline: none;
+            }
+
+    /* Estado vazio */
+    .empty-state {
+        text-align: center;
+        padding: 40px;
+        color: #718096;
+    }
+
+        .empty-state i {
+            font-size: 3rem;
+            opacity: 0.3;
+            margin-bottom: 15px;
+        }
+
+    /* Responsivo */
+    @@media (max-width: 768px) {
+        .dente
+
+    {
+        width: 50px;
+        height: 70px;
+    }
+
+    .dente-icon {
+        font-size: 1.5rem;
+    }
+
+    .dentes-grid {
+        gap: 10px;
+    }
+
+    }
+
+    /* Loading */
+    .loading-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        z-index: 9999;
+        justify-content: center;
+        align-items: center;
+    }
+
+        .loading-overlay.active {
+            display: flex;
+        }
+
+    .spinner {
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid var(--cor-secundaria);
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        animation: spin 1s linear infinite;
+    }
+
+    @@keyframes spin {
+        0%
+
+    {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+
+    }
+</style>
+
+<div class="odontograma-container">
+    <!-- Header -->
+    <div class="header-odonto">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="mb-2">
+                    <i class="fas fa-tooth"></i> Odontograma
+                </h1>
+                <p class="mb-0 opacity-90">Registro completo da saúde bucal</p>
+            </div>
+            <div>
+                @if (isAdmin)
+                {
+                    <a href="/Odontograma/Index" class="btn btn-light me-2">
+                        <i class="fas fa-list"></i> Todos
+                    </a>
+                }
+                <a href="/Odontograma/Imprimir/@Model.Id" class="btn btn-light me-2" target="_blank">
+                    <i class="fas fa-print"></i> Imprimir
+                </a>
+                <a href="/Perfil/MinhasCriancas" class="btn btn-light">
+                    <i class="fas fa-arrow-left"></i> Voltar
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Informações do Paciente -->
+    <div class="info-paciente">
+        <h4 class="text-primary mb-3">
+            <i class="fas fa-user"></i> Informações do Paciente
+        </h4>
+        <div>
+            <div class="info-item">
+                <strong>Nome:</strong> @crianca.Nome
+            </div>
+            <div class="info-item">
+                <strong>Idade:</strong> @(DateTime.Now.Year - crianca.DataNascimento.Year) anos
+            </div>
+            <div class="info-item">
+                <strong>Data Nascimento:</strong> @crianca.DataNascimento.ToString("dd/MM/yyyy")
+            </div>
+            <div class="info-item">
+                <strong>Responsável:</strong> @crianca.Responsavel?.Nome
+            </div>
+            <div class="info-item">
+                <strong>Última Atualização:</strong> @Model.DataAtualizacao.ToString("dd/MM/yyyy HH:mm")
+            </div>
+        </div>
+    </div>
+
+    <!-- Legenda -->
+    <div class="legenda-container">
+        <div class="legenda-title">
+            <i class="fas fa-palette"></i> Legenda de Status
+        </div>
+        <div class="legenda-grid">
+            <div class="legenda-item">
+                <div class="legenda-cor higido" style="background: #d1fae5;"></div>
+                <span>Hígido (Sadio)</span>
+            </div>
+            <div class="legenda-item">
+                <div class="legenda-cor" style="background: var(--cor-dente-carie);"></div>
+                <span>Cárie</span>
+            </div>
+            <div class="legenda-item">
+                <div class="legenda-cor" style="background: var(--cor-dente-restauracao);"></div>
+                <span>Restauração</span>
+            </div>
+            <div class="legenda-item">
+                <div class="legenda-cor" style="background: var(--cor-dente-canal);"></div>
+                <span>Canal</span>
+            </div>
+            <div class="legenda-item">
+                <div class="legenda-cor" style="background: var(--cor-dente-extracao);"></div>
+                <span>Extração</span>
+            </div>
+            <div class="legenda-item">
+                <div class="legenda-cor" style="background: var(--cor-dente-ausente);"></div>
+                <span>Ausente</span>
+            </div>
+        </div>
+    </div>
+
+
+<!-- Arcada Superior -->
+    <div class="arcada-container">
+        <div class="arcada-title">
+            <i class="fas fa-angle-up"></i> ARCADA SUPERIOR
+        </div>
+        <div class="dentes-grid" id="arcadaSuperior">
+            <!-- Dentes 11-18 (Superior Direito) -->
+            @for (int i = 18; i >= 11; i--)
+            {
+                <div class="dente" data-numero="@i" onclick="selecionarDente(@i)">
+                    <span class="dente-numero">@i</span>
+                    <i class="fas fa-tooth dente-icon"></i>
+                </div>
+            }
+            <!-- Dentes 21-28 (Superior Esquerdo) -->
+            @for (int i = 21; i <= 28; i++)
+            {
+                <div class="dente" data-numero="@i" onclick="selecionarDente(@i)">
+                    <span class="dente-numero">@i</span>
+                    <i class="fas fa-tooth dente-icon"></i>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Arcada Inferior -->
+    <div class="arcada-container">
+        <div class="arcada-title">
+            <i class="fas fa-angle-down"></i> ARCADA INFERIOR
+        </div>
+        <div class="dentes-grid" id="arcadaInferior">
+            <!-- Dentes 41-48 (Inferior Direito) -->
+            @for (int i = 48; i >= 41; i--)
+            {
+                <div class="dente" data-numero="@i" onclick="selecionarDente(@i)">
+                    <span class="dente-numero">@i</span>
+                    <i class="fas fa-tooth dente-icon"></i>
+                </div>
+            }
+            <!-- Dentes 31-38 (Inferior Esquerdo) -->
+            @for (int i = 31; i <= 38; i++)
+            {
+                <div class="dente" data-numero="@i" onclick="selecionarDente(@i)">
+                    <span class="dente-numero">@i</span>
+                    <i class="fas fa-tooth dente-icon"></i>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Painel de Tratamentos do Dente Selecionado -->
+    <div class="tratamentos-panel" id="tratamentosPanel" style="display: none;">
+        <div class="tratamentos-header">
+            <h4 class="mb-0">
+                <i class="fas fa-notes-medical"></i> Tratamentos do Dente <span id="denteNumeroSelecionado"></span>
+            </h4>
+            @@if (isAdmin)
+            {
+                <button type="button" class="btn-odonto btn-adicionar" onclick="abrirModalAdicionarTratamento()">
+                    <i class="fas fa-plus"></i> Adicionar Tratamento
+                </button>
+            }
+        </div>
+
+        <div id="listaTratamentos">
+            <!-- Preenchido dinamicamente via JavaScript -->
+        </div>
+    </div>
+
+    <!-- Observações Gerais -->
+    <div class="observacoes-container">
+        <h4 class="text-primary mb-3">
+            <i class="fas fa-clipboard"></i> Observações Gerais
+        </h4>
+        @@if (isAdmin)
+        {
+            <textarea id="observacoesGerais" placeholder="Digite observações gerais sobre o odontograma...">@Model.ObservacoesGerais</textarea>
+            <button type="button" class="btn-odonto btn-adicionar mt-3" onclick="salvarObservacoes()">
+                <i class="fas fa-save"></i> Salvar Observações
+            </button>
+        }
+        else
+        {
+            <p>@(string.IsNullOrEmpty(Model.ObservacoesGerais) ? "Sem observações registradas." : Model.ObservacoesGerais)</p>
+        }
+    </div>
+</div>
+
+<!-- Modal Adicionar/Editar Tratamento -->
+@@if (isAdmin)
+{
+    <div class="modal fade" id="modalTratamento" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="modalTratamentoTitle">
+                        <i class="fas fa-tooth"></i> Adicionar Tratamento
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formTratamento">
+                        <input type="hidden" id="tratamentoId" />
+                        <input type="hidden" id="odontogramaId" value="@Model.Id" />
+                        <input type="hidden" id="denteSelecionado" />
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Tipo de Tratamento *</label>
+                                <select id="tipoTratamento" class="form-control" required>
+                                    <option value="">Selecione...</option>
+                                    <option value="Hígido">Hígido (Sadio)</option>
+                                    <option value="Cárie">Cárie</option>
+                                    <option value="Restauração">Restauração</option>
+                                    <option value="Canal">Tratamento de Canal</option>
+                                    <option value="Extração">Extração</option>
+                                    <option value="Ausente">Ausente</option>
+                                    <option value="Prótese">Prótese</option>
+                                    <option value="Coroa">Coroa</option>
+                                    <option value="Outros">Outros</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Face do Dente</label>
+                                <select id="faceDente" class="form-control">
+                                    <option value="">Não especificado</option>
+                                    <option value="Oclusal">Oclusal</option>
+                                    <option value="Vestibular">Vestibular</option>
+                                    <option value="Lingual">Lingual</option>
+                                    <option value="Mesial">Mesial</option>
+                                    <option value="Distal">Distal</option>
+                                    <option value="Múltiplas Faces">Múltiplas Faces</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Status *</label>
+                                <select id="statusTratamento" class="form-control" required>
+                                    <option value="Planejado">Planejado</option>
+                                    <option value="Em Andamento">Em Andamento</option>
+                                    <option value="Concluído">Concluído</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Data do Tratamento</label>
+                                <input type="date" id="dataTratamento" class="form-control" value="@DateTime.Now.ToString("yyyy-MM-dd")" />
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Dentista Responsável</label>
+                            <select id="dentistaTratamento" class="form-control">
+                                <option value="">Não especificado</option>
+                                @@foreach (var dentista in dentistas)
+                                {
+                                    <option value="@@dentista.Id">@@dentista.Nome</option>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Observação</label>
+                            <textarea id="observacaoTratamento" class="form-control" rows="3" 
+                                      placeholder="Observações adicionais sobre o tratamento..."></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="salvarTratamento()">
+                        <i class="fas fa-save"></i> Salvar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner"></div>
+</div>
+
+@section Scripts {
+    <script>
+        let denteSelecionadoAtual = null;
+        let tratamentos = @@Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Tratamentos.Select(t => new {
+            id = t.Id,
+            numeroDente = t.NumeroDente,
+            tipoTratamento = t.TipoTratamento,
+            face = t.Face,
+            status = t.Status,
+            observacao = t.Observacao,
+            dataTratamento = t.DataTratamento?.ToString("yyyy-MM-dd"),
+            idDentista = t.IdDentista,
+            dentistaNome = t.Dentista?.Nome ?? "Não especificado"
+        })));
+
+        const isAdmin = @@(isAdmin ? "true" : "false");
+
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', function() {
+            atualizarVisualizacaoDentes();
+        });
+
+        // Selecionar dente
+        function selecionarDente(numeroDente) {
+            // Remover seleção anterior
+            document.querySelectorAll('.dente').forEach(d => d.classList.remove('selecionado'));
+            
+            // Adicionar seleção ao dente clicado
+            const denteElement = document.querySelector(`.dente[data-numero="${numeroDente}"]`);
+            if (denteElement) {
+                denteElement.classList.add('selecionado');
+            }
+
+            denteSelecionadoAtual = numeroDente;
+            document.getElementById('denteNumeroSelecionado').textContent = numeroDente;
+
+            // Buscar e exibir tratamentos do dente
+            carregarTratamentosDente(numeroDente);
+
+            // Mostrar painel
+            document.getElementById('tratamentosPanel').style.display = 'block';
+
+            // Scroll suave até o painel
+            document.getElementById('tratamentosPanel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        // Carregar tratamentos de um dente
+        async function carregarTratamentosDente(numeroDente) {
+            showLoading();
+            
+            try {
+                const response = await fetch(`/Odontograma/ObterTratamentosDente?idOdontograma=@Model.Id&numeroDente=${numeroDente}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    exibirTratamentos(data.tratamentos);
+                } else {
+                    alert('Erro ao carregar tratamentos: ' + data.message);
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+                alert('Erro ao carregar tratamentos.');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Exibir tratamentos na lista
+        function exibirTratamentos(tratamentosDoDente) {
+            const container = document.getElementById('listaTratamentos');
+            
+            if (!tratamentosDoDente || tratamentosDoDente.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-tooth"></i>
+                        <p>Nenhum tratamento registrado para este dente.</p>
+                        ${isAdmin ? '<small>Clique em "Adicionar Tratamento" para registrar.</small>' : ''}
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '';
+            tratamentosDoDente.forEach(t => {
+                const statusClass = t.status.toLowerCase().replace(' ', '-');
+                html += `
+                    <div class="tratamento-card">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <div class="tratamento-tipo">${t.tipoTratamento}</div>
+                                ${t.face ? `<div class="tratamento-info"><strong>Face:</strong> ${t.face}</div>` : ''}
+                                <div class="tratamento-info"><strong>Data:</strong> ${t.dataTratamento || 'Não especificada'}</div>
+                                <div class="tratamento-info"><strong>Dentista:</strong> ${t.dentistaNome}</div>
+                                ${t.observacao ? `<div class="tratamento-info"><strong>Obs:</strong> ${t.observacao}</div>` : ''}
+                                <span class="status-badge status-${statusClass}">${t.status}</span>
+                            </div>
+                            ${isAdmin ? `
+                                <div>
+                                    <button class="btn-odonto btn-editar" onclick="editarTratamento(${t.id})">
+                                        <i class="fas fa-edit"></i> Editar
+                                    </button>
+                                    <button class="btn-odonto btn-excluir" onclick="excluirTratamento(${t.id})">
+                                        <i class="fas fa-trash"></i> Excluir
+                                    </button>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        // Atualizar visualização dos dentes
+        function atualizarVisualizacaoDentes() {
+            // Agrupar tratamentos por dente
+            const tratamentosPorDente = {};
+            tratamentos.forEach(t => {
+                if (!tratamentosPorDente[t.numeroDente]) {
+                    tratamentosPorDente[t.numeroDente] = [];
+                }
+                tratamentosPorDente[t.numeroDente].push(t);
+            });
+
+            // Atualizar cada dente
+            document.querySelectorAll('.dente').forEach(denteEl => {
+                const numero = parseInt(denteEl.dataset.numero);
+                const tratamentosDoDente = tratamentosPorDente[numero] || [];
+
+                // Remover classes de status
+                denteEl.classList.remove('carie', 'restauracao', 'canal', 'extracao', 'ausente', 'higido');
+
+                // Adicionar badge de contagem
+                const badgeExistente = denteEl.querySelector('.dente-badge');
+                if (badgeExistente) badgeExistente.remove();
+
+                if (tratamentosDoDente.length > 0) {
+                    // Aplicar cor do último tratamento (mais recente)
+                    const ultimoTratamento = tratamentosDoDente[0];
+                    const tipo = ultimoTratamento.tipoTratamento.toLowerCase();
+
+                    if (tipo.includes('cárie') || tipo.includes('carie')) {
+                        denteEl.classList.add('carie');
+                    } else if (tipo.includes('restauração') || tipo.includes('restauracao')) {
+                        denteEl.classList.add('restauracao');
+                    } else if (tipo.includes('canal')) {
+                        denteEl.classList.add('canal');
+                    } else if (tipo.includes('extração') || tipo.includes('extracao')) {
+                        denteEl.classList.add('extracao');
+                    } else if (tipo.includes('ausente')) {
+                        denteEl.classList.add('ausente');
+                    } else if (tipo.includes('hígido') || tipo.includes('higido')) {
+                        denteEl.classList.add('higido');
+                    }
+
+                    // Adicionar badge com contagem
+                    if (tratamentosDoDente.length > 0) {
+                        const badge = document.createElement('span');
+                        badge.className = 'dente-badge';
+                        badge.textContent = tratamentosDoDente.length;
+                        denteEl.appendChild(badge);
+                    }
+                }
+            });
+        }
+
+        // Abrir modal para adicionar tratamento
+        function abrirModalAdicionarTratamento() {
+            if (!denteSelecionadoAtual) {
+                alert('Selecione um dente primeiro.');
+                return;
+            }
+
+            document.getElementById('modalTratamentoTitle').innerHTML = '<i class="fas fa-tooth"></i> Adicionar Tratamento - Dente ' + denteSelecionadoAtual;
+            document.getElementById('tratamentoId').value = '';
+            document.getElementById('denteSelecionado').value = denteSelecionadoAtual;
+            document.getElementById('formTratamento').reset();
+            document.getElementById('dataTratamento').value = new Date().toISOString().split('T')[0];
+
+            new bootstrap.Modal(document.getElementById('modalTratamento')).show();
+        }
+
+        // Editar tratamento
+        async function editarTratamento(id) {
+            showLoading();
+
+            try {
+                const tratamento = tratamentos.find(t => t.id === id);
+                if (!tratamento) {
+                    alert('Tratamento não encontrado.');
+                    return;
+                }
+
+                document.getElementById('modalTratamentoTitle').innerHTML = '<i class="fas fa-edit"></i> Editar Tratamento - Dente ' + tratamento.numeroDente;
+                document.getElementById('tratamentoId').value = tratamento.id;
+                document.getElementById('denteSelecionado').value = tratamento.numeroDente;
+                document.getElementById('tipoTratamento').value = tratamento.tipoTratamento;
+                document.getElementById('faceDente').value = tratamento.face || '';
+                document.getElementById('statusTratamento').value = tratamento.status;
+                document.getElementById('dataTratamento').value = tratamento.dataTratamento || '';
+                document.getElementById('dentistaTratamento').value = tratamento.idDentista || '';
+                document.getElementById('observacaoTratamento').value = tratamento.observacao || '';
+
+                new bootstrap.Modal(document.getElementById('modalTratamento')).show();
+            } catch (error) {
+                console.error('Erro:', error);
+                alert('Erro ao carregar dados do tratamento.');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Salvar tratamento
+        async function salvarTratamento() {
+            const tratamentoId = document.getElementById('tratamentoId').value;
+            const isEdicao = tratamentoId !== '';
+
+            const dados = {
+                id: tratamentoId ? parseInt(tratamentoId) : 0,
+                idOdontograma: parseInt(document.getElementById('odontogramaId').value),
+                numeroDente: parseInt(document.getElementById('denteSelecionado').value),
+                tipoTratamento: document.getElementById('tipoTratamento').value,
+                face: document.getElementById('faceDente').value,
+                status: document.getElementById('statusTratamento').value,
+                dataTratamento: document.getElementById('dataTratamento').value || null,
+                idDentista: document.getElementById('dentistaTratamento').value ? parseInt(document.getElementById('dentistaTratamento').value) : null,
+                observacao: document.getElementById('observacaoTratamento').value
+            };
+
+            if (!dados.tipoTratamento || !dados.status) {
+                alert('Preencha os campos obrigatórios.');
+                return;
+            }
+
+            showLoading();
+
+            try {
+                const url = isEdicao ? `/Odontograma/EditarTratamento?id=${tratamentoId}` : '/Odontograma/AdicionarTratamento';
+                
+                const formData = new FormData();
+                Object.keys(dados).forEach(key => {
+                    if (dados[key] !== null && dados[key] !== '') {
+                        formData.append(key, dados[key]);
+                    }
+                });
+
+                const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+                if (token) {
+                    formData.append('__RequestVerificationToken', token);
+                }
+
+                const response = await fetch(url, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert(data.message);
+                    bootstrap.Modal.getInstance(document.getElementById('modalTratamento')).hide();
+                    location.reload(); // Recarregar para atualizar a visualização
+                } else {
+                    alert('Erro: ' + data.message);
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+                alert('Erro ao salvar tratamento.');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Excluir tratamento
+        async function excluirTratamento(id) {
+            if (!confirm('Tem certeza que deseja excluir este tratamento?')) {
+                return;
+            }
+
+            showLoading();
+
+            try {
+                const formData = new FormData();
+                formData.append('id', id);
+                
+                const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+                if (token) {
+                    formData.append('__RequestVerificationToken', token);
+                }
+
+                const response = await fetch('/Odontograma/ExcluirTratamento', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert(data.message);
+                    location.reload();
+                } else {
+                    alert('Erro: ' + data.message);
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+                alert('Erro ao excluir tratamento.');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Salvar observações gerais
+        async function salvarObservacoes() {
+            const observacoes = document.getElementById('observacoesGerais').value;
+            
+            showLoading();
+
+            try {
+                const formData = new FormData();
+                formData.append('id', @Model.Id);
+                formData.append('observacoes', observacoes);
+                
+                const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+                if (token) {
+                    formData.append('__RequestVerificationToken', token);
+                }
+
+                const response = await fetch('/Odontograma/AtualizarObservacoes', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert(data.message);
+                } else {
+                    alert('Erro: ' + data.message);
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+                alert('Erro ao salvar observações.');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Funções auxiliares
+        function showLoading() {
+            document.getElementById('loadingOverlay').classList.add('active');
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingOverlay').classList.remove('active');
+        }
+    </script>
+
+    @Html.AntiForgeryToken()
+}
