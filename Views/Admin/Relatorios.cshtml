@@ -1,0 +1,335 @@
+﻿@{
+    ViewData["Title"] = "Relatórios do Sistema";
+}
+
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="text-primary">
+                <i class="fas fa-chart-line"></i> Relatórios do Sistema
+            </h1>
+            <p class="text-muted">Dashboard analítico com dados dos cadastros</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="/Admin/Dashboard" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Voltar ao Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Cards de Estatísticas -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total de Responsáveis
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@ViewBag.TotalResponsaveis</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-users fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Responsáveis Ativos
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@ViewBag.ResponsaveisAtivos</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-user-check fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Responsáveis Inativos
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@ViewBag.ResponsaveisInativos</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-user-times fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Taxa de Ativação
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                @{
+                                    double taxa = 0;
+                                    if (ViewBag.TotalResponsaveis > 0)
+                                    {
+                                        taxa = Math.Round((double)ViewBag.ResponsaveisAtivos / ViewBag.TotalResponsaveis * 100, 1);
+                                    }
+                                    string taxaTexto = taxa + "%";
+                                }
+                                @taxaTexto
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-percentage fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráfico de Cadastros por Mês -->
+    <div class="row">
+        <div class="col-xl-8 col-lg-7">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-chart-area"></i> Evolução de Cadastros (Últimos 6 Meses)
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-area">
+                        <canvas id="graficoMeses" width="400" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gráfico de Pizza -->
+        <div class="col-xl-4 col-lg-5">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-chart-pie"></i> Status dos Responsáveis
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-pie pt-4 pb-2">
+                        <canvas id="graficoPizza" width="300" height="300"></canvas>
+                    </div>
+                    <div class="mt-4 text-center small">
+                        <span class="mr-2">
+                            <i class="fas fa-circle text-success"></i> Ativos
+                        </span>
+                        <span class="mr-2">
+                            <i class="fas fa-circle text-danger"></i> Inativos
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabela de Resumo Detalhado -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-table"></i> Resumo Detalhado por Mês
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>Mês/Ano</th>
+                                    <th>Cadastros</th>
+                                    <th>% do Total</th>
+                                    <th>Crescimento</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @{
+                                    var dadosMeses = ViewBag.CadastrosPorMes as List<object>;
+                                    int totalGeral = ViewBag.TotalResponsaveis;
+                                    int mesAnterior = 0;
+                                }
+                                @if (dadosMeses != null)
+                                {
+                                    @foreach (dynamic mes in dadosMeses)
+                                    {
+                                        var percentual = totalGeral > 0 ? Math.Round((double)mes.Count / totalGeral * 100, 1) : 0;
+                                        var crescimento = mesAnterior > 0 ? Math.Round((double)(mes.Count - mesAnterior) / mesAnterior * 100, 1) : 0;
+                                        var corCrescimento = crescimento > 0 ? "text-success" : crescimento < 0 ? "text-danger" : "text-muted";
+
+                                        string percentualTexto = percentual + "%";
+                                        string crescimentoTexto = "";
+
+                                        if (crescimento > 0)
+                                        {
+                                            crescimentoTexto = crescimento + "%";
+                                        }
+                                        else if (crescimento < 0)
+                                        {
+                                            crescimentoTexto = Math.Abs(crescimento) + "%";
+                                        }
+                                        else
+                                        {
+                                            crescimentoTexto = "0%";
+                                        }
+
+                                        <tr>
+                                            <td><strong>@mes.Mes</strong></td>
+                                            <td>@mes.Count cadastros</td>
+                                            <td>@percentualTexto</td>
+                                            <td class="@corCrescimento">
+                                                @if (crescimento > 0)
+                                                {
+                                                    <i class="fas fa-arrow-up"></i> 
+                                                    @crescimentoTexto
+                                                }
+                                                else if (crescimento < 0)
+                                                {
+                                                    <i class="fas fa-arrow-down"></i> 
+                                                    @crescimentoTexto
+                                                }
+                                                else
+                                                {
+                                                    <i class="fas fa-minus"></i> 
+                                                    @crescimentoTexto
+                                                }
+                                            </td>
+                                        </tr>
+                                        mesAnterior = mes.Count;
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Botões de Ação -->
+    <div class="row">
+        <div class="col-12 text-center">
+            <button class="btn btn-primary me-2" onclick="window.print()">
+                <i class="fas fa-print"></i> Imprimir Relatório
+            </button>
+            <a href="/Admin/Responsaveis" class="btn btn-info">
+                <i class="fas fa-users"></i> Ver Responsáveis
+            </a>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
+    <script>
+        // Dados do backend
+        var dadosMeses = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.CadastrosPorMes));
+        var responsaveisAtivos = @ViewBag.ResponsaveisAtivos;
+        var responsaveisInativos = @ViewBag.ResponsaveisInativos;
+
+        // Gráfico de linha - Cadastros por mês
+        var ctx1 = document.getElementById('graficoMeses').getContext('2d');
+        var graficoMeses = new Chart(ctx1, {
+            type: 'line',
+            data: {
+                labels: dadosMeses.map(d => d.mes),
+                datasets: [{
+                    label: 'Cadastros',
+                    data: dadosMeses.map(d => d.count),
+                    borderColor: 'rgb(75, 192, 192)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    tension: 0.1,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Evolução dos Cadastros'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // Gráfico de pizza - Status
+        var ctx2 = document.getElementById('graficoPizza').getContext('2d');
+        var graficoPizza = new Chart(ctx2, {
+            type: 'doughnut',
+            data: {
+                labels: ['Ativos', 'Inativos'],
+                datasets: [{
+                    data: [responsaveisAtivos, responsaveisInativos],
+                    backgroundColor: [
+                        '#28a745',
+                        '#dc3545'
+                    ],
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    </script>
+
+    <style>
+        .border-left-primary {
+            border-left: 4px solid #4e73df !important;
+        }
+
+        .border-left-success {
+            border-left: 4px solid #1cc88a !important;
+        }
+
+        .border-left-warning {
+            border-left: 4px solid #f6c23e !important;
+        }
+
+        .border-left-info {
+            border-left: 4px solid #36b9cc !important;
+        }
+
+        .text-gray-800 {
+            color: #5a5c69 !important;
+        }
+
+        .text-gray-300 {
+            color: #dddfeb !important;
+        }
+    </style>
+}
