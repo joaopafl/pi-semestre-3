@@ -1,0 +1,420 @@
+﻿@model Pi_Odonto.Models.SolicitacaoVoluntario
+
+@{
+    ViewData["Title"] = "Seja Voluntário - Dentista";
+}
+
+<style>
+    :root {
+        --cor-primaria: #2c5282;
+        --cor-secundaria: #4a90e2;
+        --cor-esperanca: #48bb78;
+        --cor-amor: #f56565;
+    }
+
+    .voluntario-container {
+        max-width: 800px;
+        margin: 40px auto;
+        padding: 20px;
+    }
+
+    .voluntario-header {
+        background: linear-gradient(135deg, var(--cor-primaria), var(--cor-secundaria));
+        color: white;
+        padding: 40px;
+        border-radius: 15px 15px 0 0;
+        text-align: center;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    .voluntario-header h1 {
+        margin: 0;
+        font-size: 2.5rem;
+        font-weight: bold;
+    }
+
+    .voluntario-header p {
+        margin: 15px 0 0;
+        font-size: 1.1rem;
+        opacity: 0.95;
+    }
+
+    .form-card {
+        background: white;
+        padding: 40px;
+        border-radius: 0 0 15px 15px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    /* ESTILOS PARA AS MENSAGENS */
+    .alert {
+        padding: 15px 20px;
+        border-radius: 8px;
+        margin-bottom: 25px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        animation: slideDown 0.3s ease-out;
+    }
+
+    @@keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .alert-success {
+        background-color: #d4edda;
+        border: 1px solid #c3e6cb;
+        color: #155724;
+    }
+
+    .alert-success i {
+        color: #28a745;
+        font-size: 1.5rem;
+    }
+
+    .alert-danger {
+        background-color: #f8d7da;
+        border: 1px solid #f5c6cb;
+        color: #721c24;
+    }
+
+    .alert-danger i {
+        color: #dc3545;
+        font-size: 1.5rem;
+    }
+
+    .section-title {
+        color: var(--cor-primaria);
+        font-size: 1.3rem;
+        font-weight: bold;
+        margin: 30px 0 20px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid var(--cor-secundaria);
+    }
+
+    .form-group {
+        margin-bottom: 25px;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 8px;
+        display: block;
+    }
+
+    .form-control {
+        border: 2px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 12px 15px;
+        font-size: 1rem;
+        transition: all 0.3s;
+    }
+
+    .form-control:focus {
+        border-color: var(--cor-secundaria);
+        box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+    }
+
+    textarea.form-control {
+        min-height: 120px;
+        resize: vertical;
+    }
+
+    .btn-enviar {
+        background: linear-gradient(135deg, var(--cor-esperanca), #38a169);
+        color: white;
+        padding: 15px 40px;
+        border: none;
+        border-radius: 8px;
+        font-size: 1.1rem;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s;
+        width: 100%;
+        margin-top: 20px;
+    }
+
+    .btn-enviar:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 20px rgba(72, 187, 120, 0.4);
+    }
+
+    .btn-voltar {
+        background: white;
+        color: var(--cor-primaria);
+        border: 2px solid var(--cor-primaria);
+        padding: 12px 30px;
+        border-radius: 8px;
+        text-decoration: none;
+        display: inline-block;
+        margin-top: 15px;
+        transition: all 0.3s;
+    }
+
+    .btn-voltar:hover {
+        background: var(--cor-primaria);
+        color: white;
+    }
+
+    .required-mark {
+        color: var(--cor-amor);
+        margin-left: 3px;
+    }
+
+    .info-box {
+        background: #f0f9ff;
+        border-left: 4px solid var(--cor-secundaria);
+        padding: 20px;
+        margin: 30px 0;
+        border-radius: 8px;
+    }
+
+    .info-box h4 {
+        color: var(--cor-primaria);
+        margin-top: 0;
+    }
+
+    .info-box ul {
+        margin-bottom: 0;
+        padding-left: 20px;
+    }
+
+    .info-box li {
+        margin-bottom: 8px;
+        color: #2d3748;
+    }
+</style>
+
+<div class="voluntario-container">
+    <div class="voluntario-header">
+        <i class="fas fa-heart" style="font-size: 3rem; margin-bottom: 15px;"></i>
+        <h1>Seja um Voluntário</h1>
+        <p>Compartilhe seu conhecimento e ajude a transformar sorrisos e vidas</p>
+    </div>
+
+    <div class="form-card">
+        <!-- MENSAGEM DE SUCESSO -->
+        @if (TempData["Sucesso"] != null)
+        {
+            <div class="alert alert-success">
+                <i class="fas fa-check-circle"></i>
+                <strong>@TempData["Sucesso"]</strong>
+            </div>
+        }
+
+        <!-- MENSAGEM DE ERRO -->
+        @if (TempData["Erro"] != null)
+        {
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-circle"></i>
+                <strong>@TempData["Erro"]</strong>
+            </div>
+        }
+
+        <div class="info-box">
+            <h4><i class="fas fa-info-circle"></i> Por que ser voluntário?</h4>
+            <ul>
+                <li>💙 Faça a diferença na vida de crianças carentes</li>
+                <li>🌟 Contribua com a comunidade usando seu conhecimento</li>
+                <li>❤️ Seja parte de uma causa nobre e transformadora</li>
+                <li>🤝 Atenda de acordo com sua disponibilidade</li>
+            </ul>
+        </div>
+
+        <form asp-action="Cadastro" method="post" id="formVoluntario">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            <!-- Dados Pessoais -->
+            <div class="section-title">
+                <i class="fas fa-user"></i> Dados Pessoais
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Nome" class="form-label">
+                    Nome Completo <span class="required-mark">*</span>
+                </label>
+                <input asp-for="Nome" class="form-control" placeholder="Digite seu nome completo" required />
+                <span asp-validation-for="Nome" class="text-danger"></span>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label asp-for="Cpf" class="form-label">
+                            CPF <span class="required-mark">*</span>
+                        </label>
+                        <input asp-for="Cpf" class="form-control" placeholder="000.000.000-00" 
+                               id="cpfInput" required />
+                        <span asp-validation-for="Cpf" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label asp-for="Cro" class="form-label">
+                            Número do CRO <span class="required-mark">*</span>
+                        </label>
+                        <input asp-for="Cro" class="form-control" placeholder="Ex: SP-12345" 
+                               id="croInput" required />
+                        <span asp-validation-for="Cro" class="text-danger"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contato -->
+            <div class="section-title">
+                <i class="fas fa-phone"></i> Informações de Contato
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label asp-for="Email" class="form-label">
+                            Email <span class="required-mark">*</span>
+                        </label>
+                        <input asp-for="Email" type="email" class="form-control" 
+                               placeholder="seu@email.com" id="emailInput" required />
+                        <span asp-validation-for="Email" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label asp-for="Telefone" class="form-label">
+                            Telefone/WhatsApp <span class="required-mark">*</span>
+                        </label>
+                        <input asp-for="Telefone" class="form-control" 
+                               placeholder="(11) 99999-9999" required />
+                        <span asp-validation-for="Telefone" class="text-danger"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Endereco" class="form-label">
+                    Endereço
+                </label>
+                <input asp-for="Endereco" class="form-control" 
+                       placeholder="Rua, número, bairro, cidade - opcional" />
+                <span asp-validation-for="Endereco" class="text-danger"></span>
+            </div>
+
+            <!-- Motivação -->
+            <div class="section-title">
+                <i class="fas fa-heart"></i> Sua Motivação
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Mensagem" class="form-label">
+                    Conte-nos por que você quer ser voluntário <span class="required-mark">*</span>
+                </label>
+                <textarea asp-for="Mensagem" class="form-control" 
+                          placeholder="Compartilhe sua motivação e como pode contribuir..." 
+                          required></textarea>
+                <span asp-validation-for="Mensagem" class="text-danger"></span>
+            </div>
+
+            <button type="submit" class="btn-enviar">
+                <i class="fas fa-paper-plane"></i> Enviar Solicitação
+            </button>
+
+            <div class="text-center">
+                <a href="/" class="btn-voltar">
+                    <i class="fas fa-arrow-left"></i> Voltar para Home
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        // Máscaras para CPF e Telefone
+        document.querySelector('input[name="Cpf"]').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length <= 11) {
+                value = value.replace(/(\d{3})(\d)/, '$1.$2');
+                value = value.replace(/(\d{3})(\d)/, '$1.$2');
+                value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+                e.target.value = value;
+            }
+        });
+
+        document.querySelector('input[name="Telefone"]').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length <= 11) {
+                value = value.replace(/^(\d{2})(\d)/g, '($1) $2');
+                value = value.replace(/(\d)(\d{4})$/, '$1-$2');
+                e.target.value = value;
+            }
+        });
+
+        // Validação dos campos ao sair (blur)
+        document.getElementById('cpfInput')?.addEventListener('blur', async function() {
+            const cpf = this.value;
+            if (cpf.length === 14) {
+                try {
+                    const response = await fetch('/Voluntario/ValidarCpfVoluntario', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ cpf: cpf })
+                    });
+                    const data = await response.json();
+                    if (data.existe) {
+                        alert('Este CPF já possui uma solicitação cadastrada!');
+                        this.focus();
+                    }
+                } catch (error) {
+                    console.error('Erro ao validar CPF:', error);
+                }
+            }
+        });
+
+        document.getElementById('emailInput')?.addEventListener('blur', async function() {
+            const email = this.value;
+            if (email && email.includes('@@')) {
+                try {
+                    const response = await fetch('/Voluntario/ValidarEmail', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email: email })
+                    });
+                    const data = await response.json();
+                    if (data.existe) {
+                        alert('Este email já possui uma solicitação cadastrada!');
+                        this.focus();
+                    }
+                } catch (error) {
+                    console.error('Erro ao validar email:', error);
+                }
+            }
+        });
+
+        document.getElementById('croInput')?.addEventListener('blur', async function() {
+            const cro = this.value;
+            if (cro) {
+                try {
+                    const response = await fetch('/Voluntario/ValidarCro', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ cro: cro })
+                    });
+                    const data = await response.json();
+                    if (data.existe) {
+                        alert('Este CRO já possui uma solicitação cadastrada!');
+                        this.focus();
+                    }
+                } catch (error) {
+                    console.error('Erro ao validar CRO:', error);
+                }
+            }
+        });
+    </script>
+}

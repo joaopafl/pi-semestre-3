@@ -1,0 +1,438 @@
+﻿@model List<Pi_Odonto.Models.SolicitacaoVoluntario>
+
+@{
+    ViewData["Title"] = "Solicitações de Voluntários";
+}
+
+<style>
+    .solicitacao-card {
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+        background: white;
+        transition: all 0.3s;
+        position: relative;
+    }
+
+        .solicitacao-card:hover {
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+
+        .solicitacao-card.nova {
+            border-left: 5px solid #f59e0b;
+            background: #fffbeb;
+        }
+
+    .badge-status {
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: bold;
+    }
+
+    .badge-pendente {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .badge-aprovado {
+        background: #d1fae5;
+        color: #065f46;
+    }
+
+    .badge-rejeitado {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .badge-nova {
+        background: #f59e0b;
+        color: white;
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        padding: 4px 10px;
+        border-radius: 15px;
+        font-size: 0.75rem;
+    }
+
+    .filtros-container {
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 30px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .btn-filtro {
+        padding: 8px 16px;
+        border: 2px solid #e2e8f0;
+        border-radius: 20px;
+        background: white;
+        margin-right: 10px;
+        margin-bottom: 10px;
+        transition: all 0.3s;
+        cursor: pointer;
+    }
+
+        .btn-filtro:hover {
+            border-color: #4a90e2;
+            background: #f0f9ff;
+        }
+
+        .btn-filtro.active {
+            background: #4a90e2;
+            color: white;
+            border-color: #4a90e2;
+        }
+
+    .info-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+
+    .solicitacao-info {
+        margin-bottom: 10px;
+    }
+
+        .solicitacao-info strong {
+            color: #2c5282;
+            display: inline-block;
+            min-width: 80px;
+        }
+
+    .btn-acao {
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        margin-right: 5px;
+        transition: all 0.3s;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #718096;
+    }
+
+        .empty-state i {
+            font-size: 4rem;
+            opacity: 0.3;
+            margin-bottom: 20px;
+        }
+
+    .notificacao-badge {
+        background: #ef4444;
+        color: white;
+        border-radius: 50%;
+        padding: 2px 8px;
+        font-size: 0.75rem;
+        margin-left: 8px;
+    }
+</style>
+
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="text-primary">
+                <i class="fas fa-user-md"></i> Solicitações de Voluntários
+                @if (ViewBag.TotalNaoVisualizadas > 0)
+                {
+                    <span class="notificacao-badge">@ViewBag.TotalNaoVisualizadas</span>
+                }
+            </h1>
+            <p class="text-muted">Gerencie as solicitações de dentistas voluntários</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="/Admin/Dashboard" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Voltar ao Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Mensagens -->
+    @if (TempData["Sucesso"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle"></i> @TempData["Sucesso"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["Erro"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-circle"></i> @TempData["Erro"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Filtros -->
+    <div class="filtros-container">
+        <h5 class="mb-3"><i class="fas fa-filter"></i> Filtrar por:</h5>
+        <a href="/Admin/Solicitacoes?filtro=todas"
+           class="btn-filtro @(ViewBag.Filtro == "todas" ? "active" : "")">
+            📋 Todas (@Model.Count)
+        </a>
+        <a href="/Admin/Solicitacoes?filtro=nao_visualizadas"
+           class="btn-filtro @(ViewBag.Filtro == "nao_visualizadas" ? "active" : "")">
+            🆕 Não Visualizadas (@ViewBag.TotalNaoVisualizadas)
+        </a>
+        <a href="/Admin/Solicitacoes?filtro=pendentes"
+           class="btn-filtro @(ViewBag.Filtro == "pendentes" ? "active" : "")">
+            ⏳ Pendentes (@ViewBag.TotalPendentes)
+        </a>
+        <a href="/Admin/Solicitacoes?filtro=aprovadas"
+           class="btn-filtro @(ViewBag.Filtro == "aprovadas" ? "active" : "")">
+            ✅ Aprovadas
+        </a>
+        <a href="/Admin/Solicitacoes?filtro=rejeitadas"
+           class="btn-filtro @(ViewBag.Filtro == "rejeitadas" ? "active" : "")">
+            ❌ Rejeitadas
+        </a>
+    </div>
+
+    <!-- Lista de Solicitações -->
+    @if (Model.Any())
+    {
+        <div class="row">
+            @foreach (var solicitacao in Model)
+            {
+                <div class="col-12">
+                    <div class="solicitacao-card @(!solicitacao.Visualizado ? "nova" : "")">
+                        @if (!solicitacao.Visualizado)
+                        {
+                            <span class="badge-nova">NOVA</span>
+                        }
+
+                        <div class="info-header">
+                            <h4 class="mb-0">
+                                <i class="fas fa-user-md text-primary"></i> @solicitacao.Nome
+                            </h4>
+                            <span class="badge-status badge-@solicitacao.Status.ToLower()">
+                                @solicitacao.Status.ToUpper()
+                            </span>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="solicitacao-info">
+                                    <strong>📧 Email:</strong> @solicitacao.Email
+                                </div>
+                                <div class="solicitacao-info">
+                                    <strong>📱 Telefone:</strong> @solicitacao.Telefone
+                                </div>
+                                <div class="solicitacao-info">
+                                    <strong>🆔 CPF:</strong> @solicitacao.Cpf
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="solicitacao-info">
+                                    <strong>🦷 CRO:</strong> @solicitacao.Cro
+                                </div>
+                                <div class="solicitacao-info">
+                                    <strong>📅 Data:</strong> @solicitacao.DataSolicitacao.ToString("dd/MM/yyyy HH:mm")
+                                </div>
+                                @if (solicitacao.DataResposta.HasValue)
+                                {
+                                    <div class="solicitacao-info">
+                                        <strong>✔️ Respondida:</strong> @solicitacao.DataResposta.Value.ToString("dd/MM/yyyy")
+                                    </div>
+                                }
+                        </div>
+                    </div>
+
+                    <div class="solicitacao-info mt-3">
+                        <strong>💬 Mensagem:</strong>
+                        <p class="mb-0 mt-2" style="color: #4a5568;">
+                            @(solicitacao.Mensagem.Length > 200 ?
+                                                    solicitacao.Mensagem.Substring(0, 200) + "..." :
+                                                    solicitacao.Mensagem)
+                    </p>
+                </div>
+
+                @if (!string.IsNullOrEmpty(solicitacao.ObservacaoAdmin))
+                        {
+                            <div class="alert alert-info mt-3 mb-0">
+                                <strong>📝 Observação do Admin:</strong><br>
+                                @solicitacao.ObservacaoAdmin
+                            </div>
+                        }
+
+                        <div class="mt-3">
+                            <a href="/Admin/DetalhesSolicitacao/@solicitacao.Id"
+                               class="btn btn-acao btn-primary">
+                                <i class="fas fa-eye"></i> Ver Detalhes
+                            </a>
+
+                            @if (solicitacao.Status == "Pendente")
+                            {
+                                <button type="button" class="btn btn-acao btn-success"
+                                        onclick="abrirModalAprovar(@solicitacao.Id, '@solicitacao.Nome')">
+                                    <i class="fas fa-check"></i> Aprovar
+                                </button>
+                                <button type="button" class="btn btn-acao btn-warning"
+                                        onclick="abrirModalRejeitar(@solicitacao.Id, '@solicitacao.Nome')">
+                                    <i class="fas fa-times"></i> Rejeitar
+                                </button>
+                            }
+
+                            <form asp-action="ExcluirSolicitacao" method="post"
+                                  style="display: inline;"
+                                  onsubmit="return confirm('Tem certeza que deseja excluir esta solicitação?')">
+                                <input type="hidden" name="id" value="@solicitacao.Id" />
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-acao btn-danger">
+                                    <i class="fas fa-trash"></i> Excluir
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="empty-state">
+            <i class="fas fa-inbox"></i>
+            <h3>Nenhuma solicitação encontrada</h3>
+            <p>Não há solicitações com o filtro selecionado.</p>
+        </div>
+    }
+</div>
+
+<!-- Modal Aprovar -->
+<div class="modal fade" id="modalAprovar" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-check-circle"></i> Aprovar Solicitação
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Deseja aprovar a solicitação de <strong id="nomeAprovar"></strong>?</p>
+                <div class="form-group">
+                    <label>Observação (opcional):</label>
+                    <textarea id="observacaoAprovar" class="form-control" rows="3"
+                              placeholder="Adicione uma observação..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success" onclick="confirmarAprovacao()">
+                    <i class="fas fa-check"></i> Aprovar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Rejeitar -->
+<div class="modal fade" id="modalRejeitar" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title">
+                    <i class="fas fa-times-circle"></i> Rejeitar Solicitação
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Deseja rejeitar a solicitação de <strong id="nomeRejeitar"></strong>?</p>
+                <div class="form-group">
+                    <label>Motivo da rejeição (opcional):</label>
+                    <textarea id="observacaoRejeitar" class="form-control" rows="3"
+                              placeholder="Explique o motivo..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-warning" onclick="confirmarRejeicao()">
+                    <i class="fas fa-times"></i> Rejeitar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let solicitacaoIdAtual = 0;
+
+        function abrirModalAprovar(id, nome) {
+            solicitacaoIdAtual = id;
+            document.getElementById('nomeAprovar').textContent = nome;
+            document.getElementById('observacaoAprovar').value = '';
+            new bootstrap.Modal(document.getElementById('modalAprovar')).show();
+        }
+
+        function abrirModalRejeitar(id, nome) {
+            solicitacaoIdAtual = id;
+            document.getElementById('nomeRejeitar').textContent = nome;
+            document.getElementById('observacaoRejeitar').value = '';
+            new bootstrap.Modal(document.getElementById('modalRejeitar')).show();
+        }
+
+        async function confirmarAprovacao() {
+            const observacao = document.getElementById('observacaoAprovar').value;
+
+            try {
+                const response = await fetch(`/Admin/AprovarSolicitacao/${solicitacaoIdAtual}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                    },
+                    body: `observacao=${encodeURIComponent(observacao)}&__RequestVerificationToken=${document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''}`
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert(data.message);
+                    location.reload();
+                } else {
+                    alert('Erro: ' + data.message);
+                }
+            } catch (error) {
+                alert('Erro ao aprovar solicitação.');
+                console.error(error);
+            }
+        }
+
+        async function confirmarRejeicao() {
+            const observacao = document.getElementById('observacaoRejeitar').value;
+
+            try {
+                const response = await fetch(`/Admin/RejeitarSolicitacao/${solicitacaoIdAtual}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                    },
+                    body: `observacao=${encodeURIComponent(observacao)}&__RequestVerificationToken=${document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''}`
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert(data.message);
+                    location.reload();
+                } else {
+                    alert('Erro: ' + data.message);
+                }
+            } catch (error) {
+                alert('Erro ao rejeitar solicitação.');
+                console.error(error);
+            }
+        }
+    </script>
+}

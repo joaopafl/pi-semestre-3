@@ -1,0 +1,160 @@
+﻿@model Pi_Odonto.Models.Atendimento
+
+@{
+    ViewData["Title"] = "Excluir Atendimento";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h3 class="card-title">
+                        <i class="fas fa-exclamation-triangle"></i> Confirmar Exclusão
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning" role="alert">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>Atenção!</strong> Esta ação não pode ser desfeita. Tem certeza que deseja excluir este atendimento?
+                    </div>
+
+                    <div class="row">
+                        <!-- Informações do Atendimento -->
+                        <div class="col-md-6">
+                            <h5 class="text-primary">
+                                <i class="fas fa-info-circle"></i> Informações do Atendimento
+                            </h5>
+                            <dl class="row">
+                                <dt class="col-sm-4">Data:</dt>
+                                <dd class="col-sm-8">
+                                    <span class="badge bg-info">
+                                        @Model.DataAtendimento.ToString("dd/MM/yyyy")
+                                    </span>
+                                </dd>
+
+                                <dt class="col-sm-4">Horário:</dt>
+                                <dd class="col-sm-8">
+                                    <span class="badge bg-success">
+                                        @Model.HorarioAtendimento.ToString(@"hh\:mm")
+                                    </span>
+                                </dd>
+
+                                <dt class="col-sm-4">Duração:</dt>
+                                <dd class="col-sm-8">
+                                    <span class="badge bg-warning text-dark">
+                                        @Model.DuracaoAtendimento minutos
+                                    </span>
+                                </dd>
+
+                                <dt class="col-sm-4">Período:</dt>
+                                <dd class="col-sm-8">
+                                    <small class="text-muted">
+                                        @Model.HorarioAtendimento.ToString(@"hh\:mm") às
+                                        @Model.HorarioAtendimento.Add(TimeSpan.FromMinutes(Model.DuracaoAtendimento)).ToString(@"hh\:mm")
+                                    </small>
+                                </dd>
+                            </dl>
+                        </div>
+
+                        <!-- Paciente e Dentista -->
+                        <div class="col-md-6">
+                            <h5 class="text-success">
+                                <i class="fas fa-users"></i> Paciente e Dentista
+                            </h5>
+                            <dl class="row">
+                                <dt class="col-sm-4">Criança:</dt>
+                                <dd class="col-sm-8">
+                                    <strong>@Model.Crianca?.Nome</strong>
+                                    @if (Model.Crianca != null)
+                                    {
+                                        <br>
+                                        <small class="text-muted">
+                                            @Model.Crianca.DataNascimento.ToString("dd/MM/yyyy")
+                                        </small>
+                                    }
+                                </dd>
+
+                                <dt class="col-sm-4">Dentista:</dt>
+                                <dd class="col-sm-8">
+                                    <strong>@Model.Dentista?.Nome</strong>
+                                    @if (Model.Dentista != null)
+                                    {
+                                        <br>
+                                        <small class="text-muted">
+                                            CRO: @Model.Dentista.Cro
+                                        </small>
+                                    }
+                                </dd>
+
+                                @if (Model.IdAgenda.HasValue)
+                                {
+                                    <dt class="col-sm-4">Agenda:</dt>
+                                    <dd class="col-sm-8">
+                                        <span class="badge bg-secondary">
+                                            Agenda #@Model.IdAgenda
+                                        </span>
+                                    </dd>
+                                }
+                            </dl>
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(Model.Observacao))
+                    {
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <h5 class="text-info">
+                                    <i class="fas fa-sticky-note"></i> Observações
+                                </h5>
+                                <div class="p-3 bg-light rounded">
+                                    <p class="mb-0">@Model.Observacao</p>
+                                </div>
+                            </div>
+                        </div>
+                    }
+
+                    <!-- Informação sobre relacionamentos -->
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <div class="alert alert-info">
+                                <i class="fas fa-link"></i>
+                                <strong>Relacionamentos:</strong>
+                                <ul class="mb-0 mt-2">
+                                    <li>Criança: @(Model.Crianca?.Nome ?? "Não informado")</li>
+                                    <li>Dentista: @(Model.Dentista?.Nome ?? "Não informado")</li>
+                                    @if (Model.IdAgenda.HasValue)
+                                    {
+                                        <li>Agenda: Vinculado à agenda #@Model.IdAgenda</li>
+                                    }
+                                    @if (Model.IdOdontograma.HasValue)
+                                    {
+                                        <li>Odontograma: Vinculado ao odontograma #@Model.IdOdontograma</li>
+                                    }
+                                    else
+                                    {
+                                        <li>Odontograma: Não vinculado</li>
+                                    }
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Formulário de Exclusão -->
+                    <form asp-action="Delete" method="post" class="mt-4">
+                        <input type="hidden" asp-for="Id" />
+
+                        <div class="d-flex justify-content-between">
+                            <a asp-action="Index" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-trash"></i> Confirmar Exclusão
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
