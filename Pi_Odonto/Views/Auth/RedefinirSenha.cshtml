@@ -1,0 +1,291 @@
+﻿@{
+    ViewData["Title"] = "Redefinir Senha - Casa Espírita Trabalhadores de Jesus";
+}
+@model Pi_Odonto.ViewModels.RedefinirSenhaViewModel
+
+<style>
+    :root {
+        --cor-primaria: #4A90E2;
+        --cor-secundaria: #66BB6A;
+        --cor-accent: #FFD700;
+        --cor-paz: #E3F2FD;
+        --cor-esperanca: #E8F5E8;
+        --cor-texto: #2C3E50;
+        --cor-texto-suave: #5D6D7E;
+        --cor-amor: #FF6B8A;
+    }
+
+    body {
+        font-family: 'Poppins', sans-serif;
+        background: linear-gradient(135deg, var(--cor-paz) 0%, var(--cor-esperanca) 100%);
+        min-height: 100vh;
+        position: relative;
+        overflow-x: hidden;
+    }
+
+    body::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="hearts" patternUnits="userSpaceOnUse" width="25" height="25"><path d="M12.5,8 C9,4 5,8 8,12.5 C12.5,17 17,12.5 20,8 C17,4 12.5,8 12.5,8" fill="rgba(255,215,0,0.05)"/></pattern></defs><rect width="100" height="100" fill="url(%23hearts)"/></svg>') repeat;
+        animation: float 30s infinite linear;
+        z-index: -1;
+    }
+
+    @@keyframes float {
+        0% { transform: translateX(0) translateY(0); }
+        100% { transform: translateX(-25px) translateY(-25px); }
+    }
+
+    .login-container {
+        padding: 2rem 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+    }
+
+    .login-card {
+        background: white;
+        border-radius: 25px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+        overflow: hidden;
+        border: none;
+        backdrop-filter: blur(10px);
+        position: relative;
+    }
+
+    .login-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 5px;
+        background: linear-gradient(135deg, var(--cor-primaria), var(--cor-secundaria), var(--cor-accent));
+    }
+
+    .card-header-custom {
+        background: linear-gradient(135deg, var(--cor-primaria), var(--cor-secundaria));
+        color: white;
+        text-align: center;
+        padding: 2.5rem 2rem 2rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .card-header-custom::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="20" cy="20" r="2" fill="rgba(255,255,255,0.1)"/><circle cx="80" cy="80" r="2" fill="rgba(255,255,255,0.1)"/><circle cx="50" cy="10" r="1" fill="rgba(255,255,255,0.1)"/></svg>') repeat;
+    }
+
+    .welcome-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        background: linear-gradient(135deg, white, var(--cor-accent));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .welcome-title {
+        font-size: 1.8rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+
+    .welcome-subtitle {
+        font-size: 1rem;
+        opacity: 0.9;
+        font-weight: 300;
+    }
+
+    .form-control-custom {
+        border: 2px solid #E8E8E8;
+        border-radius: 15px;
+        padding: 15px 20px;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        background: #FAFAFA;
+    }
+
+    .form-control-custom:focus {
+        border-color: var(--cor-primaria);
+        box-shadow: 0 0 0 0.2rem rgba(74, 144, 226, 0.25);
+        background: white;
+    }
+
+    .form-label-custom {
+        font-weight: 500;
+        color: var(--cor-texto);
+        margin-bottom: 0.5rem;
+        display: block;
+    }
+
+    .btn-login {
+        background: linear-gradient(135deg, var(--cor-primaria), var(--cor-secundaria));
+        border: none;
+        border-radius: 15px;
+        padding: 15px 30px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: white;
+        transition: all 0.3s ease;
+        box-shadow: 0 5px 15px rgba(74, 144, 226, 0.3);
+    }
+
+    .btn-login:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(74, 144, 226, 0.4);
+        color: white;
+    }
+
+    .alert-danger-custom {
+        background: linear-gradient(135deg, #FF6B6B, #FF8E8E);
+        border: none;
+        border-radius: 15px;
+        color: white;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .text-danger {
+        color: #FF6B6B !important;
+        font-size: 0.9rem;
+        margin-top: 0.25rem;
+    }
+
+    .fade-in {
+        opacity: 0;
+        animation: fadeIn 0.8s ease-in-out forwards;
+    }
+
+    .fade-in-delay-1 {
+        animation-delay: 0.2s;
+    }
+
+    .fade-in-delay-2 {
+        animation-delay: 0.4s;
+    }
+
+    @@keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+</style>
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="login-container">
+                <div class="card login-card">
+                    <div class="card-header-custom">
+                        <div class="welcome-icon">🔐</div>
+                        <h1 class="welcome-title">Redefinir Senha</h1>
+                        <p class="welcome-subtitle">Casa Espírita Trabalhadores de Jesus</p>
+                    </div>
+
+                    <div class="card-body p-4">
+                        @if (TempData["ErrorMessage"] != null)
+                        {
+                            <div class="alert alert-danger-custom fade-in">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                @TempData["ErrorMessage"]
+                            </div>
+                        }
+
+                        @if (TempData["SuccessMessage"] != null)
+                        {
+                            <div class="alert alert-success fade-in">
+                                <i class="fas fa-check-circle me-2"></i>
+                                @TempData["SuccessMessage"]
+                            </div>
+                        }
+
+                        <form asp-action="RedefinirSenha" method="post" class="fade-in fade-in-delay-1">
+                            <div asp-validation-summary="All" class="alert alert-danger-custom"></div>
+
+                            <input asp-for="Token" type="hidden" />
+
+                            <div class="mb-4">
+                                <label asp-for="NovaSenha" class="form-label-custom">
+                                    <i class="fas fa-lock"></i>
+                                    Nova Senha
+                                </label>
+                                <input asp-for="NovaSenha" type="password" class="form-control form-control-custom"
+                                       placeholder="Digite sua nova senha" required />
+                                <span asp-validation-for="NovaSenha" class="text-danger small"></span>
+                            </div>
+
+                            <div class="mb-4">
+                                <label asp-for="ConfirmarSenha" class="form-label-custom">
+                                    <i class="fas fa-lock"></i>
+                                    Confirmar Nova Senha
+                                </label>
+                                <input asp-for="ConfirmarSenha" type="password" class="form-control form-control-custom"
+                                       placeholder="Confirme sua nova senha" required />
+                                <span asp-validation-for="ConfirmarSenha" class="text-danger small"></span>
+                            </div>
+
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-login">
+                                    <i class="fas fa-key me-2"></i>
+                                    Redefinir Senha
+                                </button>
+                            </div>
+
+                            <div class="text-center mt-4">
+                                <a href="@Url.Action("Login", "Auth")" class="text-decoration-none">
+                                    <i class="fas fa-arrow-left me-1"></i>
+                                    Voltar ao Login
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
+    <script>
+        // Validação em tempo real
+        document.addEventListener('DOMContentLoaded', function() {
+            const novaSenhaInput = document.querySelector('input[name="NovaSenha"]');
+            const confirmarSenhaInput = document.querySelector('input[name="ConfirmarSenha"]');
+            const submitBtn = document.querySelector('button[type="submit"]');
+
+            function validatePasswords() {
+                const novaSenha = novaSenhaInput.value;
+                const confirmarSenha = confirmarSenhaInput.value;
+
+                if (novaSenha && confirmarSenha && novaSenha !== confirmarSenha) {
+                    confirmarSenhaInput.setCustomValidity('As senhas não coincidem');
+                } else {
+                    confirmarSenhaInput.setCustomValidity('');
+                }
+            }
+
+            novaSenhaInput.addEventListener('input', validatePasswords);
+            confirmarSenhaInput.addEventListener('input', validatePasswords);
+
+            // Feedback visual no botão
+            document.querySelector('form').addEventListener('submit', function(e) {
+                const submitBtn = this.querySelector('button[type="submit"]');
+                const originalText = submitBtn.innerHTML;
+
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Redefinindo...';
+            });
+        });
+    </script>
+}

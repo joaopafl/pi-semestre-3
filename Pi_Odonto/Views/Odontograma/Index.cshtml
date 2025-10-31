@@ -1,0 +1,508 @@
+﻿@model IEnumerable<Pi_Odonto.Models.Odontograma>
+
+@{
+    ViewData["Title"] = "Odontogramas";
+}
+
+<style>
+    .page-header {
+        background: linear-gradient(135deg, #2c5282, #4a90e2);
+        color: white;
+        padding: 25px 30px;
+        border-radius: 12px;
+        margin-bottom: 25px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    .search-container {
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    .search-input-wrapper {
+        position: relative;
+    }
+
+    .search-icon {
+        position: absolute;
+        left: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #718096;
+        pointer-events: none;
+    }
+
+    .search-input {
+        padding: 12px 15px 12px 45px;
+        border: 2px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: all 0.3s;
+        width: 100%;
+    }
+
+        .search-input:focus {
+            border-color: #4a90e2;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+        }
+
+    .autocomplete-results {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: white;
+        border: 2px solid #e2e8f0;
+        border-top: none;
+        border-radius: 0 0 8px 8px;
+        max-height: 300px;
+        overflow-y: auto;
+        z-index: 1000;
+        display: none;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+        .autocomplete-results.show {
+            display: block;
+        }
+
+    .autocomplete-item {
+        padding: 12px 15px;
+        cursor: pointer;
+        transition: background 0.2s;
+        border-bottom: 1px solid #f7fafc;
+    }
+
+        .autocomplete-item:hover {
+            background: #f7fafc;
+        }
+
+        .autocomplete-item:last-child {
+            border-bottom: none;
+        }
+
+        .autocomplete-item strong {
+            color: #2c5282;
+            display: block;
+            margin-bottom: 3px;
+        }
+
+        .autocomplete-item small {
+            color: #718096;
+        }
+
+    .odonto-card {
+        background: white;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 15px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        transition: all 0.3s ease;
+        border-left: 4px solid #4a90e2;
+    }
+
+        .odonto-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        }
+
+    .info-badge {
+        display: inline-block;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        background: #f7fafc;
+        margin-right: 10px;
+        margin-bottom: 5px;
+    }
+
+    .clear-search {
+        position: absolute;
+        right: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        color: #718096;
+        cursor: pointer;
+        padding: 5px;
+        display: none;
+    }
+
+        .clear-search.show {
+            display: block;
+        }
+
+        .clear-search:hover {
+            color: #ef4444;
+        }
+
+    .no-results {
+        padding: 20px;
+        text-align: center;
+        color: #718096;
+    }
+</style>
+
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="page-header">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h2 class="mb-1"><i class="fas fa-tooth"></i> Odontogramas</h2>
+                <p class="mb-0 opacity-90">Registros de saúde bucal</p>
+            </div>
+            <div class="col-md-4 text-end">
+                <a href="/Dentista/Dashboard" class="btn btn-light">
+                    <i class="fas fa-arrow-left"></i> Voltar
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Barra de Pesquisa -->
+    <div class="search-container">
+        <div class="row">
+            <div class="col-md-8">
+                <label class="form-label fw-bold">
+                    <i class="fas fa-search"></i> Pesquisar por Nome
+                </label>
+                <div class="search-input-wrapper">
+                    <i class="fas fa-user search-icon"></i>
+                    <input type="text"
+                           id="searchNome"
+                           class="search-input"
+                           placeholder="Digite o nome da criança..."
+                           autocomplete="off">
+                    <button type="button" class="clear-search" id="clearNome" onclick="limparPesquisaNome()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                    <div class="autocomplete-results" id="autocompleteResults"></div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label fw-bold">
+                    <i class="fas fa-id-card"></i> Pesquisar por CPF
+                </label>
+                <div class="search-input-wrapper">
+                    <i class="fas fa-id-card search-icon"></i>
+                    <input type="text"
+                           id="searchCpf"
+                           class="search-input"
+                           placeholder="000.000.000-00"
+                           maxlength="14">
+                    <button type="button" class="clear-search" id="clearCpf" onclick="limparPesquisaCpf()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de Odontogramas -->
+    <div id="odontogramasList">
+        @if (Model != null && Model.Any())
+        {
+            @foreach (var odonto in Model)
+            {
+                <div class="odonto-card"
+                     data-nome="@(odonto.Crianca?.Nome?.ToLower() ?? "")"
+                     data-cpf="@(odonto.Crianca?.Cpf?.Replace(".", "").Replace("-", "") ?? "")"
+                     data-crianca-id="@odonto.Crianca?.Id">
+                    <div class="row align-items-center">
+                        <div class="col-md-4">
+                            <h5 class="text-primary mb-2">
+                                <i class="fas fa-child"></i>
+                                @(odonto.Crianca?.Nome ?? "Nome não disponível")
+                            </h5>
+                            <small class="text-muted">
+                                @if (odonto.Crianca != null)
+                                {
+                                    <span><i class="fas fa-birthday-cake"></i> @((DateTime.Now.Year - odonto.Crianca.DataNascimento.Year)) anos</span>
+                                    @if (!string.IsNullOrEmpty(odonto.Crianca.Cpf))
+                                    {
+                                        <br>
+                                        <span><i class="fas fa-id-card"></i> CPF: @odonto.Crianca.Cpf</span>
+                                    }
+                                }
+                            </small>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="info-badge">
+                                <i class="fas fa-calendar-plus text-info"></i>
+                                <strong>Criado:</strong> @odonto.DataCriacao.ToString("dd/MM/yyyy")
+                            </div>
+                            <br>
+                            <div class="info-badge">
+                                <i class="fas fa-calendar-check text-success"></i>
+                                <strong>Atualizado:</strong> @odonto.DataAtualizacao.ToString("dd/MM/yyyy")
+                            </div>
+                        </div>
+
+                        <div class="col-md-2 text-center">
+                            <div class="info-badge bg-primary text-white">
+                                <i class="fas fa-tooth"></i>
+                                <strong>@odonto.Tratamentos.Count</strong> tratamentos
+                            </div>
+                        </div>
+
+                        <div class="col-md-2 text-end">
+                            <a href="/Odontograma/PorCrianca/@odonto.Crianca.Id" class="btn btn-primary btn-sm">
+                                <i class="fas fa-eye"></i> Visualizar
+                            </a>
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(odonto.ObservacoesGerais))
+                    {
+                        <div class="row mt-2">
+                            <div class="col-12">
+                                <small class="text-muted">
+                                    <i class="fas fa-sticky-note"></i>
+                                    <strong>Obs:</strong> @odonto.ObservacoesGerais
+                                </small>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        }
+        else
+        {
+            <div class="text-center py-5">
+                <i class="fas fa-tooth fa-5x text-muted mb-4 opacity-25"></i>
+                <h4 class="text-muted">Nenhum odontograma encontrado</h4>
+                <p class="text-muted">Os odontogramas das crianças aparecerão aqui.</p>
+            </div>
+        }
+    </div>
+
+    <!-- Mensagem quando não há resultados na busca -->
+    <div id="noResults" class="text-center py-5" style="display: none;">
+        <i class="fas fa-search fa-5x text-muted mb-4 opacity-25"></i>
+        <h4 class="text-muted">Nenhum resultado encontrado</h4>
+        <p class="text-muted">Tente buscar por outro nome ou CPF.</p>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let todosOdontogramas = [];
+        let timeoutId = null;
+
+        // Aguardar a página carregar completamente
+        window.addEventListener('load', function() {
+            console.log('Página carregada completamente');
+
+            // Aguardar mais um pouco para garantir
+            setTimeout(() => {
+                carregarOdontogramas();
+            }, 500);
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM carregado');
+
+            // Carregar todos os odontogramas
+            carregarOdontogramas();
+
+            // Eventos de pesquisa
+            document.getElementById('searchNome').addEventListener('input', handleNomePesquisa);
+            document.getElementById('searchCpf').addEventListener('input', handleCpfPesquisa);
+
+            // Fechar autocomplete ao clicar fora
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.search-input-wrapper')) {
+                    document.getElementById('autocompleteResults').classList.remove('show');
+                }
+            });
+
+            // Máscara de CPF
+            document.getElementById('searchCpf').addEventListener('input', function(e) {
+                let value = e.target.value.replace(/\D/g, '');
+                if (value.length <= 11) {
+                    value = value.replace(/(\d{3})(\d)/, '$1.$2');
+                    value = value.replace(/(\d{3})(\d)/, '$1.$2');
+                    value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+                    e.target.value = value;
+                }
+            });
+        });
+
+        function carregarOdontogramas() {
+            const cards = document.querySelectorAll('.odonto-card');
+            console.log('Total de cards encontrados:', cards.length);
+
+            todosOdontogramas = Array.from(cards).map(card => {
+                const nome = card.getAttribute('data-nome') || '';
+                const cpf = (card.getAttribute('data-cpf') || '').replace(/\D/g, '');
+
+                console.log('Card carregado - Nome:', nome, 'CPF:', cpf);
+
+                return {
+                    element: card,
+                    nome: nome,
+                    cpf: cpf
+                };
+            });
+
+            console.log('Odontogramas carregados:', todosOdontogramas.length);
+            if (todosOdontogramas.length > 0) {
+                console.log('Exemplo do primeiro:', todosOdontogramas[0]);
+            }
+        }
+
+        function handleNomePesquisa(e) {
+            const valor = e.target.value.trim().toLowerCase();
+            const clearBtn = document.getElementById('clearNome');
+
+            // Mostrar/ocultar botão limpar
+            if (valor) {
+                clearBtn.classList.add('show');
+            } else {
+                clearBtn.classList.remove('show');
+            }
+
+            // Limpar timeout anterior
+            if (timeoutId) {
+                clearTimeout(timeoutId);
+            }
+
+            // Aguardar 300ms antes de buscar
+            timeoutId = setTimeout(() => {
+                if (valor.length >= 2) {
+                    mostrarAutocomplete(valor);
+                    filtrarPorNome(valor);
+                } else {
+                    ocultarAutocomplete();
+                    if (valor.length === 0) {
+                        mostrarTodos();
+                    }
+                }
+            }, 300);
+        }
+
+        function handleCpfPesquisa(e) {
+            const valor = e.target.value.replace(/\D/g, '');
+            const clearBtn = document.getElementById('clearCpf');
+
+            // Mostrar/ocultar botão limpar
+            if (valor) {
+                clearBtn.classList.add('show');
+            } else {
+                clearBtn.classList.remove('show');
+            }
+
+            if (valor.length >= 3) {
+                filtrarPorCpf(valor);
+            } else if (valor.length === 0) {
+                mostrarTodos();
+            }
+        }
+
+        function mostrarAutocomplete(termo) {
+            const resultados = todosOdontogramas.filter(o =>
+                o.nome.includes(termo)
+            ).slice(0, 5);
+
+            const container = document.getElementById('autocompleteResults');
+
+            if (resultados.length > 0) {
+                container.innerHTML = resultados.map(r => {
+                    const nomeCompleto = r.element.querySelector('h5').textContent.trim();
+                    const cpf = r.cpf ? formatarCpf(r.cpf) : 'CPF não informado';
+
+                    return `
+                        <div class="autocomplete-item" onclick="selecionarAutocomplete('${r.nome}')">
+                            <strong>${nomeCompleto}</strong>
+                            <small>${cpf}</small>
+                        </div>
+                    `;
+                }).join('');
+                container.classList.add('show');
+            } else {
+                ocultarAutocomplete();
+            }
+        }
+
+        function ocultarAutocomplete() {
+            document.getElementById('autocompleteResults').classList.remove('show');
+        }
+
+        function selecionarAutocomplete(nome) {
+            document.getElementById('searchNome').value = nome;
+            filtrarPorNome(nome);
+            ocultarAutocomplete();
+        }
+
+        function filtrarPorNome(termo) {
+            console.log('Filtrando por nome:', termo);
+            let encontrados = 0;
+
+            todosOdontogramas.forEach(o => {
+                console.log('Comparando:', o.nome, 'com', termo, '=', o.nome.includes(termo));
+                if (o.nome.includes(termo)) {
+                    o.element.style.display = 'block';
+                    encontrados++;
+                } else {
+                    o.element.style.display = 'none';
+                }
+            });
+
+            console.log('Encontrados:', encontrados);
+            mostrarMensagemResultado(encontrados);
+        }
+
+        function filtrarPorCpf(cpf) {
+            let encontrados = 0;
+
+            todosOdontogramas.forEach(o => {
+                if (o.cpf.includes(cpf)) {
+                    o.element.style.display = 'block';
+                    encontrados++;
+                } else {
+                    o.element.style.display = 'none';
+                }
+            });
+
+            mostrarMensagemResultado(encontrados);
+        }
+
+        function mostrarTodos() {
+            todosOdontogramas.forEach(o => {
+                o.element.style.display = 'block';
+            });
+            document.getElementById('noResults').style.display = 'none';
+        }
+
+        function mostrarMensagemResultado(encontrados) {
+            if (encontrados === 0) {
+                document.getElementById('noResults').style.display = 'block';
+            } else {
+                document.getElementById('noResults').style.display = 'none';
+            }
+        }
+
+        function limparPesquisaNome() {
+            document.getElementById('searchNome').value = '';
+            document.getElementById('clearNome').classList.remove('show');
+            ocultarAutocomplete();
+            mostrarTodos();
+        }
+
+        function limparPesquisaCpf() {
+            document.getElementById('searchCpf').value = '';
+            document.getElementById('clearCpf').classList.remove('show');
+            mostrarTodos();
+        }
+
+        function formatarCpf(cpf) {
+            return cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+        }
+    </script>
+}

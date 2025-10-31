@@ -1,0 +1,366 @@
+@model List<Pi_Odonto.Models.Agendamento>
+
+@using System.Security.Claims 
+
+@{
+    ViewData["Title"] = "Minha Agenda";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+
+    // Helper para determinar se a consulta está ativa ou finalizada
+    bool IsActive(DateTime data, TimeSpan hora)
+    {
+        var dataHoraAgendamento = data.Date.Add(hora);
+        // Retorna true se a data/hora do agendamento é maior ou igual ao momento atual
+        return dataHoraAgendamento >= DateTime.Now; 
+    }
+}
+
+@*========================================================*@
+@* ESTILIZAÇÃO CSS (Refatorada)             *@
+@*========================================================*@
+<style>
+    /* Variáveis de Cores */
+    :root {
+        --cor-primaria: #4A90E2; 
+        --cor-secundaria: #66BB6A; 
+        --cor-danger: #DC3545; 
+        --cor-gradiente-start: #FFD700; /* Amarelo-Ouro (Ativo) */
+        --cor-gradiente-end: #FFA07A; /* Laranja-Claro (Ativo) */
+        --cor-finalizada-start: #F0F0F0; /* Cinza Claro (Finalizado) */
+        --cor-finalizada-end: #D0D0D0; /* Cinza Médio (Finalizado) */
+    }
+
+    /* ---------------------------------------------------- */
+    /* LAYOUT GERAL E TÍTULO */
+    /* ---------------------------------------------------- */
+    .header-minha-agenda {
+        text-align: center; /* Centraliza o título */
+        margin-bottom: 2rem;
+    }
+    
+    .status-legend {
+        text-align: right;
+    }
+    
+    .status-legend .badge {
+        font-size: 0.8rem;
+        padding: 0.4em 0.7em;
+    }
+
+    /* ---------------------------------------------------- */
+    /* ESTILOS DO CARD BASE */
+    /* ---------------------------------------------------- */
+    .agendamento-card {
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        border: 1px solid #e0e0e0;
+        overflow: hidden;
+        position: relative; 
+        cursor: pointer; /* Indica que é clicável */
+        transition: box-shadow 0.3s ease, opacity 0.3s ease;
+        background-color: white; 
+        height: 100%; 
+    }
+    
+    /* Efeito de neblina para INATIVOS */
+    .agendamento-card.agendamento-finalizado {
+        opacity: 0.6; 
+    }
+    
+    .agendamento-card.agendamento-ativo:hover {
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15); /* Efeito de elevação sutil */
+    }
+
+    /* ---------------------------------------------------- */
+    /* ESTILOS DO CABEÇALHO (GRADIENTE) */
+    /* ---------------------------------------------------- */
+    .card-header-status {
+        padding: 0.75rem 1rem;
+        font-weight: 600;
+        font-size: 1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        color: #333;
+    }
+    
+    /* Gradiente para CONSULTAS ATIVAS (Amarelo/Laranja) */
+    .agendamento-ativo .card-header-status {
+        background: linear-gradient(90deg, var(--cor-gradiente-start) 0%, var(--cor-gradiente-end) 100%);
+    }
+
+    /* Gradiente para CONSULTAS FINALIZADAS (Cinza) */
+    .agendamento-finalizado .card-header-status {
+        background: linear-gradient(90deg, var(--cor-finalizada-start) 0%, var(--cor-finalizada-end) 100%);
+        color: #666;
+    }
+
+    /* ---------------------------------------------------- */
+    /* ESTILOS DO CORPO DO CARD */
+    /* ---------------------------------------------------- */
+    .agendamento-body {
+        padding: 1rem;
+        background-color: white; 
+    }
+
+    .agendamento-body p {
+        margin-bottom: 0.8rem;
+        line-height: 1.2;
+    }
+    
+    .agendamento-body strong {
+        font-size: 1rem;
+        color: #2c3e50;
+    }
+    
+    /* Estilo do Overlay/Modal (usado no modal) */
+    .overlay-actions {
+        display: flex;
+        justify-content: center;
+        gap: 20px; 
+    }
+
+    .btn-action-edit, .btn-action-cancel {
+        width: 60px; /* Aumentado para melhor toque */
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 1.5rem; /* Aumentado o ícone */
+        color: white;
+        border: none;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+        transition: transform 0.2s ease;
+    }
+
+    .btn-action-edit {
+        background-color: var(--cor-secundaria); 
+    }
+
+    .btn-action-cancel {
+        background-color: var(--cor-danger); 
+    }
+</style>
+
+@*========================================================*@
+@* CONTEÚDO DA PÁGINA (Refatorado)          *@
+@*========================================================*@
+
+<div class="container mt-4">
+    <div class="header-minha-agenda">
+        <h2>Minha Agenda</h2>
+    </div>
+    
+    <div class="d-flex justify-content-end mb-4 status-legend">
+        <span class="badge bg-success me-2">
+            <i class="fas fa-check-circle me-1"></i> Ativo
+        </span>
+        <span class="badge bg-secondary">
+            <i class="fas fa-history me-1"></i> Finalizado
+        </span>
+    </div>
+
+    @* Mensagens de Sucesso/Erro *@
+    @if (TempData["SuccessMessageTitle"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <strong>@TempData["SuccessMessageTitle"]</strong> @TempData["SuccessMessageBody"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <strong>Erro!</strong> @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (Model != null && Model.Any())
+    {
+        <div class="row">
+            @foreach (var agendamento in Model)
+            {
+                var isAgendamentoAtivo = IsActive(agendamento.DataAgendamento, agendamento.HoraAgendamento);
+                var statusClass = isAgendamentoAtivo ? "agendamento-ativo" : "agendamento-finalizado";
+                
+                <div class="col-lg-4 col-md-6 mb-4">
+                    @* Card Clicável *@
+                    <div class="card agendamento-card @statusClass" 
+                         data-id="@agendamento.Id"
+                         data-crianca="@(agendamento.Crianca?.Nome ?? "Criança")"
+                         data-data="@agendamento.DataAgendamento.ToString("dd/MM/yyyy")"
+                         data-hora="@agendamento.HoraAgendamento.ToString(@"hh\:mm")"
+                         data-dentista="@(agendamento.Dentista?.Nome ?? "Dentista Indefinido")"
+                         onclick="showEditModal(@agendamento.Id, '@(agendamento.Crianca?.Nome)', '@agendamento.DataAgendamento.ToString("dd/MM/yyyy")', '@agendamento.HoraAgendamento.ToString(@"hh\:mm")')">
+                        
+                        @* Cabeçalho *@
+                        <div class="card-header-status">
+                            <span><i class="fas fa-child me-2"></i> @(agendamento.Crianca?.Nome ?? "Criança Removida")</span>
+                            <span class="badge @(isAgendamentoAtivo ? "bg-success" : "bg-secondary")">
+                                @(isAgendamentoAtivo ? "Ativo" : "Finalizado")
+                            </span>
+                        </div>
+
+                        @* Corpo: Fundo Branco *@
+                        <div class="card-body agendamento-body">
+                            
+                            <p class="card-text">
+                                <small class="text-muted">Data:</small><br />
+                                <strong>@agendamento.DataAgendamento.ToString("dd/MM/yyyy")</strong>
+                            </p>
+                            <p class="card-text">
+                                <small class="text-muted">Horário:</small><br />
+                                @* CORRIGIDO: Exibição do horário *@
+                                <strong>@agendamento.HoraAgendamento.ToString(@"hh\:mm")</strong>
+                            </p>
+                            <p class="card-text">
+                                <small class="text-muted">Dentista:</small><br />
+                                <strong>@(agendamento.Dentista?.Nome ?? "Dentista Indefinido")</strong>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-info text-center">
+            <h4 class="alert-heading">Nenhum Agendamento Encontrado</h4>
+            <p>Você ainda não possui consultas agendadas.</p>
+            <hr>
+            <a asp-controller="Agendamento" asp-action="Index" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i> Novo Agendamento
+            </a>
+        </div>
+    }
+</div>
+
+
+@*========================================================*@
+@* 1. MODAL DE AÇÃO (EDITAR/CANCELAR)                     *@
+@*========================================================*@
+<div class="modal fade" id="actionModal" tabindex="-1" aria-labelledby="actionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content" style="border-radius: 12px;">
+            <div class="modal-body text-center" style="padding: 2rem 1rem;">
+                <h5 class="overlay-title mb-4">Editar ou Cancelar Agendamento: <span id="criancaNomeModal"></span></h5>
+                <p class="text-muted mb-4" style="font-size: 0.9rem;">
+                    O que deseja fazer com a consulta de <span id="dataHoraModal"></span>?
+                </p>
+                
+                <div class="overlay-actions">
+                    @* Botão Editar (Verde) *@
+                    <button id="btnEdit" class="btn btn-action-edit">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    
+                    @* Botão Cancelar (Vermelho) *@
+                    <button id="btnCancel" class="btn btn-action-cancel">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@*========================================================*@
+@* 2. MODAL DE CONFIRMAÇÃO DE CANCELAMENTO (Novo)          *@
+@*========================================================*@
+<div class="modal fade" id="confirmCancelModal" tabindex="-1" aria-labelledby="confirmCancelModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-danger" style="border-radius: 12px; border: 2px solid var(--cor-danger);">
+            <div class="modal-header bg-danger text-white" style="border-radius: 9px 9px 0 0;">
+                <h5 class="modal-title" id="confirmCancelModalLabel"><i class="fas fa-exclamation-triangle me-2"></i> Confirmar Cancelamento</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body text-center">
+                <p style="font-size: 1.1rem;">
+                    Você está prestes a cancelar o agendamento da criança <strong id="cancelCriancaNome"></strong> 
+                    no dia <strong id="cancelDataHora"></strong>.
+                </p>
+                <p class="text-danger">Esta ação não pode ser desfeita!</p>
+                @* A solução do 404 está aqui: Formulario POST que será submetido pelo botão *@
+                <form id="cancelForm" asp-controller="Agendamento" asp-action="Cancelar" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" id="cancelAgendamentoId" name="id" value="" />
+                    <button type="submit" class="btn btn-danger mt-3 w-75">
+                        Sim, Cancelar Agendamento Permanentemente
+                    </button>
+                </form>
+            </div>
+            <div class="modal-footer justify-content-center">
+                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Manter Agendamento</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@*========================================================*@
+@* SCRIPTS PARA INTERAÇÃO (Refatorados)                   *@
+@*========================================================*@
+@section Scripts {
+    <script>
+        // Variável global para armazenar o ID do agendamento
+        let currentAgendamentoId = 0;
+        let actionModal; // Variável para a instância do Bootstrap Modal
+
+        // Inicialização dos Modals no carregamento da página
+        document.addEventListener('DOMContentLoaded', function() {
+            actionModal = new bootstrap.Modal(document.getElementById('actionModal'));
+            
+            const btnEdit = document.getElementById('btnEdit');
+            const btnCancel = document.getElementById('btnCancel');
+
+            // 1. Ação do Botão Verde (Editar)
+            btnEdit.addEventListener('click', function() {
+                if (currentAgendamentoId > 0) {
+                    // Redireciona para a Action Editar no AgendamentoController
+                    window.location.href = `/Agendamento/Editar/${currentAgendamentoId}`;
+                }
+            });
+
+            // 2. Ação do Botão Vermelho (Abre o Modal de Confirmação)
+            btnCancel.addEventListener('click', function() {
+                if (currentAgendamentoId > 0) {
+                    actionModal.hide(); // Esconde o modal de Ação
+                    
+                    // Preenche e mostra o modal de Confirmação
+                    const crianca = document.getElementById('criancaNomeModal').innerText;
+                    const dataHora = document.getElementById('dataHoraModal').innerText;
+
+                    document.getElementById('cancelCriancaNome').innerText = crianca;
+                    document.getElementById('cancelDataHora').innerText = dataHora;
+                    document.getElementById('cancelAgendamentoId').value = currentAgendamentoId;
+
+                    const confirmCancelModal = new bootstrap.Modal(document.getElementById('confirmCancelModal'));
+                    confirmCancelModal.show();
+                }
+            });
+        });
+
+
+        // Função chamada no clique do Card
+        function showEditModal(id, criancaNome, data, hora) {
+            // Verifica se o agendamento é ATIVO (se não for, apenas ignora a ação)
+            const cardElement = document.querySelector(`.agendamento-card[data-id="${id}"]`);
+            if (cardElement && cardElement.classList.contains('agendamento-finalizado')) {
+                // Não faz nada se for finalizado (ou pode mostrar um aviso)
+                return;
+            }
+
+            currentAgendamentoId = id;
+
+            // Preenche o Modal de Ação
+            document.getElementById('criancaNomeModal').innerText = criancaNome;
+            document.getElementById('dataHoraModal').innerText = `${data} às ${hora}`;
+            
+            // Exibe o Modal de Ação
+            actionModal.show();
+        }
+    </script>
+}

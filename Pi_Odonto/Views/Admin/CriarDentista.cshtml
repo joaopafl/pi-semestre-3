@@ -1,0 +1,214 @@
+﻿@{
+    ViewData["Title"] = "Cadastrar Dentista";
+}
+@model Pi_Odonto.ViewModels.DentistaViewModel
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card shadow-lg">
+                <div class="card-header bg-success text-white text-center">
+                    <h2 class="mb-0">
+                        <i class="fas fa-user-plus"></i> Cadastrar Novo Dentista
+                    </h2>
+                </div>
+
+                <div class="card-body">
+                    <form asp-action="Create" method="post">
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="mb-3">
+                                    <label asp-for="Nome" class="form-label fw-bold">
+                                        <i class="fas fa-user text-primary"></i> Nome do Dentista <span class="text-danger">*</span>
+                                    </label>
+                                    <input asp-for="Nome" class="form-control" placeholder="Digite o nome completo do dentista" required />
+                                    <span asp-validation-for="Nome" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="Cpf" class="form-label fw-bold">
+                                        <i class="fas fa-id-card text-primary"></i> CPF <span class="text-danger">*</span>
+                                    </label>
+                                    <input asp-for="Cpf" class="form-control" id="cpfInput" placeholder="000.000.000-00" maxlength="14" required />
+                                    <span asp-validation-for="Cpf" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="Cro" class="form-label fw-bold">
+                                        <i class="fas fa-certificate text-primary"></i> CRO <span class="text-danger">*</span>
+                                    </label>
+                                    <input asp-for="Cro" class="form-control" placeholder="Digite o CRO" maxlength="10" required />
+                                    <span asp-validation-for="Cro" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="Telefone" class="form-label fw-bold">
+                                        <i class="fas fa-phone text-primary"></i> Telefone <span class="text-danger">*</span>
+                                    </label>
+                                    <input asp-for="Telefone" class="form-control" id="telefoneInput" placeholder="(11) 99999-9999" maxlength="15" required />
+                                    <span asp-validation-for="Telefone" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="Email" class="form-label fw-bold">
+                                        <i class="fas fa-envelope text-primary"></i> Email <span class="text-danger">*</span>
+                                    </label>
+                                    <input asp-for="Email" type="email" class="form-control" placeholder="dentista@email.com" maxlength="50" required />
+                                    <span asp-validation-for="Email" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="mb-3">
+                                    <label asp-for="Endereco" class="form-label fw-bold">
+                                        <i class="fas fa-map-marker-alt text-primary"></i> Endereço <span class="text-danger">*</span>
+                                    </label>
+                                    <textarea asp-for="Endereco" class="form-control" rows="3" placeholder="Rua, número, bairro, cidade, CEP" maxlength="60" required></textarea>
+                                    <span asp-validation-for="Endereco" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">
+                                        <i class="fas fa-clock text-primary"></i> Disponibilidade de Horários <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="form-text mb-3">
+                                        <i class="fas fa-info-circle text-info"></i> 
+                                        Selecione os horários em que você está disponível para trabalhar. Você pode selecionar múltiplos horários.
+                                    </div>
+                                    
+                                    <div class="row">
+                                        @for (int i = 0; i < Model.Disponibilidades.Count; i++)
+                                        {
+                                            <div class="col-md-6 col-lg-4 mb-2">
+                                                <div class="form-check">
+                                                    <input type="checkbox" 
+                                                           asp-for="@Model.Disponibilidades[i].Selecionado" 
+                                                           class="form-check-input disponibilidade-checkbox"
+                                                           data-dia="@Model.Disponibilidades[i].DiaSemana"
+                                                           data-inicio="@Model.Disponibilidades[i].HoraInicio"
+                                                           data-fim="@Model.Disponibilidades[i].HoraFim" />
+                                                    <input type="hidden" asp-for="@Model.Disponibilidades[i].DiaSemana" />
+                                                    <input type="hidden" asp-for="@Model.Disponibilidades[i].HoraInicio" />
+                                                    <input type="hidden" asp-for="@Model.Disponibilidades[i].HoraFim" />
+                                                    <label class="form-check-label" for="@Model.Disponibilidades[i].Selecionado">
+                                                        <strong>@Model.Disponibilidades[i].DiaSemana</strong><br>
+                                                        <small class="text-muted">@Model.Disponibilidades[i].HoraInicio.ToString(@"hh\:mm") - @Model.Disponibilidades[i].HoraFim.ToString(@"hh\:mm")</small>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="@Url.Action("Index")" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Voltar para Lista
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-save"></i> Cadastrar Dentista
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
+    <script>
+        // Máscara para CPF
+        document.getElementById('cpfInput').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length <= 11) {
+                value = value.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+                e.target.value = value;
+            }
+        });
+
+        // Máscara para telefone
+        document.getElementById('telefoneInput').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length <= 11) {
+                value = value.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+                e.target.value = value;
+            }
+        });
+
+        // Validação do formulário
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const cpfInput = document.getElementById('cpfInput');
+            const telefoneInput = document.getElementById('telefoneInput');
+            
+            // Remove formatação antes de enviar
+            cpfInput.value = cpfInput.value.replace(/\D/g, '');
+            telefoneInput.value = telefoneInput.value.replace(/\D/g, '');
+            
+            // Validação de disponibilidades
+            const checkboxes = document.querySelectorAll('.disponibilidade-checkbox:checked');
+            if (checkboxes.length === 0) {
+                e.preventDefault();
+                alert('Por favor, selecione pelo menos um horário de disponibilidade.');
+                return false;
+            }
+        });
+
+        // Funcionalidade para selecionar todos os horários de um dia
+        document.addEventListener('DOMContentLoaded', function() {
+            const diasSemana = ['Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
+            
+            diasSemana.forEach(dia => {
+                const checkboxes = document.querySelectorAll(`input[data-dia="${dia}"]`);
+                if (checkboxes.length > 0) {
+                    // Criar botão "Selecionar Todos" para cada dia
+                    const primeiroCheckbox = checkboxes[0];
+                    const container = primeiroCheckbox.closest('.col-md-6');
+                    const label = container.querySelector('.form-check-label');
+                    
+                    if (label && !label.querySelector('.select-all-btn')) {
+                        const selectAllBtn = document.createElement('button');
+                        selectAllBtn.type = 'button';
+                        selectAllBtn.className = 'btn btn-sm btn-outline-primary select-all-btn mt-1';
+                        selectAllBtn.textContent = 'Selecionar Todos';
+                        selectAllBtn.onclick = function() {
+                            const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+                            checkboxes.forEach(cb => cb.checked = !allChecked);
+                            selectAllBtn.textContent = allChecked ? 'Selecionar Todos' : 'Desselecionar Todos';
+                        };
+                        
+                        // Adicionar o botão após o primeiro checkbox do dia
+                        if (checkboxes[0].checked) {
+                            selectAllBtn.textContent = 'Desselecionar Todos';
+                        }
+                        
+                        // Encontrar o primeiro checkbox do dia e adicionar o botão
+                        const firstCheckboxContainer = checkboxes[0].closest('.col-md-6');
+                        firstCheckboxContainer.appendChild(selectAllBtn);
+                    }
+                }
+            });
+        });
+    </script>
+}

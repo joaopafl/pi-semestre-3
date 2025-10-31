@@ -1,0 +1,378 @@
+/*
+  Cores e Estilos Personalizados
+*/
+:root {
+  --green-main: #26AB47;
+  --blue-main: #20A2E2;
+  --green-light: #6AD380;
+  --blue-light: #52B4F0;
+  --container-bg: #EAF7F0;
+  --gradient-bg: linear-gradient(to right, #69AEEF 0%, #3C8974 98%);
+  --text-dark: #333;
+  --nav-bg: linear-gradient(to right, #69AEEF 0%, #3C8974 98%);
+  --nav-text: #fff;
+  --nav-active-bg: rgba(255, 255, 255, 0.2);
+  --nav-active-border: #80c4f8;
+  --nav-user-bg: #89C768;
+  --nav-admin-bg: #0D6EFD;
+}
+
+/* --- Navbar Styles --- */
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 20px;
+  background-image: var(--nav-bg);
+  color: var(--nav-text);
+  border: 1px solid var(--nav-active-border);
+}
+
+.logo-container {
+  display: flex;
+  flex-direction: column;
+}
+
+.logo-text {
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+.sub-text {
+  font-size: 0.8rem;
+}
+
+.nav-links {
+  list-style-type: none;
+  display: flex;
+  gap: 20px;
+}
+
+.nav-btn, .nav-btn-user, .nav-btn-admin {
+  color: var(--nav-text);
+  text-decoration: none;
+  padding: 10px 15px;
+  border-radius: 8px;
+  transition: background-color 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 0.9rem;
+  font-weight: bold;
+}
+
+.nav-btn:hover {
+  background-color: var(--nav-active-bg);
+}
+
+.nav-btn-primary {
+  background-color: var(--nav-active-bg);
+  border: 1px solid var(--nav-active-border);
+}
+
+.user-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.nav-btn-user {
+  background-color: var(--nav-user-bg);
+}
+
+.nav-btn-admin {
+  background-color: var(--nav-admin-bg);
+}
+
+/* --- Simplified Navbar (do _Layout.cshtml) --- */
+.navbar-simplified {
+  display: flex;
+  justify-content: flex-end; 
+  align-items: center;
+  padding: 10px 20px;
+  background-color: #2193b0; /* Cor definida no seu _Layout.cshtml */
+  position: relative;
+}
+
+.back-link {
+  color: var(--nav-text);
+  font-size: 1.2rem;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 8px; 
+  margin-left: 20px;
+}
+
+/* --- General and Main Card Styles --- */
+body {
+  background-image: var(--gradient-bg);
+  font-family: Arial, sans-serif;
+  color: var(--text-dark);
+}
+
+.card-wp {
+  background-color: white;
+  padding: 40px;
+  border-radius: 15px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  max-width: 1000px;
+  margin: 50px auto;
+  text-align: center;
+  min-height: 400px; 
+  display: flex; 
+  flex-direction: column; 
+  justify-content: space-between; 
+}
+
+.page-title {
+  color: #1A5B63;
+  font-size: 2.5rem;
+  font-weight: bold;
+  margin-bottom: 80px;
+}
+
+h3 {
+  color: var(--text-dark);
+  margin-top: 20px;
+  margin-bottom: 15px;
+  font-weight: normal;
+}
+
+#childSelect {
+  margin-top: 10px;
+  margin-bottom: 30px;
+  padding: 10px;
+  font-size: 1rem;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  width: 100%;
+  max-width: 400px;
+  min-height: 50px;
+}
+
+.dates-row, .times-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+
+.date-btn, .time-btn {
+  background-color: var(--green-main);
+  color: white;
+  border: none;
+  padding: 15px 25px;
+  border-radius: 8px;
+  font-size: 1.2rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.date-btn:hover, .time-btn:hover {
+  background-color: var(--green-light);
+  transform: translateY(-2px);
+}
+
+.date-btn.selected, .time-btn.selected {
+  background-color: var(--blue-main);
+  border: 2px solid var(--blue-light);
+}
+
+.date-btn.selected:hover, .time-btn.selected:hover {
+  background-color: var(--blue-light);
+}
+
+/* --- Summary Card Styles --- */
+.summary-card-wp {
+    background-color: #fff;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1); 
+    margin-top: 20px; 
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: left; /* Alinha o conteúdo interno à esquerda */
+}
+
+.summary-card-wp h2 {
+    color: #2193b0; 
+    font-size: 1.8rem;
+    margin-top: 0;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.summary-details {
+    padding: 10px 0;
+}
+
+.summary-details p {
+    font-size: 1.1rem;
+    margin: 15px 0;
+    display: flex;
+    align-items: center;
+}
+
+.summary-details strong {
+    color: #333;
+    font-weight: bold;
+    min-width: 200px; 
+    text-align: left;
+    display: inline-block;
+}
+
+.sq-icon {
+    width: 15px;
+    height: 15px;
+    background-color: var(--green-main); 
+    display: inline-block;
+    margin-right: 15px;
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+
+/* --- Action Buttons Styles --- */
+.actions {
+  margin-top: 30px;
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+}
+
+.confirm-btn, .btn-outline {
+  font-size: 1.1rem;
+  font-weight: bold;
+  padding: 12px 25px;
+  border-radius: 8px;
+  transition: background-color 0.2s ease;
+  border: none;
+  cursor: pointer;
+}
+
+.confirm-btn {
+  background-color: var(--green-main);
+  color: white;
+}
+
+.confirm-btn:hover {
+  background-color: var(--green-light);
+}
+
+.btn-outline {
+  background-color: transparent;
+  color: var(--text-dark);
+  border: 2px solid var(--text-dark);
+  text-decoration: none;
+  text-align: center;
+  display: inline-block;
+}
+
+.btn-outline:hover {
+  background-color: #f0f0f0;
+}
+
+
+/* --- Responsive Styles --- */
+@media (max-width: 768px) {
+  .navbar {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 10px;
+  }
+
+  .nav-links {
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    margin-top: 15px;
+  }
+
+  .nav-links li {
+    width: 100%;
+    text-align: center;
+  }
+
+  .nav-btn, .nav-btn-user, .nav-btn-admin {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 5px;
+    box-sizing: border-box;
+  }
+
+  .user-actions {
+    flex-direction: column;
+    width: 100%;
+    margin-top: 10px;
+  }
+
+  .logo-container {
+    width: 100%;
+    text-align: center;
+    margin-bottom: 10px;
+  }
+
+  /* Agendamento Card Responsivo */
+  .card-wp {
+    width: 95%;
+    margin: 20px auto;
+    padding: 20px;
+  }
+
+  .dates-row, .times-grid {
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .date-btn, .time-btn {
+    width: 100%;
+    padding: 12px;
+  }
+}
+
+/* --- ESTILIZAÇÃO PARA MENSAGENS DE ERRO E SUCESSO DO CONTROLLER (TempData) --- */
+
+.alert-banner {
+    /* Container principal do banner */
+    padding: 15px 20px;
+    margin-bottom: 20px;
+    border-radius: 6px;
+    font-weight: 600;
+    color: white; /* Texto branco */
+    display: flex;
+    align-items: center;
+    /* Faz o banner aparecer no topo do card, se necessário */
+    position: relative; 
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.error-banner {
+    /* Estilo para erro (vermelho) - Como na imagem que você enviou */
+    background-color: #dc3545; /* Vermelho forte do Bootstrap/padrão */
+    border: 1px solid #c82333; 
+}
+
+/* Estiliza o ícone dentro do banner */
+.alert-banner i {
+    font-size: 1.2rem;
+    margin-right: 10px;
+}
+
+/* --- ESTILIZAÇÃO PARA MENSAGEM DE ERRO NA BUSCA AJAX (JavaScript) --- */
+
+.error-agendamento-text {
+    color: #dc3545;
+    font-weight: bold;
+    margin-top: 10px;
+    padding: 5px;
+    /* Estilização para o ícone */
+    display: flex;
+    align-items: center;
+}
+
+.error-agendamento-text i {
+    margin-right: 8px;
+}
