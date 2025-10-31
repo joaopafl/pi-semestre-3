@@ -57,36 +57,6 @@
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <!-- Campo removido temporariamente -->
-                                <div class="mb-3">
-                                    <div class="alert alert-info">
-                                        <i class="fas fa-info-circle"></i>
-                                        <strong>Agenda:</strong> Funcionalidade será implementada posteriormente
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label asp-for="IdCrianca" class="form-label fw-bold">
-                                        <i class="fas fa-child text-primary"></i> Criança <span class="text-danger">*</span>
-                                    </label>
-                                    <select asp-for="IdCrianca" class="form-select" required>
-                                        <option value="0">Selecione uma criança</option>
-                                        @if (Model.CriancasDisponiveis != null)
-                                        {
-                                            @foreach (var crianca in Model.CriancasDisponiveis)
-                                            {
-                                                <option value="@crianca.Id">@crianca.Nome - @crianca.DataNascimento.ToString("dd/MM/yyyy")</option>
-                                            }
-                                        }
-                                    </select>
-                                    <span asp-validation-for="IdCrianca" class="text-danger"></span>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
                                 <div class="mb-3">
                                     <label asp-for="IdDentista" class="form-label fw-bold">
                                         <i class="fas fa-user-md text-primary"></i> Dentista <span class="text-danger">*</span>
@@ -109,6 +79,27 @@
                         <div class="row">
                             <div class="col-md-12">
                                 <div class="mb-3">
+                                    <label asp-for="IdCrianca" class="form-label fw-bold">
+                                        <i class="fas fa-child text-primary"></i> Criança <span class="text-danger">*</span>
+                                    </label>
+                                    <select asp-for="IdCrianca" class="form-select" id="selectCrianca" required>
+                                        <option value="0">Selecione uma criança</option>
+                                        @if (Model.CriancasDisponiveis != null)
+                                        {
+                                            @foreach (var crianca in Model.CriancasDisponiveis)
+                                            {
+                                                <option value="@crianca.Id">@crianca.Nome - @crianca.DataNascimento.ToString("dd/MM/yyyy")</option>
+                                            }
+                                        }
+                                    </select>
+                                    <span asp-validation-for="IdCrianca" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="mb-3">
                                     <label asp-for="Observacao" class="form-label fw-bold">
                                         <i class="fas fa-sticky-note text-primary"></i> Observações
                                     </label>
@@ -120,13 +111,22 @@
                             </div>
                         </div>
 
-                        <!-- Info box sobre Odontograma -->
-                        <div class="alert alert-info">
-                            <i class="fas fa-info-circle"></i>
-                            <strong>Nota:</strong> O odontograma será vinculado posteriormente através de módulo específico.
+                        <!-- Área do Odontograma -->
+                        <div class="alert alert-success" id="odontogramaArea">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div>
+                                    <i class="fas fa-tooth"></i>
+                                    <strong>Odontograma:</strong> Selecione uma criança acima para acessar seu odontograma em uma nova aba.
+                                </div>
+                                <div id="odontogramaButtonContainer" style="display: none;">
+                                    <a href="#" id="btnOdontograma" class="btn btn-info btn-sm" target="_blank">
+                                        <i class="fas fa-tooth"></i> Ver Odontograma da Criança
+                                    </a>
+                                </div>
+                            </div>
                         </div>
 
-                        <div class="d-flex justify-content-between">
+                        <div class="d-flex justify-content-between mt-4">
                             <a href="@Url.Action("Index")" class="btn btn-secondary">
                                 <i class="fas fa-arrow-left"></i> Voltar para Lista
                             </a>
@@ -148,11 +148,36 @@
     }
 
     <script>
-        // Script para calcular e exibir horário de término
         document.addEventListener('DOMContentLoaded', function() {
+            const selectCrianca = document.getElementById('selectCrianca');
+            const odontogramaButtonContainer = document.getElementById('odontogramaButtonContainer');
+            const odontogramaArea = document.getElementById('odontogramaArea');
+            const btnOdontograma = document.getElementById('btnOdontograma');
             const horarioInput = document.querySelector('input[name="HorarioAtendimento"]');
             const duracaoSelect = document.querySelector('select[name="DuracaoAtendimento"]');
 
+            // Mostrar/Ocultar botão de odontograma baseado na seleção da criança
+            selectCrianca.addEventListener('change', function() {
+                const criancaId = this.value;
+
+                if (criancaId && criancaId !== '0') {
+                    // Atualizar o href do botão com o ID da criança
+                    btnOdontograma.href = `https://localhost:7162/Odontograma/PorCrianca/${criancaId}`;
+                    // Mostrar o botão
+                    odontogramaButtonContainer.style.display = 'block';
+                    // Destacar a área do odontograma
+                    odontogramaArea.classList.add('alert-info');
+                    odontogramaArea.classList.remove('alert-success');
+                } else {
+                    // Ocultar o botão se nenhuma criança estiver selecionada
+                    odontogramaButtonContainer.style.display = 'none';
+                    // Voltar cor original
+                    odontogramaArea.classList.remove('alert-info');
+                    odontogramaArea.classList.add('alert-success');
+                }
+            });
+
+            // Script para calcular e exibir horário de término
             function calcularHorarioTermino() {
                 if (horarioInput.value && duracaoSelect.value) {
                     const [horas, minutos] = horarioInput.value.split(':');
@@ -165,13 +190,60 @@
                     const horaTermino = termino.getHours().toString().padStart(2, '0');
                     const minutoTermino = termino.getMinutes().toString().padStart(2, '0');
 
-                    // Exibir o horário de término (você pode personalizar onde mostrar)
-                    console.log(`Término: ${horaTermino}:${minutoTermino}`);
+                    console.log(`Atendimento termina às: ${horaTermino}:${minutoTermino}`);
                 }
             }
 
             horarioInput.addEventListener('change', calcularHorarioTermino);
             duracaoSelect.addEventListener('change', calcularHorarioTermino);
+
+            // Adicionar efeito visual ao botão de odontograma
+            btnOdontograma.addEventListener('mouseenter', function() {
+                this.style.transform = 'scale(1.05)';
+                this.style.transition = 'transform 0.2s';
+            });
+
+            btnOdontograma.addEventListener('mouseleave', function() {
+                this.style.transform = 'scale(1)';
+            });
         });
     </script>
+
+    <style>
+        #odontogramaButtonContainer {
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @@keyframes slideIn {
+            from
+
+        {
+            opacity: 0;
+            transform: translateX(20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        }
+
+        #btnOdontograma {
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+            #btnOdontograma:hover {
+                box-shadow: 0 4px 8px rgba(23, 162, 184, 0.4);
+            }
+
+        #odontogramaArea {
+            transition: all 0.3s ease;
+        }
+
+            #odontogramaArea.alert-info {
+                border-left: 5px solid #17a2b8;
+            }
+    </style>
 }

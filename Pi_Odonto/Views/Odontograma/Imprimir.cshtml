@@ -1,0 +1,380 @@
+﻿@model Pi_Odonto.Models.Odontograma
+
+@{
+    ViewData["Title"] = "Imprimir Odontograma";
+    Layout = null;
+    var crianca = ViewBag.Crianca as Pi_Odonto.Models.Crianca;
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Odontograma - @crianca.Nome</title>
+    <style>
+        @@media print {
+            .no-print { display: none; }
+            @@page { margin: 1cm; }
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .header {
+            text-align: center;
+            border-bottom: 3px solid #2c5282;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            color: #2c5282;
+            margin: 0;
+        }
+
+        .info-paciente {
+            background: #f7fafc;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .info-item {
+            display: inline-block;
+            margin-right: 30px;
+            margin-bottom: 8px;
+        }
+
+        .section-title {
+            background: #2c5282;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 5px;
+            margin: 20px 0 10px 0;
+        }
+
+        .dentes-container {
+            margin: 20px 0;
+        }
+
+        .arcada {
+            margin-bottom: 30px;
+        }
+
+        .arcada-title {
+            font-weight: bold;
+            color: #2c5282;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+
+        .dentes-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .dente {
+            width: 45px;
+            height: 60px;
+            border: 2px solid #cbd5e0;
+            border-radius: 5px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            position: relative;
+        }
+
+        .dente.carie { background: #ef4444; color: white; }
+        .dente.restauracao { background: #3b82f6; color: white; }
+        .dente.canal { background: #f59e0b; color: white; }
+        .dente.extracao { background: #6b7280; color: white; }
+        .dente.ausente { background: #1f2937; color: white; opacity: 0.7; }
+        .dente.higido { background: #d1fae5; }
+
+        .dente-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #ef4444;
+            color: white;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            font-size: 0.65rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .tratamento-item {
+            background: #f7fafc;
+            padding: 12px;
+            margin-bottom: 10px;
+            border-left: 4px solid #4a90e2;
+            border-radius: 5px;
+        }
+
+        .tratamento-titulo {
+            font-weight: bold;
+            color: #2c5282;
+            margin-bottom: 5px;
+        }
+
+        .tratamento-info {
+            font-size: 0.9rem;
+            color: #4a5568;
+            margin: 3px 0;
+        }
+
+        .legenda {
+            margin: 20px 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .legenda-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .legenda-cor {
+            width: 25px;
+            height: 25px;
+            border: 2px solid #cbd5e0;
+            border-radius: 4px;
+        }
+
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 2px solid #cbd5e0;
+            text-align: center;
+            font-size: 0.9rem;
+            color: #718096;
+        }
+    </style>
+</head>
+<body>
+    <div class="no-print" style="margin-bottom: 20px; text-align: right;">
+        <button onclick="window.print()" style="padding: 10px 20px; background: #2c5282; color: white; border: none; border-radius: 5px; cursor: pointer;">
+            <i class="fas fa-print"></i> Imprimir
+        </button>
+        <button onclick="window.close()" style="padding: 10px 20px; background: #6b7280; color: white; border: none; border-radius: 5px; cursor: pointer; margin-left: 10px;">
+            Fechar
+        </button>
+    </div>
+
+    <div class="header">
+        <h1>🦷 ODONTOGRAMA</h1>
+        <p style="margin: 5px 0;">Registro de Saúde Bucal</p>
+    </div>
+
+    <div class="info-paciente">
+        <h3 style="margin-top: 0; color: #2c5282;">Informações do Paciente</h3>
+        <div class="info-item">
+            <strong>Nome:</strong> @crianca.Nome
+        </div>
+        <div class="info-item">
+            <strong>Idade:</strong> @((DateTime.Now.Year - crianca.DataNascimento.Year)) anos
+        </div>
+        <div class="info-item">
+            <strong>Data Nascimento:</strong> @crianca.DataNascimento.ToString("dd/MM/yyyy")
+        </div>
+        <div class="info-item">
+            <strong>Responsável:</strong> @crianca.Responsavel?.Nome
+        </div>
+        <div class="info-item">
+            <strong>Última Atualização:</strong> @Model.DataAtualizacao.ToString("dd/MM/yyyy HH:mm")
+        </div>
+    </div>
+
+    <div class="section-title">
+        LEGENDA DE STATUS
+    </div>
+    <div class="legenda">
+        <div class="legenda-item">
+            <div class="legenda-cor higido" style="background: #d1fae5;"></div>
+            <span>Hígido</span>
+        </div>
+        <div class="legenda-item">
+            <div class="legenda-cor" style="background: #ef4444;"></div>
+            <span>Cárie</span>
+        </div>
+        <div class="legenda-item">
+            <div class="legenda-cor" style="background: #3b82f6;"></div>
+            <span>Restauração</span>
+        </div>
+        <div class="legenda-item">
+            <div class="legenda-cor" style="background: #f59e0b;"></div>
+            <span>Canal</span>
+        </div>
+        <div class="legenda-item">
+            <div class="legenda-cor" style="background: #6b7280;"></div>
+            <span>Extração</span>
+        </div>
+        <div class="legenda-item">
+            <div class="legenda-cor" style="background: #1f2937;"></div>
+            <span>Ausente</span>
+        </div>
+    </div>
+
+    <div class="dentes-container">
+        <div class="arcada">
+            <div class="arcada-title">▲ ARCADA SUPERIOR</div>
+            <div class="dentes-grid" id="arcadaSuperior">
+                @for (int i = 18; i >= 11; i--)
+                {
+                    <div class="dente" data-numero="@i">
+                        <span style="font-weight: bold;">@i</span>
+                        <span>🦷</span>
+                    </div>
+                }
+                @for (int i = 21; i <= 28; i++)
+                {
+                    <div class="dente" data-numero="@i">
+                        <span style="font-weight: bold;">@i</span>
+                        <span>🦷</span>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="arcada">
+            <div class="arcada-title">▼ ARCADA INFERIOR</div>
+            <div class="dentes-grid" id="arcadaInferior">
+                @for (int i = 48; i >= 41; i--)
+                {
+                    <div class="dente" data-numero="@i">
+                        <span style="font-weight: bold;">@i</span>
+                        <span>🦷</span>
+                    </div>
+                }
+                @for (int i = 31; i <= 38; i++)
+                {
+                    <div class="dente" data-numero="@i">
+                        <span style="font-weight: bold;">@i</span>
+                        <span>🦷</span>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="section-title">
+        TRATAMENTOS REALIZADOS
+    </div>
+
+    @if (Model.Tratamentos != null && Model.Tratamentos.Any())
+    {
+        var tratamentosAgrupados = Model.Tratamentos
+            .GroupBy(t => t.NumeroDente)
+            .OrderBy(g => g.Key);
+
+        @foreach (var grupo in tratamentosAgrupados)
+        {
+            <div style="margin-bottom: 20px;">
+                <h4 style="color: #2c5282; margin-bottom: 10px;">Dente @grupo.Key</h4>
+                @foreach (var tratamento in grupo.OrderByDescending(t => t.DataTratamento))
+                {
+                    <div class="tratamento-item">
+                        <div class="tratamento-titulo">@tratamento.TipoTratamento</div>
+                        @if (!string.IsNullOrEmpty(tratamento.Face))
+                        {
+                            <div class="tratamento-info"><strong>Face:</strong> @tratamento.Face</div>
+                        }
+                        <div class="tratamento-info"><strong>Status:</strong> @tratamento.Status</div>
+                        @if (tratamento.DataTratamento.HasValue)
+                        {
+                            <div class="tratamento-info"><strong>Data:</strong> @tratamento.DataTratamento.Value.ToString("dd/MM/yyyy")</div>
+                        }
+                        @if (tratamento.Dentista != null)
+                        {
+                            <div class="tratamento-info"><strong>Dentista:</strong> @tratamento.Dentista.Nome</div>
+                        }
+                        @if (!string.IsNullOrEmpty(tratamento.Observacao))
+                        {
+                            <div class="tratamento-info"><strong>Obs:</strong> @tratamento.Observacao</div>
+                        }
+                    </div>
+                }
+            </div>
+        }
+    }
+    else
+    {
+        <p style="text-align: center; color: #718096; padding: 20px;">Nenhum tratamento registrado.</p>
+    }
+
+    @if (!string.IsNullOrEmpty(Model.ObservacoesGerais))
+    {
+        <div class="section-title">
+            OBSERVAÇÕES GERAIS
+        </div>
+        <div style="background: #fef5e7; padding: 15px; border-radius: 8px; border-left: 4px solid #f39c12;">
+            @Model.ObservacoesGerais
+        </div>
+    }
+
+    <div class="footer">
+        <p>Documento gerado em @DateTime.Now.ToString("dd/MM/yyyy às HH:mm")</p>
+        <p style="margin: 0;">Sistema Pi Odonto - Gestão de Saúde Bucal Infantil</p>
+    </div>
+
+    <script>
+        // Aplicar cores aos dentes baseado nos tratamentos
+        const tratamentos = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Tratamentos.Select(t => new {
+            numeroDente = t.NumeroDente,
+            tipoTratamento = t.TipoTratamento
+        })));
+
+        const tratamentosPorDente = {};
+        tratamentos.forEach(t => {
+            if (!tratamentosPorDente[t.numeroDente]) {
+                tratamentosPorDente[t.numeroDente] = [];
+            }
+            tratamentosPorDente[t.numeroDente].push(t);
+        });
+
+        document.querySelectorAll('.dente').forEach(denteEl => {
+            const numero = parseInt(denteEl.dataset.numero);
+            const tratamentosDoDente = tratamentosPorDente[numero] || [];
+
+            if (tratamentosDoDente.length > 0) {
+                const ultimoTratamento = tratamentosDoDente[0];
+                const tipo = ultimoTratamento.tipoTratamento.toLowerCase();
+
+                if (tipo.includes('cárie') || tipo.includes('carie')) {
+                    denteEl.classList.add('carie');
+                } else if (tipo.includes('restauração') || tipo.includes('restauracao')) {
+                    denteEl.classList.add('restauracao');
+                } else if (tipo.includes('canal')) {
+                    denteEl.classList.add('canal');
+                } else if (tipo.includes('extração') || tipo.includes('extracao')) {
+                    denteEl.classList.add('extracao');
+                } else if (tipo.includes('ausente')) {
+                    denteEl.classList.add('ausente');
+                } else if (tipo.includes('hígido') || tipo.includes('higido')) {
+                    denteEl.classList.add('higido');
+                }
+
+                if (tratamentosDoDente.length > 1) {
+                    const badge = document.createElement('span');
+                    badge.className = 'dente-badge';
+                    badge.textContent = tratamentosDoDente.length;
+                    denteEl.appendChild(badge);
+                }
+            }
+        });
+    </script>
+</body>
+</html>

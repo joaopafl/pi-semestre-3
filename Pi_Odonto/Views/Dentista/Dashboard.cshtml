@@ -115,7 +115,10 @@
         <div class="row align-items-center">
             <div class="col-md-8">
                 <h1><i class="fas fa-tooth"></i> Bem-vindo, Dr(a). @Model.Nome!</h1>
-                <p class="mb-0"><i class="fas fa-id-card"></i> CRO: @Model.Cro | <i class="fas fa-envelope"></i> @Model.Email</p>
+                <p class="mb-0">
+                    <i class="fas fa-id-card"></i> CRO: @Model.Cro |
+                    <i class="fas fa-envelope"></i> @Model.Email
+                </p>
             </div>
             <div class="col-md-4 text-end">
                 <a href="/Dentista/MeuPerfil" class="btn btn-light me-2">
@@ -166,16 +169,25 @@
         <div class="col-12">
             <h4 class="mb-3"><i class="fas fa-bolt"></i> Ações Rápidas</h4>
         </div>
-        <div class="col-md-3 col-sm-6 mb-3">
-            <a href="/Atendimento/Index" class="quick-action-card" style="color: #4a90e2;">
+        <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+            <a href="/Dentista/MeusAtendimentos" class="quick-action-card" style="color: #4a90e2;">
                 <div class="quick-action-icon">
                     <i class="fas fa-clipboard-list"></i>
                 </div>
-                <h6 class="mb-2">Atendimentos</h6>
-                <p class="text-muted mb-0 small">Gerenciar atendimentos</p>
+                <h6 class="mb-2">Meus Atendimentos</h6>
+                <p class="text-muted mb-0 small">Ver atendimentos realizados</p>
             </a>
         </div>
-        <div class="col-md-3 col-sm-6 mb-3">
+        <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+            <a href="/Atendimento/Historico" class="quick-action-card" style="color: #805ad5;">
+                <div class="quick-action-icon">
+                    <i class="fas fa-history"></i>
+                </div>
+                <h6 class="mb-2">Histórico Geral</h6>
+                <p class="text-muted mb-0 small">Todos os atendimentos</p>
+            </a>
+        </div>
+        <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
             <a href="/Odontograma/Index" class="quick-action-card" style="color: #48bb78;">
                 <div class="quick-action-icon">
                     <i class="fas fa-tooth"></i>
@@ -184,7 +196,7 @@
                 <p class="text-muted mb-0 small">Visualizar odontogramas</p>
             </a>
         </div>
-        <div class="col-md-3 col-sm-6 mb-3">
+        <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
             <a href="/Dentista/EscalaTrabalho" class="quick-action-card" style="color: #ed8936;">
                 <div class="quick-action-icon">
                     <i class="fas fa-calendar-week"></i>
@@ -193,8 +205,8 @@
                 <p class="text-muted mb-0 small">Ver minha disponibilidade</p>
             </a>
         </div>
-        <div class="col-md-3 col-sm-6 mb-3">
-            <a href="/Agendamento/Index" class="quick-action-card" style="color: #9f7aea;">
+        <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+            <a href="/Agendamento/MinhaAgenda" class="quick-action-card" style="color: #9f7aea;">
                 <div class="quick-action-icon">
                     <i class="fas fa-calendar-alt"></i>
                 </div>
@@ -202,15 +214,24 @@
                 <p class="text-muted mb-0 small">Ver todos agendamentos</p>
             </a>
         </div>
+        <div class="col-lg-2 col-md-4 col-sm-6 mb-3">
+            <a href="/Atendimento/Create" class="quick-action-card" style="color: #38b2ac;">
+                <div class="quick-action-icon">
+                    <i class="fas fa-plus-circle"></i>
+                </div>
+                <h6 class="mb-2">Novo Atendimento</h6>
+                <p class="text-muted mb-0 small">Criar atendimento</p>
+            </a>
+        </div>
     </div>
 
     <!-- Próximos Agendamentos -->
-    <div class="row">
+    <div class="row mb-4">
         <div class="col-12">
             <div class="section-card">
                 <div class="section-header">
                     <span><i class="fas fa-calendar-alt"></i> Próximos Agendamentos</span>
-                    <a href="/Agendamento/Index" class="btn btn-sm btn-outline-primary">
+                    <a href="/Agendamento/MinhaAgenda" class="btn btn-sm btn-outline-primary">
                         Ver Todos <i class="fas fa-arrow-right"></i>
                     </a>
                 </div>
@@ -221,7 +242,7 @@
                         {
                             <div class="agendamento-item">
                                 <div class="row align-items-center">
-                                    <div class="col-md-3">
+                                    <div class="col-lg-3 col-md-6 mb-2 mb-lg-0">
                                         <div>
                                             <i class="fas fa-child text-primary"></i>
                                             <strong>@agendamento.Crianca.Nome</strong>
@@ -231,21 +252,23 @@
                                             @agendamento.Crianca.DataNascimento.ToString("dd/MM/yyyy")
                                         </small>
                                     </div>
-                                    <div class="col-md-3">
+                                    <div class="col-lg-3 col-md-6 mb-2 mb-lg-0">
                                         <i class="fas fa-calendar text-info"></i>
                                         <strong>@agendamento.DataAgendamento.ToString("dd/MM/yyyy")</strong>
                                         <br />
-                                        <small class="text-muted">@agendamento.DataAgendamento.ToString("dddd")</small>
+                                        <small class="text-muted">
+                                            @agendamento.DataAgendamento.ToString("dddd", new System.Globalization.CultureInfo("pt-BR"))
+                                        </small>
                                     </div>
-                                    <div class="col-md-2">
+                                    <div class="col-lg-2 col-md-4 mb-2 mb-lg-0">
                                         <i class="fas fa-clock text-warning"></i>
                                         <strong>@agendamento.HoraAgendamento.ToString(@"hh\:mm")</strong>
                                     </div>
-                                    <div class="col-md-2">
+                                    <div class="col-lg-2 col-md-4 mb-2 mb-lg-0">
                                         <span class="badge bg-success">Agendado</span>
                                     </div>
-                                    <div class="col-md-2 text-end">
-                                        <a href="/Atendimento/Criar?agendamentoId=@agendamento.Id"
+                                    <div class="col-lg-2 col-md-4 text-lg-end">
+                                        <a href="/Atendimento/Create"
                                            class="btn btn-sm btn-success">
                                             <i class="fas fa-tooth"></i> Iniciar
                                         </a>
@@ -259,92 +282,6 @@
                         <div class="text-center text-muted py-5">
                             <i class="fas fa-calendar-times fa-4x mb-3 opacity-25"></i>
                             <p class="mb-0">Nenhum agendamento próximo</p>
-                        </div>
-                    }
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Informações Pessoais e Disponibilidade -->
-    <div class="row">
-        <!-- Dados Pessoais -->
-        <div class="col-md-6 mb-4">
-            <div class="section-card">
-                <div class="section-header">
-                    <span><i class="fas fa-user"></i> Meus Dados</span>
-                    <a href="/Dentista/Edit/@Model.Id" class="btn btn-sm btn-outline-info">
-                        <i class="fas fa-edit"></i> Editar
-                    </a>
-                </div>
-                <div class="card-body px-4 py-3">
-                    <div class="info-row">
-                        <strong><i class="fas fa-user-circle text-primary"></i> Nome:</strong>
-                        <span class="float-end">@Model.Nome</span>
-                    </div>
-                    <div class="info-row">
-                        <strong><i class="fas fa-id-card text-info"></i> CPF:</strong>
-                        <span class="float-end">@Model.Cpf</span>
-                    </div>
-                    <div class="info-row">
-                        <strong><i class="fas fa-tooth text-success"></i> CRO:</strong>
-                        <span class="float-end">@Model.Cro</span>
-                    </div>
-                    <div class="info-row">
-                        <strong><i class="fas fa-envelope text-warning"></i> Email:</strong>
-                        <span class="float-end">@Model.Email</span>
-                    </div>
-                    <div class="info-row">
-                        <strong><i class="fas fa-phone text-danger"></i> Telefone:</strong>
-                        <span class="float-end">@Model.Telefone</span>
-                    </div>
-                    <div class="info-row">
-                        <strong><i class="fas fa-map-marker-alt text-secondary"></i> Endereço:</strong>
-                        <span class="float-end">@Model.Endereco</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Disponibilidade -->
-        <div class="col-md-6 mb-4">
-            <div class="section-card">
-                <div class="section-header">
-                    <span><i class="fas fa-clock"></i> Escala de Trabalho</span>
-                    <a href="/Dentista/EscalaTrabalho" class="btn btn-sm btn-outline-success">
-                        <i class="fas fa-calendar-week"></i> Gerenciar
-                    </a>
-                </div>
-                <div class="card-body px-4 py-3">
-                    @if (Model.Disponibilidades != null && Model.Disponibilidades.Any())
-                    {
-                        @foreach (var disp in Model.Disponibilidades.OrderBy(d => d.DiaSemana))
-                        {
-                            <div class="info-row">
-                                <span class="badge-day bg-primary text-white">
-                                    <i class="fas fa-calendar-check"></i> @disp.DiaSemana
-                                </span>
-                                <br />
-                                <span class="ms-2">
-                                    <i class="fas fa-clock text-success"></i>
-                                    @disp.HoraInicio.ToString(@"hh\:mm") às @disp.HoraFim.ToString(@"hh\:mm")
-                                </span>
-                            </div>
-                        }
-                        <div class="text-center mt-3">
-                            <a href="/Dentista/CreateEscala" class="btn btn-sm btn-outline-primary">
-                                <i class="fas fa-plus"></i> Adicionar Horário
-                            </a>
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="text-center text-muted py-4">
-                            <i class="fas fa-calendar-times fa-3x mb-3 opacity-25"></i>
-                            <p class="mb-3">Nenhuma disponibilidade cadastrada</p>
-                            <a href="/Dentista/CreateEscala" class="btn btn-sm btn-success">
-                                <i class="fas fa-plus"></i> Cadastrar Disponibilidade
-                            </a>
                         </div>
                     }
                 </div>

@@ -342,6 +342,29 @@ namespace Pi_Odonto.Controllers
             ViewBag.Mensagem = TempData["MensagemSucesso"];
             return View();
         }
+
+        // ==========================================================
+        // MEUS ATENDIMENTOS (DENTISTA)
+        // ==========================================================
+
+        [HttpGet]
+        public IActionResult MeusAtendimentos()
+        {
+            if (!IsDentista())
+                return RedirectToAction("DentistaLogin", "Auth");
+
+            var dentistaId = GetCurrentDentistaId();
+
+            var atendimentos = _context.Atendimentos
+                .Include(a => a.Crianca)
+                .Include(a => a.Dentista)
+                .Where(a => a.IdDentista == dentistaId)
+                .OrderByDescending(a => a.DataAtendimento)
+                .ThenByDescending(a => a.HorarioAtendimento)
+                .ToList();
+
+            return View(atendimentos);
+        }
     }
 
     // ==========================================================
