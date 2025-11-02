@@ -1,8 +1,12 @@
-﻿@{
+﻿@using Pi_Odonto.ViewModels
+@model Pi_Odonto.ViewModels.EditarPerfilResponsavelViewModel 
+@{
     ViewData["Title"] = "Editar Meu Perfil";
+    Layout = "~/Views/Shared/_Layout.cshtml"; // Assumindo seu layout padrão
+    
+    // Lista de opções de parentesco (necessária se o ViewModel não a tiver)
+    var opcoesParentesco = Model.OpcoesParentesco ?? new List<string> { "Pai", "Mãe", "Avô", "Avó", "Tio", "Tia", "Padrasto", "Madrasta", "Tutor Legal" };
 }
-@using Pi_Odonto.ViewModels
-@model ResponsavelCriancaViewModel
 
 <div class="container mt-4">
     @if (TempData["Sucesso"] != null)
@@ -25,11 +29,12 @@
 
                 <div class="card-body">
                     <form asp-action="Editar" method="post" id="editarPerfilForm">
-                        <input type="hidden" asp-for="Responsavel.Id" />
+                        <input type="hidden" asp-for="Id" />
+                        <input type="hidden" asp-for="Email" /> @* Enviamos para o Controller, mas desabilitamos na View *@
+                        <input type="hidden" asp-for="Cpf" />
 
-                        <div asp-validation-summary="All" class="alert alert-danger"></div>
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
 
-                        <!-- Dados do Responsável -->
                         <h4 class="text-primary mb-3">
                             <i class="fas fa-user"></i> Meus Dados
                         </h4>
@@ -37,16 +42,19 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label asp-for="Responsavel.Nome" class="form-label">Nome Completo</label>
-                                    <input asp-for="Responsavel.Nome" class="form-control" />
-                                    <span asp-validation-for="Responsavel.Nome" class="text-danger"></span>
+                                    <label asp-for="Nome" class="form-label">Nome Completo</label>
+                                    <input asp-for="Nome" class="form-control" />
+                                    <span asp-validation-for="Nome" class="text-danger"></span>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label asp-for="Responsavel.Email" class="form-label">Email</label>
-                                    <input asp-for="Responsavel.Email" type="email" class="form-control" />
-                                    <span asp-validation-for="Responsavel.Email" class="text-danger"></span>
+                                    <label asp-for="Email" class="form-label">Email</label>
+                                    <div class="input-group">
+                                        <input asp-for="Email" type="email" class="form-control bg-light" disabled />
+                                        <span class="input-group-text bg-light" title="Email não pode ser alterado."><i class="fas fa-lock text-secondary"></i></span>
+                                    </div>
+                                    <span asp-validation-for="Email" class="text-danger"></span>
                                 </div>
                             </div>
                         </div>
@@ -54,58 +62,75 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label asp-for="Responsavel.Cpf" class="form-label">CPF</label>
-                                    <input asp-for="Responsavel.Cpf" class="form-control" id="cpfInput" />
-                                    <span asp-validation-for="Responsavel.Cpf" class="text-danger"></span>
+                                    <label asp-for="Cpf" class="form-label">CPF</label>
+                                     <div class="input-group">
+                                        <input asp-for="Cpf" class="form-control bg-light" id="cpfInput" disabled />
+                                        <span class="input-group-text bg-light" title="CPF não pode ser alterado."><i class="fas fa-lock text-secondary"></i></span>
+                                    </div>
+                                    <span asp-validation-for="Cpf" class="text-danger"></span>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label asp-for="Responsavel.Telefone" class="form-label">Telefone</label>
-                                    <input asp-for="Responsavel.Telefone" class="form-control" id="telefoneInput" />
-                                    <span asp-validation-for="Responsavel.Telefone" class="text-danger"></span>
+                                    <label asp-for="Telefone" class="form-label">Telefone</label>
+                                    <input asp-for="Telefone" class="form-control" id="telefoneInput" />
+                                    <span asp-validation-for="Telefone" class="text-danger"></span>
                                 </div>
                             </div>
                         </div>
 
                         <div class="mb-3">
-                            <label asp-for="Responsavel.Endereco" class="form-label">Endereço</label>
-                            <textarea asp-for="Responsavel.Endereco" class="form-control" rows="3"></textarea>
-                            <span asp-validation-for="Responsavel.Endereco" class="text-danger"></span>
+                            <label asp-for="Endereco" class="form-label">Endereço</label>
+                            <textarea asp-for="Endereco" class="form-control" rows="3"></textarea>
+                            <span asp-validation-for="Endereco" class="text-danger"></span>
                         </div>
 
-                        <!-- Seção de Senha -->
                         <div class="card mt-4">
                             <div class="card-header bg-warning text-dark">
                                 <h6 class="mb-0">
-                                    <i class="fas fa-lock"></i> Alterar Senha (Opcional)
+                                    <i class="fas fa-key"></i> Alterar Senha (Opcional)
                                 </h6>
                             </div>
                             <div class="card-body">
                                 <div class="alert alert-info">
                                     <i class="fas fa-info-circle"></i>
-                                    <strong>Deixe em branco</strong> se não quiser alterar a senha atual.
+                                    Para alterar a senha, preencha os 3 campos. <strong>Deixe em branco</strong> para manter a senha atual.
                                 </div>
 
                                 <div class="row">
-                                    <div class="col-md-6">
+                                    <div class="col-md-4">
                                         <div class="mb-3">
-                                            <label asp-for="Responsavel.Senha" class="form-label">Nova Senha</label>
-                                            <input asp-for="Responsavel.Senha" type="password" class="form-control" placeholder="Digite a nova senha" />
-                                            <span asp-validation-for="Responsavel.Senha" class="text-danger"></span>
+                                            <label asp-for="SenhaAtual" class="form-label">Senha Atual</label>
+                                            <input asp-for="SenhaAtual" type="password" class="form-control" placeholder="Sua senha atual" />
+                                            <span asp-validation-for="SenhaAtual" class="text-danger"></span>
+                                            
+                                            @* Link de Esqueci Senha se houver erro *@
+                                            @if (ViewData.ModelState.ContainsKey("SenhaAtual") && ViewData.ModelState["SenhaAtual"].Errors.Any())
+                                            {
+                                                <small class="text-muted d-block mt-1">
+                                                    <a asp-action="EsqueceuSenha" asp-controller="Auth" class="text-info">Esqueci minha senha</a>
+                                                </small>
+                                            }
                                         </div>
                                     </div>
-                                    <div class="col-md-6">
+                                    <div class="col-md-4">
                                         <div class="mb-3">
-                                            <label class="form-label">Confirmar Nova Senha</label>
-                                            <input name="ConfirmarSenha" type="password" class="form-control" placeholder="Confirme a nova senha" />
+                                            <label asp-for="NovaSenha" class="form-label">Nova Senha</label>
+                                            <input asp-for="NovaSenha" type="password" class="form-control" placeholder="Mínimo 8 caracteres" />
+                                            <span asp-validation-for="NovaSenha" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label asp-for="ConfirmarNovaSenha" class="form-label">Confirmar Nova Senha</label>
+                                            <input asp-for="ConfirmarNovaSenha" type="password" class="form-control" placeholder="Confirme a nova senha" />
+                                            <span asp-validation-for="ConfirmarNovaSenha" class="text-danger"></span>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Seção das Crianças -->
                         <hr class="my-4">
                         <h4 class="text-success mb-3">
                             <i class="fas fa-child"></i> Minhas Crianças
@@ -114,26 +139,34 @@
                         <div id="criancas-container">
                             @for (int i = 0; i < Model.Criancas.Count; i++)
                             {
+                                @* Nota: O código da criança usa o índice do loop for (@i) *@
                                 <div class="border p-3 mb-3 rounded bg-light crianca-form" data-index="@i">
                                     <h6 class="text-secondary">
                                         <i class="fas fa-child"></i> Criança @(i + 1)
+                                        @if (i > 0)
+                                        {
+                                            <button type="button" class="btn btn-outline-danger btn-sm float-end" onclick="removerCrianca(@i)">
+                                                <i class="fas fa-trash"></i> Remover Criança
+                                            </button>
+                                        }
                                     </h6>
-
-                                    <input asp-for="Criancas[@i].Id" type="hidden" />
+                                    
+                                    <input asp-for="Criancas[i].Id" type="hidden" /> @* ID da Criança *@
+                                    <input asp-for="Criancas[i].IdResponsavel" type="hidden" />
 
                                     <div class="row">
                                         <div class="col-md-6">
                                             <div class="mb-3">
-                                                <label asp-for="Criancas[@i].Nome" class="form-label">Nome da Criança</label>
-                                                <input asp-for="Criancas[@i].Nome" class="form-control" />
-                                                <span asp-validation-for="Criancas[@i].Nome" class="text-danger"></span>
+                                                <label asp-for="Criancas[i].Nome" class="form-label">Nome da Criança</label>
+                                                <input asp-for="Criancas[i].Nome" class="form-control" />
+                                                <span asp-validation-for="Criancas[i].Nome" class="text-danger"></span>
                                             </div>
                                         </div>
                                         <div class="col-md-6">
                                             <div class="mb-3">
-                                                <label asp-for="Criancas[@i].Cpf" class="form-label">CPF</label>
-                                                <input asp-for="Criancas[@i].Cpf" class="form-control cpf-crianca" />
-                                                <span asp-validation-for="Criancas[@i].Cpf" class="text-danger"></span>
+                                                <label asp-for="Criancas[i].Cpf" class="form-label">CPF</label>
+                                                <input asp-for="Criancas[i].Cpf" class="form-control cpf-crianca" />
+                                                <span asp-validation-for="Criancas[i].Cpf" class="text-danger"></span>
                                             </div>
                                         </div>
                                     </div>
@@ -141,32 +174,25 @@
                                     <div class="row">
                                         <div class="col-md-6">
                                             <div class="mb-3">
-                                                <label asp-for="Criancas[@i].DataNascimento" class="form-label">Data de Nascimento</label>
-                                                <input asp-for="Criancas[@i].DataNascimento" type="date" class="form-control" />
-                                                <span asp-validation-for="Criancas[@i].DataNascimento" class="text-danger"></span>
+                                                <label asp-for="Criancas[i].DataNascimento" class="form-label">Data de Nascimento</label>
+                                                <input asp-for="Criancas[i].DataNascimento" type="date" class="form-control" />
+                                                <span asp-validation-for="Criancas[i].DataNascimento" class="text-danger"></span>
                                             </div>
                                         </div>
                                         <div class="col-md-6">
                                             <div class="mb-3">
-                                                <label asp-for="Criancas[@i].Parentesco" class="form-label">Parentesco</label>
-                                                <select asp-for="Criancas[@i].Parentesco" class="form-control">
+                                                <label asp-for="Criancas[i].Parentesco" class="form-label">Parentesco</label>
+                                                <select asp-for="Criancas[i].Parentesco" class="form-control">
                                                     <option value="">Selecione...</option>
-                                                    @foreach (var parentesco in Model.OpcoesParentesco)
+                                                    @foreach (var parentesco in opcoesParentesco)
                                                     {
-                                                        <option value="@parentesco" selected="@(Model.Criancas[i].Parentesco == parentesco ? "selected" : "")">@parentesco</option>
+                                                        <option value="@parentesco">@parentesco</option>
                                                     }
                                                 </select>
-                                                <span asp-validation-for="Criancas[@i].Parentesco" class="text-danger"></span>
+                                                <span asp-validation-for="Criancas[i].Parentesco" class="text-danger"></span>
                                             </div>
                                         </div>
                                     </div>
-
-                                    @if (i > 0)
-                                    {
-                                        <button type="button" class="btn btn-outline-danger btn-sm" onclick="removerCrianca(@i)">
-                                            <i class="fas fa-trash"></i> Remover Criança
-                                        </button>
-                                    }
                                 </div>
                             }
                         </div>
@@ -190,47 +216,57 @@
     </div>
 </div>
 
-@section Scripts {
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
+
     <script>
+        // Use a contagem atual das crianças para saber o próximo índice a adicionar
         var criancaIndex = @Model.Criancas.Count;
-        var opcoesParentesco = @Html.Raw(Json.Serialize(Model.OpcoesParentesco));
+        var opcoesParentesco = @Html.Raw(Json.Serialize(opcoesParentesco)); 
 
-        // Máscaras
-        function aplicarMascaraCPF(input) {
-            input.addEventListener('input', function(e) {
-                let value = e.target.value.replace(/\D/g, '');
-                if (value.length <= 11) {
-                    value = value.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
-                    e.target.value = value;
-                }
+        document.addEventListener('DOMContentLoaded', function () {
+            // Aplica máscaras aos campos existentes ao carregar a página
+            $('#cpfInput').mask('000.000.000-00', { reverse: true });
+            $('#telefoneInput').mask('(00) 00000-0000');
+            $('.cpf-crianca').mask('000.000.000-00', { reverse: true });
+            
+            // Adiciona listener para garantir que as máscaras sejam aplicadas a campos de criança adicionados dinamicamente
+            $(document).on('focus', '.cpf-crianca', function() {
+                 if (!$(this).data('mask-set')) {
+                    $(this).mask('000.000.000-00', { reverse: true });
+                    $(this).data('mask-set', true);
+                 }
             });
-        }
-
-        function aplicarMascaraTelefone(input) {
-            input.addEventListener('input', function(e) {
-                let value = e.target.value.replace(/\D/g, '');
-                if (value.length <= 11) {
-                    value = value.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
-                    e.target.value = value;
-                }
+            // Adiciona listener de submit para reindexar e remover máscaras
+            $('#editarPerfilForm').on('submit', function() {
+                 reindexarCriancas();
+                 // Remover máscaras antes do POST para enviar o valor limpo
+                 $('#cpfInput').unmask(); 
+                 $('#telefoneInput').unmask();
+                 $('.cpf-crianca').unmask();
             });
-        }
-
-        // Aplicar máscaras ao carregar
-        document.addEventListener('DOMContentLoaded', function() {
-            aplicarMascaraCPF(document.getElementById('cpfInput'));
-            aplicarMascaraTelefone(document.getElementById('telefoneInput'));
-            document.querySelectorAll('.cpf-crianca').forEach(aplicarMascaraCPF);
+            
+            atualizarTitulosCriancas();
         });
 
+
+        // Funções de Máscara (simplificadas usando JQuery Mask, o que é mais robusto)
+        // Seus inputs já têm o ID/Classe no HTML: $('#cpfInput'), $('#telefoneInput'), $('.cpf-crianca')
+        // Elas foram aplicadas no DOMContentLoaded acima.
+        
         function adicionarCrianca() {
             var container = document.getElementById('criancas-container');
 
+            // --- NOVO CÓDIGO HTML da Criança ---
             var novaCriancaHtml = `
-                <div class="border p-3 mb-3 rounded bg-light crianca-form" data-index="${criancaIndex}">
-                    <h6 class="text-secondary"><i class="fas fa-child"></i> Criança ${criancaIndex + 1}</h6>
+                <div class="border p-3 mb-3 rounded bg-light crianca-form" data-novo-id="${criancaIndex}">
+                    <h6 class="text-secondary"><i class="fas fa-child"></i> Criança Placeholder
+                        <button type="button" class="btn btn-outline-danger btn-sm float-end" onclick="removerCrianca(this)">
+                            <i class="fas fa-trash"></i> Remover Criança
+                        </button>
+                    </h6>
                     <input name="Criancas[${criancaIndex}].Id" type="hidden" value="0" />
+                    <input name="Criancas[${criancaIndex}].IdResponsavel" type="hidden" value="${@Model.Id}" />
 
                     <div class="row">
                         <div class="col-md-6">
@@ -269,55 +305,80 @@
                             </div>
                         </div>
                     </div>
-
-                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="removerCrianca(${criancaIndex})">
-                        <i class="fas fa-trash"></i> Remover Criança
-                    </button>
                 </div>`;
+            // --- FIM DO CÓDIGO HTML da Criança ---
 
             container.insertAdjacentHTML('beforeend', novaCriancaHtml);
 
             // Aplicar máscara no novo campo CPF
             var novoCampoCpf = container.querySelector(`input[name="Criancas[${criancaIndex}].Cpf"]`);
-            aplicarMascaraCPF(novoCampoCpf);
+            $(novoCampoCpf).mask('000.000.000-00', { reverse: true });
 
             criancaIndex++;
+            atualizarTitulosCriancas(); // Atualiza a numeração para incluir a nova criança
         }
 
-        function removerCrianca(index) {
-            var criancaForms = document.querySelectorAll('.crianca-form');
-            if (criancaForms.length > 1) {
-                var criancaForm = document.querySelector(`[data-index="${index}"]`);
-                if (criancaForm) {
-                    criancaForm.remove();
-                    atualizarTitulosCriancas();
-                }
-            } else {
-                alert('É obrigatório ter pelo menos uma criança cadastrada!');
+        // FUNÇÃO CRÍTICA (CORRIGIDA)
+        function removerCrianca(botao) {
+            // Encontra o elemento pai 'crianca-form' e o remove
+            var formToRemove = botao.closest('.crianca-form');
+            if (formToRemove) {
+                 formToRemove.remove();
+                 // Reindexa imediatamente para manter a ordem visual
+                 atualizarTitulosCriancas();
+                 // O reindexamento final será feito no submit, mas fazemos aqui para manter a numeração visual correta
             }
         }
-
-        function atualizarTitulosCriancas() {
-            var criancaForms = document.querySelectorAll('.crianca-form');
-            criancaForms.forEach(function(form, index) {
-                var titulo = form.querySelector('h6');
-                titulo.innerHTML = `<i class="fas fa-child"></i> Criança ${index + 1}`;
-            });
+        
+        // NOVO MÉTODO: Renomeia todos os campos para garantir índices sequenciais (0, 1, 2, ...)
+        // Isso é crucial para o Model Binder do ASP.NET Core
+        function reindexarCriancas() {
+             var criancaForms = document.querySelectorAll('#criancas-container .crianca-form');
+             criancaForms.forEach(function(form, index) {
+                 // Itera sobre todos os elementos de input, select e textarea dentro da div
+                 form.querySelectorAll('input, select, textarea').forEach(function(element) {
+                     let name = element.getAttribute('name');
+                     if (name && name.startsWith('Criancas[')) {
+                         // Substitui o índice antigo pelo novo (o 'index' do forEach)
+                         let novoName = name.replace(/Criancas\[\d+\]/g, `Criancas[${index}]`);
+                         element.setAttribute('name', novoName);
+                     }
+                 });
+             });
         }
 
-        // Remover máscaras antes de enviar
-        document.getElementById('editarPerfilForm').addEventListener('submit', function(e) {
-            // Remove máscaras do responsável
-            const cpfInput = document.getElementById('cpfInput');
-            if (cpfInput) cpfInput.value = cpfInput.value.replace(/\D/g, '');
+        // Método para corrigir a numeração e botões (chamado após ADD e REMOVE)
+        function atualizarTitulosCriancas() {
+             var criancaForms = document.querySelectorAll('.crianca-form');
+             criancaForms.forEach(function(form, index) {
+                 var tituloElement = form.querySelector('h6');
+                 // Nome base do título
+                 let tituloBase = `<i class="fas fa-child"></i> Criança ${index + 1}`;
+                 
+                 // Encontra o botão de remover existente ou cria um
+                 let removeButton = form.querySelector('.float-end');
 
-            const telefoneInput = document.getElementById('telefoneInput');
-            if (telefoneInput) telefoneInput.value = telefoneInput.value.replace(/\D/g, '');
+                 // O botão de remover só deve aparecer se não for a primeira criança (índice 0)
+                 if (index > 0) {
+                     if (!removeButton) {
+                        // Se não existe, insere o novo botão de remover
+                        tituloElement.insertAdjacentHTML('beforeend', `
+                             <button type="button" class="btn btn-outline-danger btn-sm float-end" onclick="removerCrianca(this)">
+                                 <i class="fas fa-trash"></i> Remover Criança
+                             </button>
+                         `);
+                     }
+                     // Atualiza o título (mantendo o botão, se existir)
+                     tituloElement.innerHTML = tituloBase + (removeButton ? removeButton.outerHTML : '');
 
-            // Remove máscaras das crianças
-            document.querySelectorAll('.cpf-crianca').forEach(input => {
-                input.value = input.value.replace(/\D/g, '');
+                 } else {
+                     // Se for a primeira criança (índice 0), remove o botão de exclusão
+                     if (removeButton) {
+                         removeButton.remove();
+                     }
+                     tituloElement.innerHTML = tituloBase;
+                 }
             });
-        });
+        }
     </script>
-}
+    <partial name="_ValidationScriptsPartial" />

@@ -9,7 +9,7 @@
         --cor-secundaria: #66BB6A;
         --cor-accent: #FFD700;
         --cor-info: #17a2b8;
-        --cor-amor: #FF6B8A;
+        --cor-amor: #ec2651ff; /* Cor usada para ações de amor/cuidado e, neste caso, para o alerta de saída */
     }
 
     body {
@@ -308,8 +308,9 @@
                     <a href="/Perfil/MinhasCriancas" class="btn btn-compacto btn-info-compacto">
                         <i class="fas fa-child me-1"></i> Crianças
                     </a>
-                    <form asp-action="Logout" asp-controller="Auth" method="post" class="d-inline">
-                        <button type="submit" class="btn btn-compacto btn-danger-compacto w-100" id="logoutBtn">
+                    @* O formulário de Logout será submetido pelo JS após a confirmação no Modal *@
+                    <form asp-action="Logout" asp-controller="Auth" method="post" class="d-inline" id="logoutForm">
+                        <button type="button" class="btn btn-compacto btn-danger-compacto w-100" id="logoutBtn" data-bs-toggle="modal" data-bs-target="#logoutConfirmModal">
                             <i class="fas fa-sign-out-alt me-1"></i> Sair
                         </button>
                     </form>
@@ -473,9 +474,7 @@
                 <div class="card-body-compacto">
                     <div class="empty-state-compacto">
                         <i class="fas fa-calendar-plus"></i>
-                        <p class="mb-2">Nenhum agendamento encontrado.</p>
-                        <p style="font-size: 0.75rem; margin-bottom: 1rem;">Agende consultas e cuidados para sua família.</p>
-
+                        <p class="mb-2">Agende consultas e cuidados para sua família.</p>
                        <div class="d-grid gap-1">
                             <a asp-action="Index" asp-controller="Agendamento" class="btn btn-compacto btn-primary-compacto">
                                 <i class="fas fa-plus me-1"></i> Agendar Consulta
@@ -533,19 +532,55 @@
 </div>
 
 @* ========================================================= *@
-@* 2. SCRIPTS PARA EXIBIR O MODAL E OUTRAS FUNÇÕES *@
+@* 2. MODAL DE CONFIRMAÇÃO DE SAÍDA (LOGOUT) *@
+@* ========================================================= *@
+<div class="modal fade" id="logoutConfirmModal" tabindex="-1" aria-labelledby="logoutConfirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content" style="border-radius: 15px; border: 3px solid var(--cor-amor);">
+            
+            <div class="modal-header" style="background-color: var(--cor-amor); color: white; border-radius: 12px 12px 0 0;">
+                <h5 class="modal-title" id="logoutConfirmModalLabel">
+                    <i class="fas fa-sign-out-alt me-1"></i> Confirmar Saída
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            
+            <div class="modal-body text-center">
+                @* Ícone de coração partido removido, substituído por um ícone de sign-out para manter a consistência com o título *@
+                <i class="fas fa-sign-out-alt fa-3x" style="color: var(--cor-amor); margin-bottom: 15px;"></i>
+                <p class="mb-0">
+                    Tem certeza que deseja sair da sua conta?
+                </p>
+                <small class="text-muted">Você precisará fazer login novamente para acessar seus dados.</small>
+            </div>
+            
+            <div class="modal-footer justify-content-center border-0">
+                <button type="button" class="btn btn-outline-secondary btn-compacto" data-bs-dismiss="modal">
+                    Ficar
+                </button>
+                <button type="button" class="btn btn-compacto" id="confirmLogoutBtn" style="background-color: var(--cor-amor); color: white;">
+                    Sim, Sair
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@* ========================================================= *@
+@* 3. SCRIPTS PARA EXIBIR O MODAL E OUTRAS FUNÇÕES *@
 @* ========================================================= *@
 @section Scripts {
     <script>
-        // Função para simular a visualização da agenda completa
-       
-
-        // Confirmação antes de sair
-        document.getElementById('logoutBtn').addEventListener('click', function(e) {
-            if (!confirm('Tem certeza que deseja sair da sua família espiritual?')) {
-                e.preventDefault();
-            }
+        
+        // ======================================================
+        // LÓGICA DE EXIBIÇÃO DO MODAL DE CONFIRMAÇÃO DE SAÍDA
+        // ======================================================
+        document.getElementById('confirmLogoutBtn').addEventListener('click', function(e) {
+            // Submete o formulário de logout após a confirmação no modal
+            document.getElementById('logoutForm').submit();
         });
+
 
         // ======================================================
         // LÓGICA DE EXIBIÇÃO DO MODAL DE SUCESSO (CHAVE)

@@ -192,24 +192,139 @@
         padding: 40px 20px;
     }
 
-    @@media (max-width: 768px) {
-        .header
-
-    {
-        flex-direction: column;
-        align-items: stretch;
+    /* Estilos do Modal */
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        animation: fadeIn 0.2s ease;
     }
 
-    .crianca-grid {
-        grid-template-columns: 1fr;
+    .modal-overlay.show {
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
-    .filtros {
-        flex-direction: column;
-        align-items: flex-start;
+    .modal-content-custom {
+        background: white;
+        border-radius: 12px;
+        max-width: 500px;
+        width: 90%;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        animation: slideDown 0.3s ease;
+    }
+
+    .modal-header-custom {
+        padding: 20px;
+        border-bottom: 1px solid #eee;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .modal-header-custom.danger {
+        background: #dc3545;
+        color: white;
+        border-radius: 12px 12px 0 0;
+    }
+
+    .modal-header-custom.success {
+        background: #28a745;
+        color: white;
+        border-radius: 12px 12px 0 0;
+    }
+
+    .modal-header-custom h3 {
+        margin: 0;
+        font-size: 1.3rem;
+        display: flex;
+        align-items: center;
         gap: 10px;
     }
 
+    .modal-close {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: inherit;
+        opacity: 0.8;
+        transition: opacity 0.2s;
+    }
+
+    .modal-close:hover {
+        opacity: 1;
+    }
+
+    .modal-body-custom {
+        padding: 25px;
+    }
+
+    .modal-body-custom p {
+        margin: 0 0 15px 0;
+        font-size: 1rem;
+        line-height: 1.5;
+    }
+
+    .modal-body-custom .child-name {
+        font-weight: bold;
+        color: #17a2b8;
+    }
+
+    .modal-footer-custom {
+        padding: 15px 20px;
+        border-top: 1px solid #eee;
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+
+    .modal-footer-custom .btn {
+        padding: 10px 20px;
+        font-size: 0.95rem;
+    }
+
+    @@keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    @@keyframes slideDown {
+        from {
+            transform: translateY(-50px);
+            opacity: 0;
+        }
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .header {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .crianca-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .filtros {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .modal-content-custom {
+            width: 95%;
+        }
     }
 </style>
 
@@ -223,7 +338,6 @@
                     @if (!string.IsNullOrEmpty(responsavelNome))
                     {
                         <br>
-                
                         <small style="font-size: 0.7em; opacity: 0.9;">Responsável: @responsavelNome</small>
                     }
                 }
@@ -308,8 +422,7 @@
                     </div>
 
                     <div class="crianca-actions">
-                        <a href="/Perfil/DetalhesCrianca/@crianca.Id" class="btn btn-primary">👁️ Ver</a>
-                        <a href="/Odontograma/PorCrianca/@crianca.Id" class="btn btn-info">🦷 Odontograma</a>
+                        
 
                         @if (crianca.Ativa)
                         {
@@ -317,7 +430,7 @@
                             @if (isAdmin || Model.Count(c => c.Ativa) > 1)
                             {
                                 <button type="button" class="btn btn-danger"
-                                        onclick="alterarStatusCrianca(@crianca.Id, '@crianca.Nome', false)">
+                                        onclick="mostrarModalDesativar(@crianca.Id, '@crianca.Nome')">
                                     ❌ Desativar
                                 </button>
                             }
@@ -325,7 +438,7 @@
                         else
                         {
                             <button type="button" class="btn btn-success"
-                                    onclick="alterarStatusCrianca(@crianca.Id, '@crianca.Nome', true)">
+                                    onclick="mostrarModalReativar(@crianca.Id, '@crianca.Nome')">
                                 ✅ Reativar
                             </button>
                         }
@@ -390,37 +503,105 @@
     </div>
 </div>
 
+<!-- Modal de Confirmação -->
+<div id="confirmModal" class="modal-overlay" onclick="fecharModal(event)">
+    <div class="modal-content-custom" onclick="event.stopPropagation()">
+        <div id="modalHeader" class="modal-header-custom">
+            <h3 id="modalTitle"></h3>
+            <button class="modal-close" onclick="fecharModal()">&times;</button>
+        </div>
+        <div class="modal-body-custom">
+            <p id="modalMessage"></p>
+        </div>
+        <div class="modal-footer-custom">
+            <button class="btn btn-secondary" onclick="fecharModal()">Cancelar</button>
+            <button id="confirmButton" class="btn"></button>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     <script>
+        let modalAction = null;
+
+        function mostrarModalDesativar(id, nome) {
+            const modal = document.getElementById('confirmModal');
+            const header = document.getElementById('modalHeader');
+            const title = document.getElementById('modalTitle');
+            const message = document.getElementById('modalMessage');
+            const confirmBtn = document.getElementById('confirmButton');
+
+            header.className = 'modal-header-custom danger';
+            title.innerHTML = '⚠️ Desativar Criança';
+            message.innerHTML = `Tem certeza que deseja desativar <span class="child-name">${nome}</span>?<br><br>A criança será mantida no sistema mas ficará inativa.`;
+            confirmBtn.textContent = 'Desativar';
+            confirmBtn.className = 'btn btn-danger';
+            
+            modalAction = () => alterarStatusCrianca(id, nome, false);
+            modal.classList.add('show');
+        }
+
+        function mostrarModalReativar(id, nome) {
+            const modal = document.getElementById('confirmModal');
+            const header = document.getElementById('modalHeader');
+            const title = document.getElementById('modalTitle');
+            const message = document.getElementById('modalMessage');
+            const confirmBtn = document.getElementById('confirmButton');
+
+            header.className = 'modal-header-custom success';
+            title.innerHTML = '✅ Reativar Criança';
+            message.innerHTML = `Tem certeza que deseja reativar <span class="child-name">${nome}</span>?`;
+            confirmBtn.textContent = 'Reativar';
+            confirmBtn.className = 'btn btn-success';
+            
+            modalAction = () => alterarStatusCrianca(id, nome, true);
+            modal.classList.add('show');
+        }
+
+        function fecharModal(event) {
+            if (!event || event.target.id === 'confirmModal' || event.type === 'click') {
+                document.getElementById('confirmModal').classList.remove('show');
+                modalAction = null;
+            }
+        }
+
+        document.getElementById('confirmButton').addEventListener('click', () => {
+            if (modalAction) {
+                modalAction();
+                fecharModal();
+            }
+        });
+
+        // Fechar modal com ESC
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                fecharModal();
+            }
+        });
+
         function alterarStatusCrianca(id, nome, ativar) {
             const acao = ativar ? 'reativar' : 'desativar';
-            const mensagem = ativar
-                ? `Tem certeza que deseja reativar a criança "${nome}"?`
-                : `Tem certeza que deseja desativar a criança "${nome}"?\n\nA criança será mantida no sistema mas ficará inativa.`;
 
-            if (confirm(mensagem)) {
-                fetch('/Perfil/AlterarStatusCrianca', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
-                    },
-                    body: `id=${id}&ativar=${ativar}`
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert(data.message);
-                        location.reload();
-                    } else {
-                        alert(data.message);
-                    }
-                })
-                .catch(error => {
-                    console.error('Erro:', error);
-                    alert(`Erro ao ${acao} criança.`);
-                });
-            }
+            fetch('/Perfil/AlterarStatusCrianca', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                },
+                body: `id=${id}&ativar=${ativar}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert(data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                alert(`Erro ao ${acao} criança.`);
+            });
         }
 
         function filtrarCriancas(filtro) {

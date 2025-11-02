@@ -19,7 +19,7 @@ namespace Pi_Odonto.Controllers
         public string DentistaName { get; set; } = string.Empty;
     }
 
-    [Authorize(AuthenticationSchemes = "AdminAuth,DentistaAuth")] // Aceita ambos
+    [Authorize(AuthenticationSchemes = "AdminAuth,DentistaAuth")]
     public class AgendamentoController : Controller
     {
         private readonly AppDbContext _context;
@@ -31,7 +31,7 @@ namespace Pi_Odonto.Controllers
         }
 
         // ====================================================================
-        // MÉTODOS AUXILIARES - CORRIGIDOS PARA USAR CLAIMS
+        // MÉTODOS AUXILIARES
         // ====================================================================
 
         private bool IsAdmin() => User.HasClaim("TipoUsuario", "Admin");
@@ -56,18 +56,15 @@ namespace Pi_Odonto.Controllers
             return claim != null ? int.Parse(claim.Value) : 0;
         }
 
-        // CORRIGIDO: Usa Claims em vez de Roles
         private IQueryable<Crianca> GetChildrenQueryBase()
         {
             IQueryable<Crianca> query = _context.Criancas.Where(c => c.Ativa);
 
-            // Admin e Dentista veem TODAS as crianças ativas
             if (IsAdmin() || IsDentista())
             {
                 return query;
             }
 
-            // Responsável vê APENAS suas crianças
             var responsavelId = GetCurrentUserId();
             if (responsavelId == 0)
             {
@@ -77,27 +74,23 @@ namespace Pi_Odonto.Controllers
             return query.Where(c => c.IdResponsavel == responsavelId);
         }
 
-        // CORRIGIDO: Usa Claims e filtra por dentista
         private IQueryable<Agendamento> GetAgendamentosQueryBase()
         {
             IQueryable<Agendamento> query = _context.Agendamentos
                 .Include(a => a.Crianca)
                 .Include(a => a.Dentista);
 
-            // Admin vê TODOS os agendamentos
             if (IsAdmin())
             {
                 return query;
             }
 
-            // Dentista vê APENAS seus agendamentos
             if (IsDentista())
             {
                 var dentistaId = GetCurrentDentistaId();
                 return query.Where(a => a.IdDentista == dentistaId);
             }
 
-            // Responsável vê APENAS os agendamentos das suas crianças
             var responsavelId = GetCurrentUserId();
             if (responsavelId == 0)
             {
@@ -154,6 +147,30 @@ namespace Pi_Odonto.Controllers
                 {
                     TempData["ErrorMessage"] = "Nenhuma criança ativa encontrada para agendamento.";
                     return RedirectToAction("MinhaAgenda");
+                }
+
+                // === NOVA VALIDAÇÃO: RESPONSÁVEL SÓ PODE AGENDAR CRIANÇAS SEM AGENDAMENTO ATIVO ===
+                if (IsResponsavel())
+                {
+                    var agora = DateTime.Now;
+                    
+                    // Busca IDs das crianças que JÁ TÊM agendamento ativo (data/hora futura)
+                    var criancasComAgendamentoAtivo = await _context.Agendamentos
+                        .Where(a => children.Select(c => c.Id).Contains(a.IdCrianca))
+                        .Where(a => a.DataAgendamento.Date > agora.Date || 
+                                   (a.DataAgendamento.Date == agora.Date && a.HoraAgendamento > agora.TimeOfDay))
+                        .Select(a => a.IdCrianca)
+                        .Distinct()
+                        .ToListAsync();
+
+                    // Filtra apenas crianças SEM agendamento ativo
+                    children = children.Where(c => !criancasComAgendamentoAtivo.Contains(c.Id)).ToList();
+
+                    if (!children.Any())
+                    {
+                        TempData["ErrorMessage"] = "Todas as suas crianças já possuem agendamentos ativos. Você pode editar ou cancelar na tela 'Minha Agenda'.";
+                        return RedirectToAction("MinhaAgenda");
+                    }
                 }
 
                 var vm = new AppointmentViewModel
@@ -250,14 +267,21 @@ namespace Pi_Odonto.Controllers
                 return RedirectToAction("Index");
             }
 
-            var agendamentoExistente = await _context.Agendamentos
-                .Where(a => a.IdCrianca == model.SelectedChildId && a.DataAgendamento.Date == dataConsulta.Date)
-                .FirstOrDefaultAsync();
-
-            if (agendamentoExistente != null)
+            // === VALIDAÇÃO: RESPONSÁVEL NÃO PODE TER 2 AGENDAMENTOS ATIVOS PARA A MESMA CRIANÇA ===
+            if (IsResponsavel())
             {
-                TempData["ErrorMessage"] = $"A criança {crianca.Nome} já possui um agendamento para o dia {dataConsulta:dd/MM/yyyy}.";
-                return RedirectToAction("Index");
+                var agora = DateTime.Now;
+                var temAgendamentoAtivo = await _context.Agendamentos
+                    .Where(a => a.IdCrianca == model.SelectedChildId)
+                    .Where(a => a.DataAgendamento.Date > agora.Date || 
+                               (a.DataAgendamento.Date == agora.Date && a.HoraAgendamento > agora.TimeOfDay))
+                    .AnyAsync();
+
+                if (temAgendamentoAtivo)
+                {
+                    TempData["ErrorMessage"] = $"A criança {crianca.Nome} já possui um agendamento ativo. Você pode editá-lo ou cancelá-lo na tela 'Minha Agenda'.";
+                    return RedirectToAction("MinhaAgenda");
+                }
             }
 
             try

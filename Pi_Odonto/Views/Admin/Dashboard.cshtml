@@ -4,7 +4,31 @@
 @model List<Pi_Odonto.Models.Responsavel>
 
 <div class="container-fluid mt-4">
-    <!-- Header -->
+    <style>
+        /* REMOVIDO: Estilos específicos de cores (como btn-agendar-consulta-default) para usar .btn-primary e .btn-success */
+        
+        /* Classe para forçar largura e altura uniforme nos botões de Ações Rápidas */
+        .btn-fixed-size {
+            width: 150px; /* Largura fixa */
+            height: 100px; /* Altura fixa para acomodar duas linhas de texto e o ícone */
+            display: flex; /* Para centralizar o conteúdo verticalmente */
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 5px; /* Ajusta o padding para que o conteúdo caiba melhor */
+            white-space: normal; /* Permite que o texto quebre linha */
+            line-height: 1.2; /* Ajusta a altura da linha */
+        }
+        
+        /* NOVO: Garante que todos os botões com cores sólidas tenham texto branco para contraste */
+        .btn-primary.text-white, .btn-success.text-white, .btn-info.text-white,
+        .btn-warning.text-white,
+        .btn-primary.text-white:hover, .btn-success.text-white:hover,
+        .btn-warning.text-white:hover {
+             color: white !important;
+        }
+    </style>
+    
     <div class="row mb-4">
         <div class="col-md-8">
             <h1 class="text-primary">
@@ -33,7 +57,6 @@
         </div>
     </div>
 
-    <!-- Cards de Estatísticas -->
     <div class="row mb-4">
         <div class="col-md-3">
             <div class="card bg-primary text-white">
@@ -76,7 +99,7 @@
         </div>
 
         <div class="col-md-3">
-            <div class="card bg-info text-white">
+            <div class="card bg-primary text-white"> @* COR ALTERADA: De bg-info para bg-primary (Azul) *@
                 <div class="card-body">
                     <div class="d-flex justify-content-between">
                         <div>
@@ -114,7 +137,6 @@
         </div>
     </div>
 
-    <!-- Ações Rápidas -->
     <div class="row mb-4">
         <div class="col-12">
             <div class="card">
@@ -122,27 +144,40 @@
                     <h5 class="mb-0"><i class="fas fa-bolt"></i> Ações Rápidas</h5>
                 </div>
                 <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-3 text-center mb-3">
-                            <a href="/Admin/Responsaveis" class="btn btn-outline-primary btn-lg w-100">
+                    @* Agora todos os botões são preenchidos com suas cores e texto branco *@
+                    <div class="row justify-content-center">
+                        <div class="col-md-2 text-center mb-3">
+                            <a href="/Admin/Responsaveis" class="btn btn-primary btn-lg btn-fixed-size text-white">
                                 <i class="fas fa-users fa-2x d-block mb-2"></i>
                                 Gerenciar Responsáveis
                             </a>
                         </div>
-                        <div class="col-md-3 text-center mb-3">
-                            <a href="/Admin/Relatorios" class="btn btn-outline-success btn-lg w-100">
+                        <div class="col-md-2 text-center mb-3">
+                            <a href="/Admin/Relatorios" class="btn btn-success btn-lg btn-fixed-size text-white">
                                 <i class="fas fa-chart-bar fa-2x d-block mb-2"></i>
                                 Relatórios
                             </a>
                         </div>
-                        <div class="col-md-3 text-center mb-3">
-                            <a href="/Responsavel/Create" class="btn btn-outline-info btn-lg w-100">
+                        <div class="col-md-2 text-center mb-3">
+                            <a href="/Responsavel/Create" class="btn btn-primary btn-lg btn-fixed-size text-white"> @* COR ALTERADA: De btn-info para btn-primary (Azul) *@
                                 <i class="fas fa-user-plus fa-2x d-block mb-2"></i>
                                 Cadastrar Responsável
                             </a>
                         </div>
-                        <div class="col-md-3 text-center mb-3">
-                            <a href="/" class="btn btn-outline-warning btn-lg w-100" target="_blank">
+                        <div class="col-md-2 text-center mb-3">
+                            <a href="/Agendamento/MinhaAgenda" class="btn btn-success btn-lg btn-fixed-size text-white"> @* COR ALTERADA: De custom para btn-success (Verde Escuro) *@
+                                <i class="fas fa-calendar-alt fa-2x d-block mb-2"></i>
+                                Agenda Completa
+                            </a>
+                        </div>
+                        <div class="col-md-2 text-center mb-3">
+                            <a href="/Agendamento/Index" class="btn btn-primary btn-lg btn-fixed-size text-white"> @* COR ALTERADA: De custom para btn-primary (Azul) *@
+                                <i class="fas fa-calendar-plus fa-2x d-block mb-2"></i>
+                                Agendar Consulta
+                            </a>
+                        </div>
+                        <div class="col-md-2 text-center mb-3">
+                            <a href="/" class="btn btn-warning btn-lg btn-fixed-size text-white" target="_blank">
                                 <i class="fas fa-home fa-2x d-block mb-2"></i>
                                 Página Inicial
                             </a>
@@ -153,7 +188,6 @@
         </div>
     </div>
 
-    <!-- Últimos Cadastros -->
     <div class="row">
         <div class="col-12">
             <div class="card">
