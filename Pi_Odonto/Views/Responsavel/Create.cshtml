@@ -419,9 +419,13 @@
                         <button type="button" class="btn btn-outline-secondary btn-compact" onclick="etapaAnterior()">
                             <i class="fas fa-arrow-left"></i> Etapa Anterior
                         </button>
-                        <button type="submit" class="btn btn-success btn-compact" style="padding: 0.5rem 1.5rem;">
-                            <i class="fas fa-check"></i> Finalizar Cadastro
-                        </button>
+                        <div class="row mt-4">
+                            <div class="col text-right">
+                                <button type="submit" id="btnFinalizarCadastro" class="btn btn-success">
+                                    Finalizar Cadastro
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </form>
@@ -859,3 +863,558 @@
         }
     }, true);
 </script>
+<script>
+    var criancaIndex = @Model.Criancas.Count;
+    var opcoesParentesco = @Html.Raw(Json.Serialize(Model.OpcoesParentesco));
+    var etapaAtual = 1;
+    var validacoesPendentes = new Set();
+
+    // ----------------------------------------------------------------------
+    // NOVO: Função para atualizar nomes e índices dos campos e títulos
+    // ----------------------------------------------------------------------
+    function atualizarTitulosCriancas() {
+        var criancaForms = document.querySelectorAll('#criancas-container .crianca-form');
+        criancaIndex = criancaForms.length; // Atualiza o índice global de rastreamento
+
+        criancaForms.forEach((form, index) => {
+            // 1. Atualiza o título
+            var headerSpan = form.querySelector('.crianca-header span');
+            if (headerSpan) {
+                headerSpan.innerHTML = '<i class="fas fa-child"></i> Criança ' + (index + 1);
+            }
+
+            // 2. Atualiza os atributos name e data-index
+            form.setAttribute('data-index', index);
+            form.querySelectorAll('[name^="Criancas["]').forEach(input => {
+                var oldName = input.getAttribute('name');
+                var newName = oldName.replace(/\[\d+\]/g, '[' + index + ']');
+                input.setAttribute('name', newName);
+
+                // 3. Atualiza os validation messages (se existirem)
+                var validationSpan = document.querySelector(`span[data-valmsg-for="${oldName}"]`);
+                if (validationSpan) {
+                    validationSpan.setAttribute('data-valmsg-for', newName);
+                }
+            });
+
+            // 4. Lógica do botão de remoção
+            var removeBtn = form.querySelector('.remove-btn');
+            if (removeBtn) {
+                removeBtn.setAttribute('onclick', 'removerCrianca(' + index + ')');
+                if (criancaForms.length === 1) {
+                    removeBtn.style.display = 'none'; // Desabilita se for a única
+                } else {
+                    removeBtn.style.display = 'block';
+                }
+            }
+        });
+    }
+
+
+    // Validação de duplicação
+    function validarCPF(cpf) {
+        cpf = cpf.replace(/\D/g, '');
+        if (cpf.length !== 11) return false;
+        if (/^(\d)\1{10}$/.test(cpf)) return false;
+
+        let soma = 0;
+        for (let i = 0; i < 9; i++) {
+            soma += parseInt(cpf.charAt(i)) * (10 - i);
+        }
+        let resto = 11 - (soma % 11);
+        if (resto === 10 || resto === 11) resto = 0;
+        if (resto !== parseInt(cpf.charAt(9))) return false;
+
+        soma = 0;
+        for (let i = 0; i < 10; i++) {
+            soma += parseInt(cpf.charAt(i)) * (11 - i);
+        }
+        resto = 11 - (soma % 11);
+        if (resto === 10 || resto === 11) resto = 0;
+        if (resto !== parseInt(cpf.charAt(10))) return false;
+
+        return true;
+    }
+
+    async function verificarCpfExistente(cpf, inputElement, errorElement, spinnerId) {
+        if (!validarCPF(cpf)) {
+            errorElement.textContent = 'CPF inválido';
+            errorElement.style.display = 'block';
+            inputElement.classList.add('is-invalid');
+            return false;
+        }
+
+        const spinner = document.getElementById(spinnerId);
+        spinner.style.display = 'inline-block';
+        validacoesPendentes.add(spinnerId);
+
+        try {
+            const response = await fetch('/Responsavel/ValidarCpf', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ cpf: cpf.replace(/\D/g, '') })
+            });
+
+            const data = await response.json();
+
+            if (data.existe) {
+                errorElement.textContent = 'Este CPF já está cadastrado no sistema';
+                errorElement.style.display = 'block';
+                inputElement.classList.add('is-invalid');
+                return false;
+            } else {
+                errorElement.style.display = 'none';
+                inputElement.classList.remove('is-invalid');
+                return true;
+            }
+        } catch (error) {
+            console.error('Erro ao validar CPF:', error);
+            return true; // Em caso de erro, permite continuar
+        } finally {
+            spinner.style.display = 'none';
+            validacoesPendentes.delete(spinnerId);
+        }
+    }
+
+    async function verificarEmailExistente(email, inputElement, errorElement, spinnerId) {
+        const emailRegex = /^[^\s@@]+@@[^\s@@]+\.[^\s@@]+$/;
+        if (!emailRegex.test(email)) {
+            return true; // Deixa validação HTML padrão tratar
+        }
+
+        const spinner = document.getElementById(spinnerId);
+        spinner.style.display = 'inline-block';
+        validacoesPendentes.add(spinnerId);
+
+        try {
+            const response = await fetch('/Responsavel/ValidarEmail', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: email })
+            });
+
+            const data = await response.json();
+
+            if (data.existe) {
+                errorElement.textContent = 'Este email já está cadastrado no sistema';
+                errorElement.style.display = 'block';
+                inputElement.classList.add('is-invalid');
+                return false;
+            } else {
+                errorElement.style.display = 'none';
+                inputElement.classList.remove('is-invalid');
+                return true;
+            }
+        } catch (error) {
+            console.error('Erro ao validar email:', error);
+            return true;
+        } finally {
+            spinner.style.display = 'none';
+            validacoesPendentes.delete(spinnerId);
+        }
+    }
+
+    async function verificarTelefoneExistente(telefone, inputElement, errorElement, spinnerId) {
+        const telefoneLimpo = telefone.replace(/\D/g, '');
+        if (telefoneLimpo.length < 10) {
+            return true; // Deixa validação padrão tratar
+        }
+
+        const spinner = document.getElementById(spinnerId);
+        spinner.style.display = 'inline-block';
+        validacoesPendentes.add(spinnerId);
+
+        try {
+            const response = await fetch('/Responsavel/ValidarTelefone', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ telefone: telefoneLimpo })
+            });
+
+            const data = await response.json();
+
+            if (data.existe) {
+                errorElement.textContent = 'Este telefone já está cadastrado no sistema';
+                errorElement.style.display = 'block';
+                inputElement.classList.add('is-invalid');
+                return false;
+            } else {
+                errorElement.style.display = 'none';
+                inputElement.classList.remove('is-invalid');
+                return true;
+            }
+        } catch (error) {
+            console.error('Erro ao validar telefone:', error);
+            return true;
+        } finally {
+            spinner.style.display = 'none';
+            validacoesPendentes.delete(spinnerId);
+        }
+    }
+
+    function debounce(func, wait) {
+        let timeout;
+        return function executedFunction() {
+            const args = arguments;
+            const later = function() {
+                clearTimeout(timeout);
+                func.apply(this, args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    }
+
+    // Funções de navegação entre etapas
+    async function proximaEtapa() {
+        if (validacoesPendentes.size > 0) {
+            alert('Aguarde a validação dos dados...');
+            return;
+        }
+
+        if (await validarEtapa1()) {
+            etapaAtual = 2;
+            mostrarEtapa(2);
+            atualizarIndicadores();
+        }
+    }
+
+    function etapaAnterior() {
+        etapaAtual = 1;
+        mostrarEtapa(1);
+        atualizarIndicadores();
+    }
+
+    function mostrarEtapa(numeroEtapa) {
+        document.querySelectorAll('.step-content').forEach(content => {
+            content.classList.remove('active');
+        });
+        document.getElementById('step' + numeroEtapa + '-content').classList.add('active');
+    }
+
+    function atualizarIndicadores() {
+        const step1 = document.getElementById('step1-indicator');
+        const step2 = document.getElementById('step2-indicator');
+        const connector = document.getElementById('connector1');
+
+        step1.classList.remove('active', 'completed');
+        step2.classList.remove('active', 'completed');
+        connector.style.background = '#dee2e6'; // Cor padrão
+
+        if (etapaAtual === 1) {
+            step1.classList.add('active');
+        } else if (etapaAtual === 2) {
+            step1.classList.add('completed');
+            step2.classList.add('active');
+            connector.style.background = 'var(--cor-secundaria)';
+        }
+    }
+
+    async function validarEtapa1() {
+        let isValid = true;
+        const requiredFields = document.querySelectorAll('#step1-content input[required], #step1-content textarea[required]');
+
+        requiredFields.forEach(field => {
+            if (!field.value.trim()) {
+                field.classList.add('is-invalid');
+                isValid = false;
+            } else {
+                field.classList.remove('is-invalid');
+                // Adiciona 'is-valid' apenas para feedback visual
+            }
+        });
+
+        // Verifica validação customizada (erros de duplicação assíncrona)
+        const customErrors = document.querySelectorAll('#step1-content .validation-error-custom');
+        customErrors.forEach(errorDiv => {
+            if (errorDiv.style.display === 'block') {
+                isValid = false;
+            }
+        });
+
+        const senhaInput = document.querySelector('input[name="Responsavel.Senha"]');
+        const confirmarSenhaInput = document.querySelector('input[name="ConfirmarSenha"]');
+        const senha = senhaInput.value;
+        const confirmarSenha = confirmarSenhaInput.value;
+
+        if (senha !== confirmarSenha || senha.length < 6) {
+             confirmarSenhaInput.classList.add('is-invalid');
+             if (senha !== confirmarSenha) {
+                 alert('As senhas não coincidem!');
+             }
+             isValid = false;
+        } else {
+             confirmarSenhaInput.classList.remove('is-invalid');
+        }
+
+        // Garante que o CPF do responsável é válido
+        if (cpfInput.value.length === 14 && !validarCPF(cpfInput.value)) {
+            document.getElementById('cpf-error').textContent = 'CPF inválido';
+            document.getElementById('cpf-error').style.display = 'block';
+            cpfInput.classList.add('is-invalid');
+            isValid = false;
+        }
+
+        if (!isValid) {
+            // Se falhar, forçamos o scroll para o primeiro erro visível.
+            const firstInvalid = document.querySelector('.is-invalid:not(.cpf-crianca)');
+            if (firstInvalid) {
+                 firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            alert('Por favor, corrija os erros nos Dados do Responsável antes de prosseguir.');
+        }
+
+        return isValid;
+    }
+
+    // ----------------------------------------------------------------------
+    // NOVO: Função para validar a Etapa 2 (Crianças)
+    // ----------------------------------------------------------------------
+    // Função que valida todos os campos da Etapa 2 (Crianças)
+    async function validarEtapa2() {
+        let isValid = true;
+        const criancaForms = document.querySelectorAll('.crianca-form');
+        const cpfsCriancas = new Set(); // Para checagem de duplicidade INTRA-FORMULÁRIO
+        let errosDeIdade = 0;
+
+        criancaForms.forEach((form, index) => {
+            const requiredFields = form.querySelectorAll('input[required], select[required]');
+            let formIsValid = true;
+
+            // 1. Validação de Campos Obrigatórios (Nome e Parentesco)
+            requiredFields.forEach(field => {
+                if (!field.value.trim()) {
+                    field.classList.add('is-invalid');
+                    formIsValid = false;
+                    isValid = false;
+                } else {
+                    field.classList.remove('is-invalid');
+                }
+            });
+
+            // Pega os campos de CPF e Data de Nascimento desta criança
+            const cpfInput = form.querySelector('input[name$="\\.CPF"]');
+            const dataNascimentoInput = form.querySelector('input[name$="\\.DataNascimento"]');
+
+            // 2. Validação de CPF (Formato e Duplicidade Intra-formulário)
+            if (cpfInput && cpfInput.value.trim()) {
+                const cpfLimpo = cpfInput.value.replace(/[^\d]/g, '');
+
+                // Checa formato
+                if (cpfLimpo.length !== 11) {
+                     cpfInput.classList.add('is-invalid');
+                     // Adiciona a mensagem de erro específica, se necessário
+                     formIsValid = false;
+                     isValid = false;
+                }
+
+                // Checa Duplicidade INTRA-FORMULÁRIO (o novo requisito)
+                else if (cpfsCriancas.has(cpfLimpo)) {
+                    cpfInput.classList.add('is-invalid');
+                    // Alerta as DUAS ocorrências do CPF duplicado
+                    document.querySelectorAll(`input[value="${cpfInput.value}"]`).forEach(dupField => {
+                        dupField.classList.add('is-invalid');
+                        const errorElement = dupField.closest('.form-group, .row').querySelector('.invalid-feedback') || document.createElement('div');
+                        errorElement.classList.add('invalid-feedback');
+                        errorElement.style.display = 'block';
+                        errorElement.innerHTML = 'CPF duplicado no formulário.';
+                        if (!dupField.closest('.form-group, .row').querySelector('.invalid-feedback')) {
+                            dupField.closest('.form-group, .row').appendChild(errorElement);
+                        }
+                    });
+                    formIsValid = false;
+                    isValid = false;
+                }
+                else {
+                    cpfsCriancas.add(cpfLimpo);
+                    cpfInput.classList.remove('is-invalid');
+                }
+            }
+
+            // 3. Validação de Idade (Data de Nascimento)
+            if (dataNascimentoInput && dataNascimentoInput.value.trim()) {
+                const dataNasc = new Date(dataNascimentoInput.value.split('/').reverse().join('-'));
+                const hoje = new Date();
+                const idade = hoje.getFullYear() - dataNasc.getFullYear();
+                const m = hoje.getMonth() - dataNasc.getMonth();
+
+                // Ajuste para garantir 18 anos completos (se ainda não fez aniversário)
+                if (m < 0 || (m === 0 && hoje.getDate() < dataNasc.getDate())) {
+                    idade--;
+                }
+
+                // Critério de falha: Se a idade for 18 anos ou mais
+                if (idade >= 18 || dataNasc > hoje) {
+                    dataNascimentoInput.classList.add('is-invalid');
+                    errosDeIdade++;
+                    formIsValid = false;
+                    isValid = false;
+
+                    // Exibe a mensagem de erro de idade
+                    const errorElement = dataNascimentoInput.closest('.form-group, .row').querySelector('.invalid-feedback') || document.createElement('div');
+                    errorElement.classList.add('invalid-feedback');
+                    errorElement.style.display = 'block';
+                    errorElement.innerHTML = 'Data inválida. A criança deve ter no máximo 18 anos.';
+                    if (!dataNascimentoInput.closest('.form-group, .row').querySelector('.invalid-feedback')) {
+                        dataNascimentoInput.closest('.form-group, .row').appendChild(errorElement);
+                    }
+                } else {
+                    dataNascimentoInput.classList.remove('is-invalid');
+                }
+            }
+
+            // Se o form individual não for válido, marca o global como inválido
+            if (!formIsValid) {
+                isValid = false;
+            }
+        });
+
+        // ==========================================================
+        // PARTE CRUCIAL: Retorno final da função
+        // ==========================================================
+        if (!isValid) {
+            // Se houver erros, alerta o usuário, rola a tela e RETORNA FALSE.
+            alert('Por favor, corrija os erros na Etapa 2 para continuar.');
+
+            // Força a rolagem para o topo da Etapa 2 (Garante a visualização)
+            document.getElementById('etapa2').scrollIntoView({ behavior: 'smooth' });
+
+            return false;
+        }
+
+        // Se chegou até aqui, todas as crianças são válidas
+        return true;
+    }
+
+            // 1. Validação de CPF de Criança
+            const cpfInput = form.querySelector('.cpf-crianca');
+            const cpfPuro = cpfInput.value.replace(/\D/g, '');
+            const validationSpan = form.querySelector(`span[data-valmsg-for="Criancas[${index}].Cpf"]`);
+
+            if (cpfPuro.length === 11) {
+                if (!validarCPF(cpfPuro)) {
+                    validationSpan.textContent = 'CPF inválido.';
+                    validationSpan.style.display = 'block';
+                    cpfInput.classList.add('is-invalid');
+                    formIsValid = false;
+                } else {
+                    validationSpan.textContent = '';
+                    validationSpan.style.display = 'none';
+                    cpfInput.classList.remove('is-invalid');
+                }
+
+                // Adiciona para checagem de duplicidade Intra-Formulário
+                cpfsCriancas.push({ cpf: cpfPuro, index: index, input: cpfInput, validationSpan: validationSpan });
+
+            } else if (cpfPuro.length > 0) {
+                 // Campo preenchido, mas incompleto
+                 validationSpan.textContent = 'CPF incompleto (11 dígitos).';
+                 validationSpan.style.display = 'block';
+                 cpfInput.classList.add('is-invalid');
+                 formIsValid = false;
+            }
+
+            // 2. Validação de Data de Nascimento (Idade)
+            const dataNascimentoInput = form.querySelector('input[type="date"]');
+            const dataNascimento = dataNascimentoInput.value;
+            const dataValidationSpan = form.querySelector(`span[data-valmsg-for="Criancas[${index}].DataNascimento"]`);
+            const maxAge = 18; // Definido no seu [CustomMaxAge]
+
+            if (dataNascimento) {
+                 const dataNasc = new Date(dataNascimento);
+                 const hoje = new Date();
+                 const idade = hoje.getFullYear() - dataNasc.getFullYear();
+                 const m = hoje.getMonth() - dataNasc.getMonth();
+
+                 let idadeFinal = idade;
+                 if (m < 0 || (m === 0 && hoje.getDate() < dataNasc.getDate())) {
+                    idadeFinal--;
+                 }
+
+                 if (idadeFinal < 0) { // Data futura
+                     dataValidationSpan.textContent = 'Data de nascimento inválida (futura).';
+                     dataValidationSpan.style.display = 'block';
+                     dataNascimentoInput.classList.add('is-invalid');
+                     formIsValid = false;
+                 } else if (idadeFinal >= maxAge) {
+                     dataValidationSpan.textContent = `A criança deve ter menos de ${maxAge} anos.`;
+                     dataValidationSpan.style.display = 'block';
+                     dataNascimentoInput.classList.add('is-invalid');
+                     formIsValid = false;
+                 } else {
+                     dataValidationSpan.textContent = '';
+                     dataValidationSpan.style.display = 'none';
+                     dataNascimentoInput.classList.remove('is-invalid');
+                 }
+            }
+
+
+            if (!formIsValid) {
+                isValid = false;
+            }
+        });
+
+        // 3. Validação de Duplicidade Intra-Formulário (CPF entre crianças)
+        const cpfsEncontrados = {};
+        let duplicidadeIntraFormulario = false;
+
+        cpfsCriancas.forEach(item => {
+             if (cpfsEncontrados[item.cpf]) {
+                 duplicidadeIntraFormulario = true;
+                 // Marca o CPF atual como inválido
+                 item.validationSpan.textContent = 'CPF duplicado no formulário.';
+                 item.validationSpan.style.display = 'block';
+                 item.input.classList.add('is-invalid');
+                 // Marca o CPF anterior como inválido
+                 const primeiroDuplicado = cpfsEncontrados[item.cpf];
+                 primeiroDuplicado.validationSpan.textContent = 'CPF duplicado no formulário.';
+                 primeiroDuplicado.validationSpan.style.display = 'block';
+                 primeiroDuplicado.input.classList.add('is-invalid');
+             } else {
+                 cpfsEncontrados[item.cpf] = item;
+             }
+        });
+
+        if (duplicidadeIntraFormulario) {
+            isValid = false;
+        }
+
+        if (!isValid) {
+             // Se falhar, forçamos o scroll para o primeiro erro visível.
+            const firstInvalid = document.querySelector('#step2-content .is-invalid');
+            if (firstInvalid) {
+                 firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            alert('Por favor, corrija os erros nos Dados das Crianças antes de finalizar.');
+        }
+
+        return isValid;
+    }
+            // Seu listener de submit corrigido:
+    document.getElementById('cadastroForm').addEventListener('submit', async function(e) {
+        // ... (código para e.preventDefault() e etapa 1) ...
+
+        const etapa2Valida = await validarEtapa2();
+
+        if (etapa2Valida) {
+             this.submit();
+        } else {
+             // Se for inválido, o preventDefault já está aplicado.
+             // Precisamos garantir que a visualização da Etapa 2 seja mantida.
+
+             // ADICIONE ESTA LINHA:
+             document.getElementById('etapa1').style.display = 'none';
+             document.getElementById('etapa2').style.display = 'block';
+
+             // E garanta que a classe 'active' está na bolha 2
+             document.getElementById('passo1').classList.remove('active');
+             document.getElementById('passo2').classList.add('active');
+        }
+    });
+    // Máscara para CPF
+    function aplicarMascaraCPF(input) {
+        input.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length <= 11) {
+                value = value.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+                e
