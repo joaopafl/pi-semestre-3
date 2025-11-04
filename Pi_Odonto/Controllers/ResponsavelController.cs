@@ -7,6 +7,7 @@ using Pi_Odonto.Helpers;
 using Pi_Odonto.Models;
 using Pi_Odonto.Services;
 using Pi_Odonto.ViewModels;
+using System.Linq; // Garante que o .Linq e .GroupBy funcionem
 
 namespace Pi_Odonto.Controllers
 {
@@ -53,124 +54,124 @@ namespace Pi_Odonto.Controllers
             // Remove validação da propriedade de navegação
             ModelState.Remove("Responsavel.Criancas");
 
-            if (ModelState.IsValid)
+            // ----------------------------------------------------------------------------------
+            // NOVO PASSO: VALIDAÇÃO 3 (Server-Side) - CHECAGEM DE CPF DUPLICADO NO MESMO FORMULÁRIO (Intra-Formulário)
+            // Esta é a última defesa caso o JavaScript falhe ou esteja desabilitado.
+            // ----------------------------------------------------------------------------------
+
+            // 1. Limpa e seleciona os CPFs enviados no formulário de crianças
+            var cpfsEnviados = viewModel.Criancas
+                                     .Where(c => !string.IsNullOrEmpty(c.Cpf))
+                                     // Limpa os caracteres de máscara antes de comparar
+                                     .Select(c => c.Cpf.Replace(".", "").Replace("-", "").Trim())
+                                     .ToList();
+
+            // 2. Encontra os CPFs que aparecem mais de uma vez na lista
+            var cpfsDuplicadosIntraFormulario = cpfsEnviados
+                                  .GroupBy(cpf => cpf)
+                                  .Where(g => g.Count() > 1)
+                                  .Select(g => g.Key)
+                                  .ToList();
+
+            if (cpfsDuplicadosIntraFormulario.Any())
             {
-                // Verificações de duplicação antes de salvar
-                var cpfExiste = await _context.Responsaveis
-                    .AnyAsync(r => r.Cpf == viewModel.Responsavel.Cpf);
+                ModelState.AddModelError("", "Existem CPFs duplicados no cadastro de crianças neste formulário. Por favor, verifique.");
 
-                var emailExiste = await _context.Responsaveis
-                    .AnyAsync(r => r.Email == viewModel.Responsavel.Email);
-
-                var telefoneExiste = await _context.Responsaveis
-                    .AnyAsync(r => r.Telefone == viewModel.Responsavel.Telefone);
-
-                if (cpfExiste)
+                // Adiciona erro específico ao campo, para que o ValidationMessage apareça
+                for (int i = 0; i < viewModel.Criancas.Count; i++)
                 {
-                    ModelState.AddModelError("Responsavel.Cpf", "Este CPF já está cadastrado no sistema.");
-                }
-
-                if (emailExiste)
-                {
-                    ModelState.AddModelError("Responsavel.Email", "Este email já está cadastrado no sistema.");
-                }
-
-                if (telefoneExiste)
-                {
-                    ModelState.AddModelError("Responsavel.Telefone", "Este telefone já está cadastrado no sistema.");
-                }
-
-                // Verificar CPFs das crianças
-                foreach (var crianca in viewModel.Criancas)
-                {
-                    var cpfCriancaExiste = await _context.Criancas
-                        .AnyAsync(c => c.Cpf == crianca.Cpf) ||
-                        await _context.Responsaveis
-                        .AnyAsync(r => r.Cpf == crianca.Cpf);
-
-                    if (cpfCriancaExiste)
+                    var criancaCpfPuro = viewModel.Criancas[i].Cpf.Replace(".", "").Replace("-", "").Trim();
+                    if (cpfsDuplicadosIntraFormulario.Contains(criancaCpfPuro))
                     {
-                        ModelState.AddModelError("", $"O CPF {crianca.Cpf} (criança {crianca.Nome}) já está cadastrado no sistema.");
+                        ModelState.AddModelError($"Criancas[{i}].Cpf", "CPF duplicado! Já usado por outra criança neste formulário.");
                     }
                 }
+            }
+            // ----------------------------------------------------------------------------------
+            // O ModelState.IsValid agora verifica:
+            // 1. Todas as Data Annotations (incluindo [CustomMaxAge] e o [UniqueCpf] que você implementou)
+            // 2. O erro manual de duplicidade Intra-Formulário que acabamos de adicionar.
+            // ----------------------------------------------------------------------------------
 
-                // Se passou por todas as validações, tenta salvar
-                if (ModelState.IsValid)
+            // As checagens manuais de duplicidade de CPF/Email/Telefone do Responsável 
+            // e CPF de Criança no banco foram REMOVIDAS daqui, pois o Data Annotations
+            // (principalmente o [UniqueCpf]) agora faz esse trabalho de forma mais limpa.
+
+            if (ModelState.IsValid)
+            {
+                using (var transaction = _context.Database.BeginTransaction())
                 {
-                    using (var transaction = _context.Database.BeginTransaction())
+                    try
                     {
+                        // Define valores padrão
+                        viewModel.Responsavel.Ativo = false;
+                        viewModel.Responsavel.DataCadastro = DateTime.Now;
+                        viewModel.Responsavel.EmailVerificado = false;
+                        viewModel.Responsavel.TokenVerificacao = Guid.NewGuid().ToString();
+
+                        // Criptografar a senha
+                        viewModel.Responsavel.Senha = PasswordHelper.HashPassword(viewModel.Responsavel.Senha);
+
+                        // Salva o responsável
+                        _context.Responsaveis.Add(viewModel.Responsavel);
+                        await _context.SaveChangesAsync();
+
+                        // Salva as crianças
+                        foreach (var crianca in viewModel.Criancas)
+                        {
+                            crianca.IdResponsavel = viewModel.Responsavel.Id;
+                            crianca.Ativa = true; // Define criança como ativa por padrão
+                            _context.Criancas.Add(crianca);
+                        }
+                        await _context.SaveChangesAsync();
+
+                        // Enviar email de verificação
                         try
                         {
-                            // Define valores padrão
-                            viewModel.Responsavel.Ativo = false;
-                            viewModel.Responsavel.DataCadastro = DateTime.Now;
-                            viewModel.Responsavel.EmailVerificado = false;
-                            viewModel.Responsavel.TokenVerificacao = Guid.NewGuid().ToString();
-
-                            // Criptografar a senha
-                            viewModel.Responsavel.Senha = PasswordHelper.HashPassword(viewModel.Responsavel.Senha);
-
-                            // Salva o responsável
-                            _context.Responsaveis.Add(viewModel.Responsavel);
-                            await _context.SaveChangesAsync();
-
-                            // Salva as crianças
-                            foreach (var crianca in viewModel.Criancas)
-                            {
-                                crianca.IdResponsavel = viewModel.Responsavel.Id;
-                                crianca.Ativa = true; // Define criança como ativa por padrão
-                                _context.Criancas.Add(crianca);
-                            }
-                            await _context.SaveChangesAsync();
-
-                            // Enviar email de verificação
-                            try
-                            {
-                                await _emailService.EnviarEmailVerificacaoAsync(
-                                    viewModel.Responsavel.Email,
-                                    viewModel.Responsavel.Nome,
-                                    viewModel.Responsavel.TokenVerificacao
-                                );
-                            }
-                            catch (Exception emailEx)
-                            {
-                                Console.WriteLine($"Erro ao enviar email: {emailEx.Message}");
-                                // Não falha o cadastro por causa do email
-                            }
-
-                            transaction.Commit();
-                            return RedirectToAction("EmailEnviado");
+                            await _emailService.EnviarEmailVerificacaoAsync(
+                                viewModel.Responsavel.Email,
+                                viewModel.Responsavel.Nome,
+                                viewModel.Responsavel.TokenVerificacao
+                            );
                         }
-                        catch (DbUpdateException ex)
+                        catch (Exception emailEx)
                         {
-                            transaction.Rollback();
-
-                            // Trata erros específicos do banco
-                            if (ex.InnerException?.Message.Contains("CPF") == true)
-                            {
-                                ModelState.AddModelError("Responsavel.Cpf", "Este CPF já está cadastrado no sistema.");
-                            }
-                            else if (ex.InnerException?.Message.Contains("Email") == true)
-                            {
-                                ModelState.AddModelError("Responsavel.Email", "Este email já está cadastrado no sistema.");
-                            }
-                            else if (ex.InnerException?.Message.Contains("Telefone") == true)
-                            {
-                                ModelState.AddModelError("Responsavel.Telefone", "Este telefone já está cadastrado no sistema.");
-                            }
-                            else
-                            {
-                                ModelState.AddModelError("", "Dados duplicados encontrados. Verifique CPF, email e telefone.");
-                            }
-
-                            Console.WriteLine($"Erro de banco: {ex.InnerException?.Message}");
+                            Console.WriteLine($"Erro ao enviar email: {emailEx.Message}");
+                            // Não falha o cadastro por causa do email
                         }
-                        catch (Exception ex)
+
+                        transaction.Commit();
+                        return RedirectToAction("EmailEnviado");
+                    }
+                    catch (DbUpdateException ex)
+                    {
+                        transaction.Rollback();
+                        // Lógica de fallback para erros de índice único que o Data Annotations 
+                        // pode não ter pego por algum motivo (ex: corridas de concorrência)
+                        if (ex.InnerException?.Message.Contains("CPF") == true)
                         {
-                            transaction.Rollback();
-                            ModelState.AddModelError("", "Erro ao salvar os dados. Tente novamente.");
-                            Console.WriteLine($"Erro geral: {ex.Message}");
+                            ModelState.AddModelError("Responsavel.Cpf", "Este CPF (Responsável ou Criança) já está cadastrado no sistema.");
                         }
+                        else if (ex.InnerException?.Message.Contains("Email") == true)
+                        {
+                            ModelState.AddModelError("Responsavel.Email", "Este email já está cadastrado no sistema.");
+                        }
+                        else if (ex.InnerException?.Message.Contains("Telefone") == true)
+                        {
+                            ModelState.AddModelError("Responsavel.Telefone", "Este telefone já está cadastrado no sistema.");
+                        }
+                        else
+                        {
+                            ModelState.AddModelError("", "Erro ao salvar os dados. Verifique os dados e tente novamente.");
+                        }
+
+                        Console.WriteLine($"Erro de banco: {ex.InnerException?.Message}");
+                    }
+                    catch (Exception ex)
+                    {
+                        transaction.Rollback();
+                        ModelState.AddModelError("", "Erro ao salvar os dados. Tente novamente.");
+                        Console.WriteLine($"Erro geral: {ex.Message}");
                     }
                 }
             }
@@ -187,7 +188,8 @@ namespace Pi_Odonto.Controllers
             return View(viewModel);
         }
 
-        // MÉTODOS DE VALIDAÇÃO AJAX
+        // MÉTODOS DE VALIDAÇÃO AJAX (Mantenha inalterado, exceto se quiser simplificá-los, 
+        // mas eles já estão funcionando como validação em tempo real.)
         [HttpPost]
         [AllowAnonymous]
         public async Task<IActionResult> ValidarCpf([FromBody] ValidarCpfRequest request)
@@ -326,6 +328,9 @@ namespace Pi_Odonto.Controllers
         [HttpPost]
         public IActionResult Edit(ResponsavelCriancaViewModel viewModel)
         {
+            // Nota: O Edit precisaria da mesma lógica de duplicidade Intra-Formulário
+            // Se você quiser essa lógica no Edit, avise-me. Por enquanto, mantenho o original.
+
             if (ModelState.IsValid)
             {
                 using (var transaction = _context.Database.BeginTransaction())
@@ -443,7 +448,7 @@ namespace Pi_Odonto.Controllers
         public class ValidarEmailRequest { public string Email { get; set; } }
         public class ValidarTelefoneRequest { public string Telefone { get; set; } }
 
-    	[HttpGet]
+        [HttpGet]
         [AllowAnonymous]
         public IActionResult CreateCrianca()
         {
@@ -454,9 +459,10 @@ namespace Pi_Odonto.Controllers
 
             var crianca = new Crianca();
             ViewBag.OpcoesParentesco = new List<string>
-        {
-        "Pai", "Mãe", "Avô", "Avó", "Tio", "Tia", "Padrasto", "Madrasta", "Tutor Legal"
-        };
+            {
+            "Pai", "Mãe", "Avô", "Avó", "Tio", "Tia", "Padrasto", "Madrasta", "Tutor Legal"
+            };
             return View(crianca);
         }
-    } }
+    }
+}

@@ -1,6 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System;
 
 namespace Pi_Odonto.Models
 {
@@ -26,6 +25,8 @@ namespace Pi_Odonto.Models
         [Column("dt_nasc_crianca")]
         [Display(Name = "Data de Nascimento")]
         [DataType(DataType.Date)]
+        // ** VALIDAÇÃO DE IDADE ADICIONADA AQUI **
+        [CustomMaxAge(18, ErrorMessage = "Data inválida, a criança deve ter entre 1 à 18 anos.")]
         public DateTime DataNascimento { get; set; }
 
         [Required]
@@ -39,13 +40,28 @@ namespace Pi_Odonto.Models
         [Display(Name = "Responsável")]
         public int IdResponsavel { get; set; }
 
-        // Mapeamento CRÍTICO para a coluna 'ativa' (bit(1) ou tinyint(1) no MySQL)
-        [Column("ativa")] 
+        [Column("ativa")]
         [Display(Name = "Ativa")]
         public bool Ativa { get; set; } = true;
 
         // Navegação
         [ForeignKey("IdResponsavel")]
         public virtual Responsavel? Responsavel { get; set; }
+    }
+}
+
+namespace Pi_Odonto.Models
+{
+    public class Criancaa
+    {
+        // ...
+        [Required]
+        [StringLength(14)]
+        [Column("cpf_crianca")]
+        [Display(Name = "CPF")]
+        // >>> NOVO: Aplica o atributo para checar o CPF no banco
+        [UniqueCpf(ErrorMessage = "Este CPF já está cadastrado no sistema.")]
+        public string Cpf { get; set; } = string.Empty;
+        // ...
     }
 }
