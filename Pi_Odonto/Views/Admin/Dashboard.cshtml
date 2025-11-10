@@ -118,22 +118,26 @@
         </div>
 
         <div class="col-md-3">
-            <div class="card bg-warning text-dark">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h4 class="mb-0">@ViewBag.CadastrosEsteMes</h4>
-                            <p class="mb-0">Cadastros Este Mês</p>
-                        </div>
-                        <div class="align-self-center">
-                            <i class="fas fa-calendar-alt fa-2x"></i>
+            <a href="/Admin/Escala/Calendario" class="text-decoration-none">
+                <div class="card bg-warning text-dark" style="cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h4 class="mb-0">
+                                    <i class="fas fa-calendar-check"></i> Escalas
+                                </h4>
+                                <p class="mb-0">Calendário de Dentistas</p>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="fas fa-calendar-alt fa-2x"></i>
+                            </div>
                         </div>
                     </div>
+                    <div class="card-footer">
+                        <small>Gerenciar escalas mensais <i class="fas fa-arrow-right"></i></small>
+                    </div>
                 </div>
-                <div class="card-footer">
-                    <small>Total no mês atual</small>
-                </div>
-            </div>
+            </a>
         </div>
     </div>
 
@@ -177,9 +181,9 @@
                             </a>
                         </div>
                         <div class="col-md-2 text-center mb-3">
-                            <a href="/" class="btn btn-warning btn-lg btn-fixed-size text-white" target="_blank">
-                                <i class="fas fa-home fa-2x d-block mb-2"></i>
-                                Página Inicial
+                            <a href="/Admin/Escala/Calendario" class="btn btn-warning btn-lg btn-fixed-size text-white">
+                                <i class="fas fa-calendar-alt fa-2x d-block mb-2"></i>
+                                Escalas dos Dentistas
                             </a>
                         </div>
                     </div>

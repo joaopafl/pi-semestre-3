@@ -79,30 +79,49 @@ builder.Services.AddAuthorization(options =>
 var app = builder.Build();
 
 // === Popular dados iniciais se necessário ===
-using (var scope = app.Services.CreateScope())
+// Executar de forma assíncrona em background para não bloquear a inicialização do servidor
+var loggerInit = app.Services.GetRequiredService<ILogger<Program>>();
+_ = Task.Run(async () =>
 {
-    var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-
-    // Garantir que o banco existe
-    context.Database.EnsureCreated();
-
-    // Popular escalas de trabalho se não existirem
-    if (!context.EscalaTrabalho.Any())
+    try
     {
-        var escalas = new[]
+        // Aguardar um pouco para garantir que o servidor iniciou
+        await Task.Delay(2000);
+        
+        using (var scope = app.Services.CreateScope())
         {
-            new EscalaTrabalho { DtDisponivel = "Segunda-feira", HrInicio = 8, HrFim = 17 },
-            new EscalaTrabalho { DtDisponivel = "Terça-feira", HrInicio = 8, HrFim = 17 },
-            new EscalaTrabalho { DtDisponivel = "Quarta-feira", HrInicio = 8, HrFim = 17 },
-            new EscalaTrabalho { DtDisponivel = "Quinta-feira", HrInicio = 8, HrFim = 17 },
-            new EscalaTrabalho { DtDisponivel = "Sexta-feira", HrInicio = 8, HrFim = 17 },
-            new EscalaTrabalho { DtDisponivel = "Sábado", HrInicio = 8, HrFim = 12 }
-        };
+            var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-        context.EscalaTrabalho.AddRange(escalas);
-        context.SaveChanges();
+            // Garantir que o banco existe
+            loggerInit.LogInformation("Verificando conexão com banco de dados...");
+            await context.Database.EnsureCreatedAsync();
+            loggerInit.LogInformation("Conexão com banco de dados estabelecida.");
+
+            // Popular escalas de trabalho se não existirem
+            if (!await context.EscalaTrabalho.AnyAsync())
+            {
+                var escalas = new[]
+                {
+                    new EscalaTrabalho { DtDisponivel = "Segunda-feira", HrInicio = 8, HrFim = 17 },
+                    new EscalaTrabalho { DtDisponivel = "Terça-feira", HrInicio = 8, HrFim = 17 },
+                    new EscalaTrabalho { DtDisponivel = "Quarta-feira", HrInicio = 8, HrFim = 17 },
+                    new EscalaTrabalho { DtDisponivel = "Quinta-feira", HrInicio = 8, HrFim = 17 },
+                    new EscalaTrabalho { DtDisponivel = "Sexta-feira", HrInicio = 8, HrFim = 17 },
+                    new EscalaTrabalho { DtDisponivel = "Sábado", HrInicio = 8, HrFim = 12 }
+                };
+
+                await context.EscalaTrabalho.AddRangeAsync(escalas);
+                await context.SaveChangesAsync();
+                loggerInit.LogInformation("Escalas de trabalho inicializadas.");
+            }
+        }
     }
-}
+    catch (Exception ex)
+    {
+        // Log do erro, mas não interrompe a inicialização
+        loggerInit.LogError(ex, "Erro ao inicializar banco de dados. A aplicação continuará funcionando, mas algumas funcionalidades podem não estar disponíveis.");
+    }
+});
 
 // === Pipeline ===
 if (!app.Environment.IsDevelopment())
@@ -110,8 +129,19 @@ if (!app.Environment.IsDevelopment())
     app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
 }
+else
+{
+    // Em desenvolvimento, mostrar erros detalhados
+    app.UseDeveloperExceptionPage();
+}
 
-app.UseHttpsRedirection();
+// Apenas usar HTTPS redirection se HTTPS estiver configurado
+var hasHttps = app.Configuration["ASPNETCORE_URLS"]?.Contains("https") == true;
+if (hasHttps)
+{
+    app.UseHttpsRedirection();
+}
+
 app.UseStaticFiles();
 app.UseRouting();
 
@@ -200,6 +230,32 @@ app.MapControllerRoute(
     pattern: "Admin",
     defaults: new { controller = "Admin", action = "Dashboard" });
 
+// ========== Rotas Admin Escala (ANTES da rota genérica Admin) ==========
+app.MapControllerRoute(
+    name: "admin_escala_calendario",
+    pattern: "Admin/Escala/Calendario",
+    defaults: new { controller = "AdminEscala", action = "Calendario" });
+
+app.MapControllerRoute(
+    name: "admin_escala_criar",
+    pattern: "Admin/Escala/Criar",
+    defaults: new { controller = "AdminEscala", action = "Criar" });
+
+app.MapControllerRoute(
+    name: "admin_escala_editar",
+    pattern: "Admin/Escala/Editar/{id}",
+    defaults: new { controller = "AdminEscala", action = "Editar" });
+
+app.MapControllerRoute(
+    name: "admin_escala_excluir",
+    pattern: "Admin/Escala/Excluir/{id}",
+    defaults: new { controller = "AdminEscala", action = "Excluir" });
+
+app.MapControllerRoute(
+    name: "admin_escala_criar_multiplos",
+    pattern: "Admin/Escala/CriarMultiplos",
+    defaults: new { controller = "AdminEscala", action = "CriarMultiplos" });
+
 app.MapControllerRoute(
     name: "admin_actions",
     pattern: "Admin/{action}/{id?}",
@@ -211,5 +267,20 @@ app.MapControllerRoute(
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
+
+// Log da URL onde o servidor está escutando
+var logger = app.Services.GetRequiredService<ILogger<Program>>();
+var urls = Environment.GetEnvironmentVariable("ASPNETCORE_URLS") ?? 
+           app.Configuration["ASPNETCORE_URLS"] ?? 
+           "http://localhost:5000";
+           
+logger.LogInformation("========================================");
+logger.LogInformation("🚀 SERVIDOR INICIANDO...");
+logger.LogInformation("========================================");
+logger.LogInformation("URLs configuradas: {Urls}", urls);
+logger.LogInformation("Ambiente: {Environment}", app.Environment.EnvironmentName);
+logger.LogInformation("========================================");
+logger.LogInformation("✅ Servidor pronto! Acesse: http://localhost:5000");
+logger.LogInformation("========================================");
 
 app.Run();

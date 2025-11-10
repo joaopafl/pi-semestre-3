@@ -1,0 +1,229 @@
+@{
+    ViewData["Title"] = "Calendário de Escalas dos Dentistas";
+}
+
+@model List<Pi_Odonto.Models.EscalaMensalDentista>
+
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="text-primary">
+                <i class="fas fa-calendar-alt"></i> Calendário de Escalas dos Dentistas
+            </h1>
+            <p class="text-muted">Gerencie as escalas mensais dos dentistas</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <button onclick="history.back()" class="btn btn-secondary btn-lg me-2">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </button>
+            <a href="@Url.Action("Criar")" class="btn btn-success btn-lg">
+                <i class="fas fa-plus"></i> Nova Escala
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle"></i> @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-circle"></i> @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["WarningMessage"] != null)
+    {
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-triangle"></i> @TempData["WarningMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Navegação do Mês -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-4">
+                    <a href="@Url.Action("Calendario", new { ano = ViewBag.Ano, mes = ViewBag.Mes - 1 })"
+                       class="btn btn-outline-primary">
+                        <i class="fas fa-chevron-left"></i> Mês Anterior
+                    </a>
+                </div>
+                <div class="col-md-4 text-center">
+                    <h3 class="mb-0">
+                        @System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName((int)ViewBag.Mes) @ViewBag.Ano
+                    </h3>
+                </div>
+                <div class="col-md-4 text-end">
+                    <a href="@Url.Action("Calendario", new { ano = ViewBag.Ano, mes = ViewBag.Mes + 1 })"
+                       class="btn btn-outline-primary">
+                        Próximo Mês <i class="fas fa-chevron-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Calendário -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th class="text-center" style="width: 14%">Domingo</th>
+                            <th class="text-center" style="width: 14%">Segunda</th>
+                            <th class="text-center" style="width: 14%">Terça</th>
+                            <th class="text-center" style="width: 14%">Quarta</th>
+                            <th class="text-center" style="width: 14%">Quinta</th>
+                            <th class="text-center" style="width: 14%">Sexta</th>
+                            <th class="text-center" style="width: 14%">Sábado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @{
+                            var primeiroDia = (DateTime)ViewBag.PrimeiroDia;
+                            var ultimoDia = (DateTime)ViewBag.UltimoDia;
+                            var escalasPorData = (Dictionary<DateTime, Dictionary<int, List<Pi_Odonto.Models.EscalaMensalDentista>>>)ViewBag.EscalasPorData;
+                            var dentistas = (List<Pi_Odonto.Models.Dentista>)ViewBag.Dentistas;
+                            var dentistasDict = dentistas.ToDictionary(d => d.Id, d => d.Nome);
+
+                            var diaAtual = primeiroDia.AddDays(-(int)primeiroDia.DayOfWeek);
+                            var fimMes = ultimoDia;
+                            var fimCalendario = fimMes.AddDays(6 - (int)fimMes.DayOfWeek);
+                        }
+
+                        @while (diaAtual <= fimCalendario)
+                        {
+                            <tr>
+                                @for (int i = 0; i < 7; i++)
+                                {
+                                    var dia = diaAtual.AddDays(i);
+                                    var isCurrentMonth = dia.Month == primeiroDia.Month;
+                                    var isToday = dia.Date == DateTime.Today;
+                                    var isPastDate = dia.Date < DateTime.Today;
+                                    var temEscalas = escalasPorData.ContainsKey(dia.Date);
+                                    var escalasDoDia = temEscalas ? escalasPorData[dia.Date] : new Dictionary<int, List<Pi_Odonto.Models.EscalaMensalDentista>>();
+                                    var totalEscalasDia = escalasDoDia.Values.Sum(lista => lista.Count);
+
+                                    <td class="@(isCurrentMonth ? "" : "text-muted") @(isToday ? "bg-light" : "") @(isPastDate ? "bg-secondary bg-opacity-10" : "")"
+                                        style="height: 120px; vertical-align: top; position: relative;">
+                                        <div class="d-flex justify-content-between align-items-start mb-1">
+                                            <span class="fw-bold @(isToday ? "text-primary" : "") @(isPastDate ? "text-muted" : "")">@dia.Day</span>
+                                            @if (isCurrentMonth && !isPastDate)
+                                            {
+                                                @* Só permite adicionar nova escala se não houver nenhuma escala neste dia e não for data passada *@
+                                                @if (totalEscalasDia == 0)
+                                                {
+                                                    <a href="@Url.Action("Criar", new { data = dia })"
+                                                       class="btn btn-sm btn-outline-success"
+                                                       title="Adicionar escala">
+                                                        <i class="fas fa-plus"></i>
+                                                    </a>
+                                                }
+                                                else
+                                                {
+                                                    <button class="btn btn-sm btn-outline-secondary"
+                                                            disabled
+                                                            title="Já existe um horário alocado. Delete o existente para adicionar outro.">
+                                                        <i class="fas fa-lock"></i>
+                                                    </button>
+                                                }
+                                            }
+                                            @if (isPastDate && isCurrentMonth)
+                                            {
+                                                <span class="badge bg-secondary" title="Data passada">
+                                                    <i class="fas fa-ban"></i>
+                                                </span>
+                                            }
+                                        </div>
+
+                                        @if (temEscalas && isCurrentMonth)
+                                        {
+                                            <div class="escalas-dia" style="font-size: 0.75rem;">
+                                                @foreach (var grupo in escalasDoDia)
+                                                {
+                                                    var dentistaNome = dentistasDict.ContainsKey(grupo.Key) ? dentistasDict[grupo.Key] : "Desconhecido";
+                                                    var cores = new[] { "primary", "success", "info", "warning", "danger" };
+                                                    var corIndex = grupo.Key % cores.Length;
+
+                                                    <div class="mb-1">
+                                                        <span class="badge bg-@cores[corIndex] mb-1">@dentistaNome</span>
+                                                        @foreach (var escala in grupo.Value.OrderBy(e => e.HoraInicio))
+                                                        {
+                                                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                                                <small>
+                                                                    @escala.HoraInicio.ToString(@"hh\:mm") - @escala.HoraFim.ToString(@"hh\:mm")
+                                                                </small>
+                                                                <div>
+                                                                    <a href="@Url.Action("Editar", new { id = escala.Id })"
+                                                                       class="btn btn-xs btn-outline-primary btn-sm"
+                                                                       title="Editar">
+                                                                        <i class="fas fa-edit"></i>
+                                                                    </a>
+                                                                    <form asp-action="Excluir" asp-route-id="@escala.Id"
+                                                                          method="post"
+                                                                          style="display: inline;"
+                                                                          onsubmit="return confirm('Tem certeza que deseja excluir esta escala?');">
+                                                                        <button type="submit"
+                                                                                class="btn btn-xs btn-outline-danger btn-sm"
+                                                                                title="Excluir">
+                                                                            <i class="fas fa-trash"></i>
+                                                                        </button>
+                                                                    </form>
+                                                                </div>
+                                                            </div>
+                                                        }
+                                                    </div>
+                                                }
+                                            </div>
+                                        }
+                                    </td>
+                                }
+                            </tr>
+                            diaAtual = diaAtual.AddDays(7);
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Legenda -->
+    <div class="card mt-4">
+        <div class="card-body">
+            <h5>Legenda</h5>
+            <div class="row">
+                @foreach (var dentista in dentistas)
+                {
+                    var cores = new[] { "primary", "success", "info", "warning", "danger" };
+                    var corIndex = dentista.Id % cores.Length;
+                    <div class="col-md-3 mb-2">
+                        <span class="badge bg-@cores[corIndex]">@dentista.Nome</span>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <style>
+        .escalas-dia {
+            max-height: 80px;
+            overflow-y: auto;
+        }
+
+        .btn-xs {
+            padding: 0.1rem 0.3rem;
+            font-size: 0.7rem;
+        }
+    </style>
+}

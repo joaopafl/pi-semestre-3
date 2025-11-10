@@ -12,6 +12,7 @@ namespace Pi_Odonto.Data
         public DbSet<Dentista> Dentistas { get; set; }
         public DbSet<EscalaTrabalho> EscalaTrabalho { get; set; }
         public DbSet<DisponibilidadeDentista> DisponibilidadesDentista { get; set; }
+        public DbSet<EscalaMensalDentista> EscalasMensaisDentista { get; set; }
         public DbSet<Agendamento> Agendamentos { get; set; }
         public DbSet<Atendimento> Atendimentos { get; set; }
 
@@ -48,6 +49,9 @@ namespace Pi_Odonto.Data
             modelBuilder.Entity<DisponibilidadeDentista>()
                 .ToTable("disponibilidade_dentista");
 
+            modelBuilder.Entity<EscalaMensalDentista>()
+                .ToTable("escala_mensal_dentista");
+
             modelBuilder.Entity<Agendamento>()
                 .ToTable("agendamento");
 
@@ -79,6 +83,13 @@ namespace Pi_Odonto.Data
                 .HasOne(d => d.Dentista)
                 .WithMany(d => d.Disponibilidades)
                 .HasForeignKey(d => d.IdDentista)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Configuração do relacionamento Dentista -> EscalaMensalDentista
+            modelBuilder.Entity<EscalaMensalDentista>()
+                .HasOne(e => e.Dentista)
+                .WithMany()
+                .HasForeignKey(e => e.IdDentista)
                 .OnDelete(DeleteBehavior.Cascade);
 
             // NOVO: Configuração do relacionamento Odontograma -> Crianca
