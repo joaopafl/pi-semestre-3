@@ -1,5 +1,10 @@
 @{
     ViewData["Title"] = "Criar Escala de Dentista";
+    // Define uma lista de horários de trabalho padrão (blocos de 1 hora)
+    var HorariosPadrao = new List<string> {
+        "08:00", "09:00", "10:00", "11:00", "12:00", 
+        "13:00", "14:00", "15:00", "16:00", "17:00"
+    };
 }
 
 @model Pi_Odonto.Models.EscalaMensalDentista
@@ -10,18 +15,21 @@
             <div class="card">
                 <div class="card-header bg-success text-white">
                     <h4 class="mb-0">
-                        <i class="fas fa-plus-circle"></i> Criar Nova Escala
+                        <i class="fas fa-plus-circle"></i> Criar Nova Escala (Blocos de 1 Hora)
                     </h4>
                 </div>
                 <div class="card-body">
-                    <form asp-action="Criar" method="post">
+                    <form asp-action="CriarMultiplos" method="post">
                         <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
+                        <h6 class="text-secondary mb-3"><i class="fas fa-caret-right"></i> Informações Básicas</h6>
+                        <hr class="mt-1 mb-3" />
+
                         <div class="mb-3">
-                            <label asp-for="IdDentista" class="form-label fw-bold">
+                            <label class="form-label fw-bold">
                                 <i class="fas fa-user-md text-primary"></i> Dentista
                             </label>
-                            <select asp-for="IdDentista" class="form-select" required>
+                            <select name="idDentista" class="form-select" required>
                                 <option value="">Selecione um dentista</option>
                                 @foreach (var dentista in (List<Pi_Odonto.Models.Dentista>)ViewBag.Dentistas)
                                 {
@@ -32,40 +40,43 @@
                         </div>
 
                         <div class="mb-3">
-                            <label asp-for="DataEscala" class="form-label fw-bold">
+                            <label class="form-label fw-bold">
                                 <i class="fas fa-calendar text-primary"></i> Data
                             </label>
-                            <input asp-for="DataEscala" type="date" class="form-control" 
+                            <input name="dataEscala" type="date" class="form-control" 
                                    value="@(((DateTime?)ViewBag.DataSelecionada)?.ToString("yyyy-MM-dd") ?? DateTime.Today.ToString("yyyy-MM-dd"))" 
                                    required />
-                            <span asp-validation-for="DataEscala" class="text-danger"></span>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label asp-for="HoraInicio" class="form-label fw-bold">
-                                    <i class="fas fa-clock text-primary"></i> Hora de Início
-                                </label>
-                                <input asp-for="HoraInicio" type="time" class="form-control" 
-                                       step="3600" required />
-                                <small class="text-muted">Cada bloco tem 1 hora de duração</small>
-                                <span asp-validation-for="HoraInicio" class="text-danger"></span>
                             </div>
 
-                            <div class="col-md-6 mb-3">
-                                <label asp-for="HoraFim" class="form-label fw-bold">
-                                    <i class="fas fa-clock text-primary"></i> Hora de Fim
-                                </label>
-                                <input asp-for="HoraFim" type="time" class="form-control" 
-                                       step="3600" required readonly />
-                                <small class="text-muted">Calculado automaticamente (1 hora após início)</small>
-                                <span asp-validation-for="HoraFim" class="text-danger"></span>
+                        <h6 class="text-secondary mb-3 mt-4"><i class="fas fa-caret-right"></i> Seleção de Horários (Blocos de 1h)</h6>
+                        <hr class="mt-1 mb-3" />
+
+                        <div class="mb-3 p-3 border rounded bg-light">
+                            <label class="form-label fw-bold mb-3">
+                                <i class="fas fa-clock text-success"></i> Selecione os Horários de Início:
+                            </label>
+                            <div class="row">
+                                @foreach (var horario in HorariosPadrao)
+                                {
+                                    <div class="col-6 col-sm-4 col-md-3">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" 
+                                                   name="horariosSelecionados" 
+                                                   id="horario_@horario.Replace(":", "")" 
+                                                   value="@horario:00" />
+                                            <label class="form-check-label" for="horario_@horario.Replace(":", "")">
+                                                @horario - @(DateTime.Parse(horario).AddHours(1).ToString("HH:mm"))
+                                            </label>
+                                        </div>
+                                    </div>
+                                }
                             </div>
+                            <small class="text-muted mt-2 d-block">Cada bloco selecionado será criado com 1 hora de duração.</small>
                         </div>
 
-                        <div class="alert alert-info">
-                            <i class="fas fa-info-circle"></i> 
-                            <strong>Dica:</strong> Você pode criar múltiplos blocos de 1 hora para o mesmo dentista no mesmo dia.
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle"></i> 
+                            Verifique se o dentista já possui escalas criadas para a data selecionada antes de salvar.
                         </div>
 
                         <div class="d-flex justify-content-between">
@@ -73,55 +84,7 @@
                                 <i class="fas fa-arrow-left"></i> Voltar para Calendário
                             </a>
                             <button type="submit" class="btn btn-success">
-                                <i class="fas fa-save"></i> Criar Escala
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-
-            <!-- Formulário para criar múltiplos blocos -->
-            <div class="card mt-4">
-                <div class="card-header bg-info text-white">
-                    <h5 class="mb-0">
-                        <i class="fas fa-layer-group"></i> Criar Múltiplos Blocos de Uma Vez
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <form asp-action="CriarMultiplos" method="post" id="formMultiplos">
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Dentista</label>
-                            <select name="idDentista" class="form-select" required>
-                                <option value="">Selecione um dentista</option>
-                                @foreach (var dentista in (List<Pi_Odonto.Models.Dentista>)ViewBag.Dentistas)
-                                {
-                                    <option value="@dentista.Id">@dentista.Nome (@dentista.Cro)</option>
-                                }
-                            </select>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Data</label>
-                            <input name="dataEscala" type="date" class="form-control" 
-                                   value="@(((DateTime?)ViewBag.DataSelecionada)?.ToString("yyyy-MM-dd") ?? DateTime.Today.ToString("yyyy-MM-dd"))" 
-                                   required />
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">
-                                Horários (separados por vírgula)
-                            </label>
-                            <input name="horarios" type="text" class="form-control" 
-                                   placeholder="Ex: 08:00, 09:00, 10:00, 11:00" 
-                                   required />
-                            <small class="text-muted">
-                                Digite os horários de início separados por vírgula. Cada um criará um bloco de 1 hora.
-                            </small>
-                        </div>
-
-                        <div class="d-flex justify-content-end">
-                            <button type="submit" class="btn btn-info">
-                                <i class="fas fa-save"></i> Criar Múltiplos Blocos
+                                <i class="fas fa-save"></i> Criar Blocos de Escala
                             </button>
                         </div>
                     </form>
@@ -132,16 +95,4 @@
 </div>
 
 @section Scripts {
-    <script>
-        // Calcular automaticamente a hora fim (1 hora após início)
-        document.querySelector('input[name="HoraInicio"]').addEventListener('change', function() {
-            if (this.value) {
-                var horaInicio = new Date('2000-01-01T' + this.value + ':00');
-                horaInicio.setHours(horaInicio.getHours() + 1);
-                var horaFim = horaInicio.toTimeString().slice(0, 5);
-                document.querySelector('input[name="HoraFim"]').value = horaFim;
-            }
-        });
-    </script>
-}
-
+    }

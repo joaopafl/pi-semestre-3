@@ -1,15 +1,20 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Pi_Odonto.Data;
 using Pi_Odonto.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
+using System.Security.Claims;
+using System.Globalization; // Necessário para a cultura
 
 namespace Pi_Odonto.Controllers
 {
+    // A rota base para todas as ações desta controller
     [Authorize(Policy = "AdminOnly")]
+    [Route("Admin/Escala")]
     public class AdminEscalaController : Controller
     {
         private readonly AppDbContext _context;
@@ -19,364 +24,287 @@ namespace Pi_Odonto.Controllers
             _context = context;
         }
 
-        // GET: Admin/Escala/Calendario
-        [HttpGet]
-        public IActionResult Calendario(int? ano, int? mes)
+        // Método de suporte para verificar se é Admin
+        private bool IsAdmin()
         {
-            try
-            {
-                var dataAtual = DateTime.Now;
-                var anoSelecionado = ano ?? dataAtual.Year;
-                var mesSelecionado = mes ?? dataAtual.Month;
-
-                // Ajustar ano ao mudar de mês
-                if (mesSelecionado < 1)
-                {
-                    mesSelecionado = 12;
-                    anoSelecionado--;
-                }
-                else if (mesSelecionado > 12)
-                {
-                    mesSelecionado = 1;
-                    anoSelecionado++;
-                }
-
-                var primeiroDia = new DateTime(anoSelecionado, mesSelecionado, 1);
-                var ultimoDia = primeiroDia.AddMonths(1).AddDays(-1);
-
-                // Buscar todas as escalas do mês (tratando erro caso a tabela não exista)
-                List<EscalaMensalDentista> escalas = new List<EscalaMensalDentista>();
-                try
-                {
-                    escalas = _context.EscalasMensaisDentista
-                        .Include(e => e.Dentista)
-                        .Where(e => e.DataEscala >= primeiroDia && e.DataEscala <= ultimoDia && e.Ativo)
-                        .OrderBy(e => e.DataEscala)
-                        .ThenBy(e => e.HoraInicio)
-                        .ToList();
-                }
-                catch (Exception ex)
-                {
-                    // Se a tabela não existir, mostrar mensagem
-                    TempData["ErrorMessage"] = "A tabela de escalas ainda não foi criada. Execute o script SQL create_escala_mensal_table.sql no banco de dados.";
-                    escalas = new List<EscalaMensalDentista>();
-                }
-
-                // Agrupar por data e dentista
-                var escalasPorData = escalas
-                    .GroupBy(e => e.DataEscala.Date)
-                    .ToDictionary(g => g.Key, g => g.GroupBy(e => e.IdDentista).ToDictionary(g2 => g2.Key, g2 => g2.ToList()));
-
-                ViewBag.Ano = anoSelecionado;
-                ViewBag.Mes = mesSelecionado;
-                ViewBag.PrimeiroDia = primeiroDia;
-                ViewBag.UltimoDia = ultimoDia;
-                ViewBag.EscalasPorData = escalasPorData;
-                ViewBag.Dentistas = _context.Dentistas.Where(d => d.Ativo).OrderBy(d => d.Nome).ToList();
-
-                return View();
-            }
-            catch (Exception ex)
-            {
-                TempData["ErrorMessage"] = $"Erro ao carregar calendário: {ex.Message}";
-                ViewBag.Ano = DateTime.Now.Year;
-                ViewBag.Mes = DateTime.Now.Month;
-                ViewBag.PrimeiroDia = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
-                ViewBag.UltimoDia = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1).AddMonths(1).AddDays(-1);
-                ViewBag.EscalasPorData = new Dictionary<DateTime, Dictionary<int, List<EscalaMensalDentista>>>();
-                ViewBag.Dentistas = _context.Dentistas.Where(d => d.Ativo).OrderBy(d => d.Nome).ToList();
-                return View();
-            }
+            return User.HasClaim("TipoUsuario", "Admin");
         }
 
-        // GET: Admin/Escala/Criar
-        [HttpGet]
-        public IActionResult Criar(DateTime? data)
+        // ==========================================================
+        // CALENDÁRIO GERAL DE ESCALAS (CORRIGIDO ERRO DE VIEW)
+        // ==========================================================
+        
+        // GET: Admin/Escala/Calendario
+        [HttpGet("Calendario")]
+        public async Task<IActionResult> Calendario(DateTime? data)
         {
-            ViewBag.Dentistas = _context.Dentistas
+            if (!IsAdmin())
+            {
+                return RedirectToAction("AdminLogin", "Auth");
+            }
+
+            var dataReferencia = data ?? DateTime.Today;
+            
+            // Calcula o primeiro dia do mês e o último dia do mês
+            var primeiroDiaDoMes = new DateTime(dataReferencia.Year, dataReferencia.Month, 1);
+            var ultimoDiaDoMes = primeiroDiaDoMes.AddMonths(1).AddDays(-1);
+
+            // 1. Popula as ViewBags para Navegação e Título (CORREÇÃO DE BINDING)
+            ViewBag.Ano = dataReferencia.Year;
+            ViewBag.Mes = dataReferencia.Month;
+            ViewBag.PrimeiroDia = primeiroDiaDoMes;
+            ViewBag.UltimoDia = ultimoDiaDoMes;
+
+            // 2. Busca todos os dentistas ativos para a legenda e dicionário
+            var dentistas = await _context.Dentistas
                 .Where(d => d.Ativo)
                 .OrderBy(d => d.Nome)
-                .ToList();
+                .ToListAsync();
+            ViewBag.Dentistas = dentistas;
 
-            ViewBag.DataSelecionada = data ?? DateTime.Today;
+            // 3. Busca as escalas
+            var escalasNoMes = await _context.EscalasMensaisDentista
+                .Include(e => e.Dentista)
+                .Where(e => e.DataEscala.Year == dataReferencia.Year &&
+                            e.DataEscala.Month == dataReferencia.Month)
+                .OrderBy(e => e.DataEscala)
+                .ThenBy(e => e.HoraInicio)
+                .ToListAsync();
+
+            // 4. Cria o dicionário de escalas agrupadas (Data -> DentistaId -> Lista de Escalas)
+            // Isso resolve o erro de conversão de tipos na View (RuntimeBinderException)
+            var escalasPorData = escalasNoMes
+                .GroupBy(e => e.DataEscala.Date)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.GroupBy(e => e.IdDentista)
+                          .ToDictionary(d => d.Key, d => d.ToList())
+                );
+            ViewBag.EscalasPorData = escalasPorData;
+
+            return View(escalasNoMes);
+        }
+
+        // ==========================================================
+        // CRIAR ESCALA (Bloco Múltiplo - Checkboxes)
+        // ==========================================================
+
+        // GET: Admin/Escala/Criar
+        [HttpGet("Criar")]
+        public IActionResult Criar(DateTime? data)
+        {
+            if (!IsAdmin())
+            {
+                return RedirectToAction("AdminLogin", "Auth");
+            }
+
+            // Popula a lista de dentistas para o dropdown
+            ViewBag.Dentistas = _context.Dentistas
+                                    .Where(d => d.Ativo)
+                                    .OrderBy(d => d.Nome)
+                                    .ToList();
+
+            if (data.HasValue)
+            {
+                ViewBag.DataSelecionada = data.Value;
+            }
 
             return View();
         }
 
-        // POST: Admin/Escala/Criar
-        [HttpPost]
+        // POST: Admin/Escala/CriarMultiplos (Ação refatorada com List<string>)
+        [HttpPost("CriarMultiplos")]
         [ValidateAntiForgeryToken]
-        public IActionResult Criar(EscalaMensalDentista escala)
+        public IActionResult CriarMultiplos(
+            int idDentista, 
+            DateTime dataEscala, 
+            [FromForm(Name = "horariosSelecionados")] List<string> horariosSelecionados) // Mapeia o array de checkboxes
         {
-            if (ModelState.IsValid)
+            if (!IsAdmin())
+                return RedirectToAction("AdminLogin", "Auth");
+
+            if (idDentista == 0 || dataEscala == DateTime.MinValue || horariosSelecionados == null || !horariosSelecionados.Any())
             {
-                // NOVA VALIDAÇÃO: Não permitir criar escalas em datas passadas
-                if (escala.DataEscala.Date < DateTime.Today)
-                {
-                    TempData["ErrorMessage"] = "Não é possível criar escalas para datas anteriores ao dia atual.";
-                    ViewBag.Dentistas = _context.Dentistas.Where(d => d.Ativo).OrderBy(d => d.Nome).ToList();
-                    ViewBag.DataSelecionada = escala.DataEscala;
-                    return View(escala);
-                }
-
-                // Validar que a hora fim é maior que a hora início
-                if (escala.HoraFim <= escala.HoraInicio)
-                {
-                    ModelState.AddModelError("HoraFim", "A hora de fim deve ser maior que a hora de início.");
-                    ViewBag.Dentistas = _context.Dentistas.Where(d => d.Ativo).OrderBy(d => d.Nome).ToList();
-                    ViewBag.DataSelecionada = escala.DataEscala;
-                    return View(escala);
-                }
-
-                // Validar que o bloco tem exatamente 1 hora
-                var duracao = escala.HoraFim - escala.HoraInicio;
-                if (duracao.TotalHours != 1)
-                {
-                    ModelState.AddModelError("HoraFim", "Cada bloco deve ter exatamente 1 hora de duração.");
-                    ViewBag.Dentistas = _context.Dentistas.Where(d => d.Ativo).OrderBy(d => d.Nome).ToList();
-                    ViewBag.DataSelecionada = escala.DataEscala;
-                    return View(escala);
-                }
-
-                // NOVA VALIDAÇÃO: Verifica se já existe UMA escala para esta data (qualquer dentista)
-                var escalaExistenteNaData = _context.EscalasMensaisDentista
-                    .Any(e => e.DataEscala.Date == escala.DataEscala.Date &&
-                              e.HoraInicio == escala.HoraInicio &&
-                              e.Ativo);
-
-                if (escalaExistenteNaData)
-                {
-                    TempData["ErrorMessage"] = "Já existe um horário alocado para este dia neste horário. Delete o horário existente antes de adicionar um novo.";
-                    return RedirectToAction("Calendario", new { ano = escala.DataEscala.Year, mes = escala.DataEscala.Month });
-                }
-
-                // Verificar se já existe uma escala para o mesmo dentista, data e horário
-                var existeEscala = _context.EscalasMensaisDentista
-                    .Any(e => e.IdDentista == escala.IdDentista &&
-                              e.DataEscala.Date == escala.DataEscala.Date &&
-                              e.HoraInicio == escala.HoraInicio &&
-                              e.Ativo);
-
-                if (existeEscala)
-                {
-                    ModelState.AddModelError("", "Já existe uma escala para este dentista neste horário.");
-                    ViewBag.Dentistas = _context.Dentistas.Where(d => d.Ativo).OrderBy(d => d.Nome).ToList();
-                    ViewBag.DataSelecionada = escala.DataEscala;
-                    return View(escala);
-                }
-
-                escala.DataCadastro = DateTime.Now;
-                escala.Ativo = true;
-
-                _context.EscalasMensaisDentista.Add(escala);
-                _context.SaveChanges();
-
-                TempData["SuccessMessage"] = "Escala criada com sucesso!";
-                return RedirectToAction("Calendario", new { ano = escala.DataEscala.Year, mes = escala.DataEscala.Month });
+                TempData["Erro"] = "Por favor, selecione um dentista, uma data e pelo menos um horário.";
+                return RedirectToAction("Criar", new { data = dataEscala }); 
             }
 
-            ViewBag.Dentistas = _context.Dentistas.Where(d => d.Ativo).OrderBy(d => d.Nome).ToList();
-            ViewBag.DataSelecionada = escala.DataEscala;
-            return View(escala);
-        }
+            var novasEscalas = new List<EscalaMensalDentista>();
+            int escalasCriadas = 0;
+            bool houveDuplicidade = false;
 
-        // POST: Admin/Escala/CriarMultiplos
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public IActionResult CriarMultiplos(int idDentista, DateTime dataEscala, string horarios)
-        {
-            if (idDentista <= 0 || string.IsNullOrWhiteSpace(horarios))
-            {
-                TempData["ErrorMessage"] = "Dados inválidos.";
-                return RedirectToAction("Criar", new { data = dataEscala });
-            }
-
-            // Parse dos horários (formato: "08:00,09:00,10:00")
-            var horariosList = horarios.Split(',')
-                .Select(h => h.Trim())
-                .Where(h => !string.IsNullOrEmpty(h))
-                .ToList();
-
-            var escalasCriadas = 0;
-            var escalasDuplicadas = 0;
-            var escalasBloquadas = 0;
-
-            foreach (var horarioStr in horariosList)
+            foreach (var horarioStr in horariosSelecionados)
             {
                 if (TimeSpan.TryParse(horarioStr, out TimeSpan horaInicio))
                 {
-                    var horaFim = horaInicio.Add(TimeSpan.FromHours(1));
+                    TimeSpan horaFim = horaInicio.Add(TimeSpan.FromHours(1));
 
-                    // NOVA VALIDAÇÃO: Verifica se já existe alguma escala neste horário
-                    var existeEscalaNaData = _context.EscalasMensaisDentista
-                        .Any(e => e.DataEscala.Date == dataEscala.Date &&
-                                  e.HoraInicio == horaInicio &&
-                                  e.Ativo);
+                    bool jaExiste = _context.EscalasMensaisDentista.Any(e => 
+                        e.IdDentista == idDentista &&
+                        e.DataEscala.Date == dataEscala.Date &&
+                        e.HoraInicio == horaInicio);
 
-                    if (existeEscalaNaData)
+                    if (jaExiste)
                     {
-                        escalasBloquadas++;
-                        continue;
+                        houveDuplicidade = true;
+                        continue; 
                     }
 
-                    // Verificar se já existe para este dentista específico
-                    var existe = _context.EscalasMensaisDentista
-                        .Any(e => e.IdDentista == idDentista &&
-                                  e.DataEscala.Date == dataEscala.Date &&
-                                  e.HoraInicio == horaInicio &&
-                                  e.Ativo);
-
-                    if (!existe)
+                    novasEscalas.Add(new EscalaMensalDentista
                     {
-                        var escala = new EscalaMensalDentista
-                        {
-                            IdDentista = idDentista,
-                            DataEscala = dataEscala.Date,
-                            HoraInicio = horaInicio,
-                            HoraFim = horaFim,
-                            Ativo = true,
-                            DataCadastro = DateTime.Now
-                        };
-
-                        _context.EscalasMensaisDentista.Add(escala);
-                        escalasCriadas++;
-                    }
-                    else
-                    {
-                        escalasDuplicadas++;
-                    }
+                        IdDentista = idDentista,
+                        DataEscala = dataEscala,
+                        HoraInicio = horaInicio,
+                        HoraFim = horaFim,
+                        Ativo = true,
+                        DataCadastro = DateTime.Now
+                    });
+                    escalasCriadas++;
                 }
             }
 
-            _context.SaveChanges();
+            if (novasEscalas.Any())
+            {
+                _context.EscalasMensaisDentista.AddRange(novasEscalas);
+                _context.SaveChanges();
+                
+                string mensagemSucesso = $"{escalasCriadas} blocos de escala criados com sucesso para {dataEscala:dd/MM/yyyy}!";
+                if(houveDuplicidade)
+                {
+                    mensagemSucesso += " (Alguns horários já existiam e foram ignorados).";
+                }
+                TempData["Sucesso"] = mensagemSucesso;
+            }
+            else if (houveDuplicidade)
+            {
+                 TempData["Erro"] = "Nenhum novo bloco de escala foi criado, pois todos os horários selecionados já existiam.";
+            }
+            else
+            {
+                 TempData["Erro"] = "Nenhum bloco de escala foi criado. Verifique os dados.";
+            }
 
-            if (escalasCriadas > 0)
-            {
-                TempData["SuccessMessage"] = $"{escalasCriadas} escala(s) criada(s) com sucesso!";
-            }
-            if (escalasDuplicadas > 0)
-            {
-                TempData["WarningMessage"] = $"{escalasDuplicadas} escala(s) já existiam e foram ignoradas.";
-            }
-            if (escalasBloquadas > 0)
-            {
-                TempData["ErrorMessage"] = $"{escalasBloquadas} horário(s) já estavam alocados e foram ignorados.";
-            }
-
-            return RedirectToAction("Calendario", new { ano = dataEscala.Year, mes = dataEscala.Month });
+            return RedirectToAction("Calendario", new { data = dataEscala.ToString("yyyy-MM-dd") });
         }
 
-        // GET: Admin/Escala/Editar/{id}
-        [HttpGet]
-        public IActionResult Editar(int id)
+
+        // ==========================================================
+        // EDITAR ESCALA (Bloco Único - Dropdown)
+        // ==========================================================
+
+        // GET: Admin/Escala/Editar/5
+        [HttpGet("Editar/{id}")]
+        public async Task<IActionResult> Editar(int id)
         {
-            var escala = _context.EscalasMensaisDentista
-                .Include(e => e.Dentista)
-                .FirstOrDefault(e => e.Id == id);
+            if (!IsAdmin())
+            {
+                return RedirectToAction("AdminLogin", "Auth");
+            }
+
+            var escala = await _context.EscalasMensaisDentista
+                .FirstOrDefaultAsync(e => e.Id == id);
 
             if (escala == null)
             {
-                return NotFound();
+                TempData["Erro"] = "Escala não encontrada.";
+                return RedirectToAction("Calendario");
             }
 
-            ViewBag.Dentistas = _context.Dentistas.Where(d => d.Ativo).OrderBy(d => d.Nome).ToList();
+            ViewBag.Dentistas = await _context.Dentistas
+                .Where(d => d.Ativo || d.Id == escala.IdDentista) 
+                .OrderBy(d => d.Nome)
+                .ToListAsync();
+
             return View(escala);
         }
 
-        // POST: Admin/Escala/Editar/{id}
-        [HttpPost]
+        // POST: Admin/Escala/Editar/5
+        [HttpPost("Editar/{id}")]
         [ValidateAntiForgeryToken]
-        public IActionResult Editar(int id, EscalaMensalDentista escala)
+        public async Task<IActionResult> Editar(int id, EscalaMensalDentista model)
         {
-            if (id != escala.Id)
-            {
-                return NotFound();
-            }
+            if (!IsAdmin())
+                return RedirectToAction("AdminLogin", "Auth");
+
+            if (id != model.Id)
+                return BadRequest();
 
             if (ModelState.IsValid)
             {
-                if (escala.HoraFim <= escala.HoraInicio)
-                {
-                    ModelState.AddModelError("HoraFim", "A hora de fim deve ser maior que a hora de início.");
-                    ViewBag.Dentistas = _context.Dentistas.Where(d => d.Ativo).OrderBy(d => d.Nome).ToList();
-                    return View(escala);
-                }
+                var escalaExistente = await _context.EscalasMensaisDentista
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(e => e.Id == id);
 
-                var duracao = escala.HoraFim - escala.HoraInicio;
-                if (duracao.TotalHours != 1)
+                if (escalaExistente == null)
                 {
-                    ModelState.AddModelError("HoraFim", "Cada bloco deve ter exatamente 1 hora de duração.");
-                    ViewBag.Dentistas = _context.Dentistas.Where(d => d.Ativo).OrderBy(d => d.Nome).ToList();
-                    return View(escala);
-                }
-
-                // NOVA VALIDAÇÃO: Verifica se existe outra escala para esta data e horário (excluindo a atual)
-                var escalaExistenteNaData = _context.EscalasMensaisDentista
-                    .Any(e => e.DataEscala.Date == escala.DataEscala.Date &&
-                              e.HoraInicio == escala.HoraInicio &&
-                              e.Id != id &&
-                              e.Ativo);
-
-                if (escalaExistenteNaData)
-                {
-                    TempData["ErrorMessage"] = "Já existe outro horário alocado para este dia e horário. Delete o horário existente antes de modificar.";
-                    return RedirectToAction("Calendario", new { ano = escala.DataEscala.Year, mes = escala.DataEscala.Month });
+                    TempData["Erro"] = "Escala não encontrada.";
+                    return RedirectToAction("Calendario");
                 }
 
                 try
                 {
-                    _context.Update(escala);
-                    _context.SaveChanges();
-                    TempData["SuccessMessage"] = "Escala atualizada com sucesso!";
-                    return RedirectToAction("Calendario", new { ano = escala.DataEscala.Year, mes = escala.DataEscala.Month });
+                    _context.Entry(model).State = EntityState.Modified;
+                    await _context.SaveChangesAsync();
+
+                    TempData["Sucesso"] = $"Escala para {model.DataEscala:dd/MM/yyyy} atualizada com sucesso!";
+                    return RedirectToAction("Calendario", new { data = model.DataEscala.ToString("yyyy-MM-dd") });
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!EscalaExists(escala.Id))
+                    if (!_context.EscalasMensaisDentista.Any(e => e.Id == model.Id))
                     {
-                        return NotFound();
+                        TempData["Erro"] = "Escala não encontrada (concorrência).";
+                        return RedirectToAction("Calendario");
                     }
                     throw;
                 }
             }
 
-            ViewBag.Dentistas = _context.Dentistas.Where(d => d.Ativo).OrderBy(d => d.Nome).ToList();
-            return View(escala);
+            ViewBag.Dentistas = await _context.Dentistas.Where(d => d.Ativo || d.Id == model.IdDentista).OrderBy(d => d.Nome).ToListAsync();
+            return View(model);
         }
 
-        // POST: Admin/Escala/Excluir/{id}
-        [HttpPost]
+        // ==========================================================
+        // DELETAR ESCALA
+        // ==========================================================
+
+        // POST: Admin/Escala/Deletar/5
+        [HttpPost("Deletar/{id}")]
         [ValidateAntiForgeryToken]
-        public IActionResult Excluir(int id)
+        public async Task<IActionResult> Deletar(int id)
         {
-            var escala = _context.EscalasMensaisDentista.Find(id);
+            if (!IsAdmin())
+            {
+                return RedirectToAction("AdminLogin", "Auth");
+            }
+
+            var escala = await _context.EscalasMensaisDentista.FindAsync(id);
+
             if (escala == null)
             {
-                TempData["ErrorMessage"] = "Escala não encontrada.";
+                TempData["Erro"] = "Escala não encontrada.";
                 return RedirectToAction("Calendario");
             }
 
-            var ano = escala.DataEscala.Year;
-            var mes = escala.DataEscala.Month;
+            var dataReferencia = escala.DataEscala;
 
-            try
+            // Verifica se há agendamentos futuros neste bloco para impedir a exclusão
+            var temAgendamento = await _context.Agendamentos.AnyAsync(a =>
+                a.IdDentista == escala.IdDentista &&
+                a.DataAgendamento.Date == escala.DataEscala.Date &&
+                a.HoraAgendamento == escala.HoraInicio);
+            
+            if(temAgendamento)
             {
-                _context.EscalasMensaisDentista.Remove(escala);
-                _context.SaveChanges();
-
-                TempData["SuccessMessage"] = "Escala excluída com sucesso!";
-            }
-            catch (Exception ex)
-            {
-                TempData["ErrorMessage"] = $"Erro ao excluir escala: {ex.Message}";
+                TempData["Erro"] = "Esta escala não pode ser excluída, pois possui agendamentos futuros vinculados.";
+                return RedirectToAction("Calendario", new { data = dataReferencia.ToString("yyyy-MM-dd") });
             }
 
-            return RedirectToAction("Calendario", new { ano, mes });
-        }
+            _context.EscalasMensaisDentista.Remove(escala);
+            await _context.SaveChangesAsync();
 
-        private bool EscalaExists(int id)
-        {
-            return _context.EscalasMensaisDentista.Any(e => e.Id == id);
+            TempData["Sucesso"] = "Escala removida com sucesso!";
+            return RedirectToAction("Calendario", new { data = dataReferencia.ToString("yyyy-MM-dd") });
         }
     }
 }

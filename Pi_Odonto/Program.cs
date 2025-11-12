@@ -273,7 +273,7 @@ var logger = app.Services.GetRequiredService<ILogger<Program>>();
 var urls = Environment.GetEnvironmentVariable("ASPNETCORE_URLS") ?? 
            app.Configuration["ASPNETCORE_URLS"] ?? 
            "http://localhost:5000";
-           
+  /*         
 logger.LogInformation("========================================");
 logger.LogInformation("🚀 SERVIDOR INICIANDO...");
 logger.LogInformation("========================================");
@@ -282,5 +282,5 @@ logger.LogInformation("Ambiente: {Environment}", app.Environment.EnvironmentName
 logger.LogInformation("========================================");
 logger.LogInformation("✅ Servidor pronto! Acesse: http://localhost:5000");
 logger.LogInformation("========================================");
-
+*/
 app.Run();

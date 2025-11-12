@@ -8,6 +8,8 @@ using Pi_Odonto.ViewModels;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
+using System.Threading.Tasks;
 
 namespace Pi_Odonto.Controllers
 {
@@ -49,7 +51,6 @@ namespace Pi_Odonto.Controllers
             }
 
             var dentista = _context.Dentistas
-                .Include(d => d.Disponibilidades)
                 .Include(d => d.EscalaTrabalho)
                 .FirstOrDefault(d => d.Id == dentistaId);
 
@@ -74,7 +75,7 @@ namespace Pi_Odonto.Controllers
             ViewBag.ProximosAgendamentos = _context.Agendamentos
                 .Include(a => a.Crianca)
                 .Where(a => a.IdDentista == dentistaId &&
-                            a.DataAgendamento >= DateTime.Today)
+                            a.DataAgendamento.Date >= DateTime.Today)
                 .OrderBy(a => a.DataAgendamento)
                 .ThenBy(a => a.HoraAgendamento)
                 .Take(5)
@@ -84,30 +85,31 @@ namespace Pi_Odonto.Controllers
         }
 
         // ==========================================================
-        // ESCALA DE TRABALHO DO DENTISTA
+        // ESCALA DE TRABALHO DO DENTISTA (REFATORADO PARA ESCALA MENSAL)
         // ==========================================================
 
         [HttpGet]
-        public IActionResult EscalaTrabalho()
+        public async Task<IActionResult> EscalaTrabalho()
         {
             if (!IsDentista())
                 return RedirectToAction("DentistaLogin", "Auth");
 
             var dentistaId = GetCurrentDentistaId();
 
-            var dentista = _context.Dentistas
-                .Include(d => d.Disponibilidades)
-                .Include(d => d.EscalaTrabalho)
-                .FirstOrDefault(d => d.Id == dentistaId);
+            // Puxa o dentista com suas escalas mensais
+            var escalas = await _context.EscalasMensaisDentista
+                .Where(e => e.IdDentista == dentistaId)
+                .OrderByDescending(e => e.DataEscala)
+                .ThenBy(e => e.HoraInicio)
+                .ToListAsync();
 
-            if (dentista == null)
-                return RedirectToAction("DentistaLogin", "Auth");
-
-            return View(dentista);
+            ViewBag.Dentista = await _context.Dentistas.FindAsync(dentistaId);
+            
+            return View(escalas);
         }
 
         // ==========================================================
-        // CRIAR DISPONIBILIDADE
+        // CRIAR DISPONIBILIDADE (REFATORADO PARA ESCALA MENSAL)
         // ==========================================================
 
         [HttpGet]
@@ -116,9 +118,10 @@ namespace Pi_Odonto.Controllers
             if (!IsDentista())
                 return RedirectToAction("DentistaLogin", "Auth");
 
-            var viewModel = new DisponibilidadeDentista
+            var viewModel = new EscalaMensalDentista
             {
-                IdDentista = GetCurrentDentistaId()
+                IdDentista = GetCurrentDentistaId(),
+                DataEscala = DateTime.Today 
             };
 
             return View(viewModel);
@@ -126,20 +129,22 @@ namespace Pi_Odonto.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult CreateEscala(DisponibilidadeDentista model)
+        public IActionResult CreateEscala(EscalaMensalDentista model)
         {
             if (!IsDentista())
                 return RedirectToAction("DentistaLogin", "Auth");
 
             var dentistaId = GetCurrentDentistaId();
             model.IdDentista = dentistaId;
+            model.Ativo = true;
+            model.DataCadastro = DateTime.Now;
 
             if (ModelState.IsValid)
             {
-                _context.DisponibilidadesDentista.Add(model);
+                _context.EscalasMensaisDentista.Add(model);
                 _context.SaveChanges();
 
-                TempData["Sucesso"] = "Disponibilidade cadastrada com sucesso!";
+                TempData["Sucesso"] = $"Escala cadastrada para {model.DataEscala:dd/MM/yyyy} com sucesso!";
                 return RedirectToAction("EscalaTrabalho");
             }
 
@@ -147,7 +152,7 @@ namespace Pi_Odonto.Controllers
         }
 
         // ==========================================================
-        // EDITAR DISPONIBILIDADE
+        // EDITAR DISPONIBILIDADE (REFATORADO PARA ESCALA MENSAL)
         // ==========================================================
 
         [HttpGet]
@@ -158,46 +163,49 @@ namespace Pi_Odonto.Controllers
 
             var dentistaId = GetCurrentDentistaId();
 
-            var disponibilidade = _context.DisponibilidadesDentista
-                .FirstOrDefault(d => d.Id == id && d.IdDentista == dentistaId);
+            // CORRIGIDO CS1061: Usa 'Id'
+            var escala = _context.EscalasMensaisDentista
+                .FirstOrDefault(e => e.Id == id && e.IdDentista == dentistaId);
 
-            if (disponibilidade == null)
+            if (escala == null)
             {
-                TempData["Erro"] = "Disponibilidade não encontrada.";
+                TempData["Erro"] = "Escala não encontrada.";
                 return RedirectToAction("EscalaTrabalho");
             }
 
-            return View(disponibilidade);
+            return View(escala);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult EditEscala(DisponibilidadeDentista model)
+        public IActionResult EditEscala(EscalaMensalDentista model)
         {
             if (!IsDentista())
                 return RedirectToAction("DentistaLogin", "Auth");
 
             var dentistaId = GetCurrentDentistaId();
 
-            // Verificar se a disponibilidade pertence ao dentista logado
-            var disponibilidade = _context.DisponibilidadesDentista
-                .FirstOrDefault(d => d.Id == model.Id && d.IdDentista == dentistaId);
+            // CORRIGIDO CS1061: Usa 'Id'
+            var escalaExistente = _context.EscalasMensaisDentista
+                .FirstOrDefault(e => e.Id == model.Id && e.IdDentista == dentistaId);
 
-            if (disponibilidade == null)
+            if (escalaExistente == null)
             {
-                TempData["Erro"] = "Disponibilidade não encontrada.";
+                TempData["Erro"] = "Escala não encontrada.";
                 return RedirectToAction("EscalaTrabalho");
             }
 
             if (ModelState.IsValid)
             {
-                disponibilidade.DiaSemana = model.DiaSemana;
-                disponibilidade.HoraInicio = model.HoraInicio;
-                disponibilidade.HoraFim = model.HoraFim;
+                // Atualiza APENAS os campos mutáveis
+                escalaExistente.DataEscala = model.DataEscala;
+                escalaExistente.HoraInicio = model.HoraInicio;
+                escalaExistente.HoraFim = model.HoraFim;
+                escalaExistente.Ativo = model.Ativo;
 
                 _context.SaveChanges();
 
-                TempData["Sucesso"] = "Disponibilidade atualizada com sucesso!";
+                TempData["Sucesso"] = "Escala atualizada com sucesso!";
                 return RedirectToAction("EscalaTrabalho");
             }
 
@@ -205,7 +213,7 @@ namespace Pi_Odonto.Controllers
         }
 
         // ==========================================================
-        // DELETAR DISPONIBILIDADE
+        // DELETAR DISPONIBILIDADE (REFATORADO PARA ESCALA MENSAL)
         // ==========================================================
 
         [HttpPost]
@@ -217,19 +225,20 @@ namespace Pi_Odonto.Controllers
 
             var dentistaId = GetCurrentDentistaId();
 
-            var disponibilidade = _context.DisponibilidadesDentista
-                .FirstOrDefault(d => d.Id == id && d.IdDentista == dentistaId);
+            // CORRIGIDO CS1061: Usa 'Id'
+            var escala = _context.EscalasMensaisDentista
+                .FirstOrDefault(e => e.Id == id && e.IdDentista == dentistaId);
 
-            if (disponibilidade == null)
+            if (escala == null)
             {
-                TempData["Erro"] = "Disponibilidade não encontrada.";
+                TempData["Erro"] = "Escala não encontrada.";
                 return RedirectToAction("EscalaTrabalho");
             }
 
-            _context.DisponibilidadesDentista.Remove(disponibilidade);
+            _context.EscalasMensaisDentista.Remove(escala);
             _context.SaveChanges();
 
-            TempData["Sucesso"] = "Disponibilidade removida com sucesso!";
+            TempData["Sucesso"] = "Escala removida com sucesso!";
             return RedirectToAction("EscalaTrabalho");
         }
 
@@ -246,7 +255,6 @@ namespace Pi_Odonto.Controllers
             var dentistaId = GetCurrentDentistaId();
 
             var dentista = _context.Dentistas
-                .Include(d => d.Disponibilidades)
                 .Include(d => d.EscalaTrabalho)
                 .FirstOrDefault(d => d.Id == dentistaId);
 
@@ -368,14 +376,15 @@ namespace Pi_Odonto.Controllers
     }
 
     // ==========================================================
-    // VIEW MODEL PARA EDITAR PERFIL DO DENTISTA
+    // VIEW MODEL PARA EDITAR PERFIL DO DENTISTA (CORRIGIDO CS8618)
     // ==========================================================
     public class EditarPerfilDentistaViewModel
     {
-        public string Nome { get; set; }
-        public string Email { get; set; }
-        public string Telefone { get; set; }
-        public string Endereco { get; set; }
+        // Adicionando '?' para resolver os avisos CS8618
+        public string? Nome { get; set; }
+        public string? Email { get; set; }
+        public string? Telefone { get; set; }
+        public string? Endereco { get; set; }
         public string? NovaSenha { get; set; }
         public string? ConfirmarSenha { get; set; }
     }

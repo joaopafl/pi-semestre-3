@@ -5,6 +5,9 @@ using Pi_Odonto.Data;
 using Pi_Odonto.Models;
 using Pi_Odonto.Helpers;
 using Pi_Odonto.ViewModels;
+using System.Linq;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Pi_Odonto.Controllers
 {
@@ -326,10 +329,10 @@ namespace Pi_Odonto.Controllers
         }
 
         // ========================================
-        // GERENCIAMENTO DE DENTISTAS
+        // GERENCIAMENTO DE DENTISTAS (REFATORADO)
         // ========================================
 
-        // GET: Lista de Dentistas
+        // GET: Lista de Dentistas (REFATORADO INCLUSÃO)
         [Route("Dentistas")]
         public IActionResult Dentistas()
         {
@@ -340,14 +343,14 @@ namespace Pi_Odonto.Controllers
 
             var dentistas = _context.Dentistas
                 .Include(d => d.EscalaTrabalho)
-                .Include(d => d.Disponibilidades)
+                // REMOVIDO: .Include(d => d.Disponibilidades)
                 .OrderBy(d => d.Nome)
                 .ToList();
 
             return View(dentistas);
         }
 
-        // GET: Criar Dentista
+        // GET: Criar Dentista (REFATORADO)
         [Route("CriarDentista")]
         public IActionResult CriarDentista()
         {
@@ -358,15 +361,13 @@ namespace Pi_Odonto.Controllers
 
             ViewBag.Escalas = _context.EscalaTrabalho.ToList();
 
-            var viewModel = new DentistaViewModel
-            {
-                Disponibilidades = ObterDisponibilidadesPadrao()
-            };
+            // REMOVIDO: View Model de Disponibilidade não é mais necessária aqui.
+            var viewModel = new DentistaViewModel();
 
             return View(viewModel);
         }
 
-        // POST: Criar Dentista
+        // POST: Criar Dentista (REFATORADO)
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Route("CriarDentista")]
@@ -380,7 +381,7 @@ namespace Pi_Odonto.Controllers
             if (!ModelState.IsValid)
             {
                 ViewBag.Escalas = _context.EscalaTrabalho.ToList();
-                viewModel.Disponibilidades = ObterDisponibilidadesPadrao();
+                // REMOVIDO: viewModel.Disponibilidades = ObterDisponibilidadesPadrao();
                 return View(viewModel);
             }
 
@@ -400,25 +401,14 @@ namespace Pi_Odonto.Controllers
             _context.Dentistas.Add(dentista);
             _context.SaveChanges();
 
-            // Vincular disponibilidades selecionadas
-            foreach (var disp in viewModel.Disponibilidades.Where(d => d.Selecionado))
-            {
-                _context.DisponibilidadesDentista.Add(new DisponibilidadeDentista
-                {
-                    IdDentista = dentista.Id,
-                    DiaSemana = disp.DiaSemana,
-                    HoraInicio = disp.HoraInicio,
-                    HoraFim = disp.HoraFim
-                });
-            }
-
-            _context.SaveChanges();
+            // REMOVIDO: Lógica de vinculação de disponibilidades obsoletas.
+            // O dentista deve ter suas escalas cadastradas através do AdminEscalaController.
 
             TempData["Sucesso"] = $"Dentista cadastrado com sucesso! Senha inicial: {viewModel.Cro}123";
             return RedirectToAction("Dentistas");
         }
 
-        // GET: Editar Dentista
+        // GET: Editar Dentista (REFATORADO INCLUSÃO)
         [Route("EditarDentista/{id}")]
         public IActionResult EditarDentista(int id)
         {
@@ -428,7 +418,7 @@ namespace Pi_Odonto.Controllers
             }
 
             var dentista = _context.Dentistas
-                .Include(d => d.Disponibilidades)
+                // REMOVIDO: .Include(d => d.Disponibilidades)
                 .Include(d => d.EscalaTrabalho)
                 .FirstOrDefault(d => d.Id == id);
 
@@ -450,13 +440,14 @@ namespace Pi_Odonto.Controllers
                 Email = dentista.Email,
                 Telefone = dentista.Telefone,
                 IdEscala = dentista.IdEscala,
-                Disponibilidades = ObterDisponibilidadesComSelecoes(dentista.Disponibilidades)
+                // REMOVIDO: Inicialização de Disponibilidades obsoletas.
+                // Disponibilidades agora é gerenciada separadamente.
             };
 
             return View(viewModel);
         }
 
-        // POST: Editar Dentista
+        // POST: Editar Dentista (REFATORADO)
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Route("EditarDentista/{id}")]
@@ -467,6 +458,7 @@ namespace Pi_Odonto.Controllers
                 return RedirectToAction("AdminLogin", "Auth");
             }
 
+            // O ModelState.IsValid deve ser reavaliado aqui, pois a ViewModel pode ter sido simplificada.
             if (!ModelState.IsValid)
             {
                 ViewBag.Escalas = _context.EscalaTrabalho.ToList();
@@ -474,7 +466,7 @@ namespace Pi_Odonto.Controllers
             }
 
             var dentista = _context.Dentistas
-                .Include(d => d.Disponibilidades)
+                // REMOVIDO: .Include(d => d.Disponibilidades)
                 .FirstOrDefault(d => d.Id == viewModel.Id);
 
             if (dentista == null)
@@ -492,19 +484,8 @@ namespace Pi_Odonto.Controllers
             dentista.Telefone = viewModel.Telefone;
             dentista.IdEscala = IdEscala;
 
-            // Atualizar disponibilidades
-            _context.DisponibilidadesDentista.RemoveRange(dentista.Disponibilidades);
-
-            foreach (var disp in viewModel.Disponibilidades.Where(d => d.Selecionado))
-            {
-                _context.DisponibilidadesDentista.Add(new DisponibilidadeDentista
-                {
-                    IdDentista = dentista.Id,
-                    DiaSemana = disp.DiaSemana,
-                    HoraInicio = disp.HoraInicio,
-                    HoraFim = disp.HoraFim
-                });
-            }
+            // REMOVIDO: Toda a lógica de Atualizar/Remover disponibilidades.
+            // Isso era a causa dos erros de compilação CS1061.
 
             _context.SaveChanges();
 
@@ -512,7 +493,7 @@ namespace Pi_Odonto.Controllers
             return RedirectToAction("Dentistas");
         }
 
-        // POST: Deletar Dentista
+        // POST: Deletar Dentista (MANTIDO - Soft Delete)
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Route("DeletarDentista/{id}")]
@@ -539,7 +520,7 @@ namespace Pi_Odonto.Controllers
             return RedirectToAction("Dentistas");
         }
 
-        // GET: Detalhes do Dentista
+        // GET: Detalhes do Dentista (REFATORADO INCLUSÃO)
         [Route("DetalhesDentista/{id}")]
         public IActionResult DetalhesDentista(int id)
         {
@@ -549,7 +530,7 @@ namespace Pi_Odonto.Controllers
             }
 
             var dentista = _context.Dentistas
-                .Include(d => d.Disponibilidades)
+                // REMOVIDO: .Include(d => d.Disponibilidades)
                 .Include(d => d.EscalaTrabalho)
                 .FirstOrDefault(d => d.Id == id);
 
@@ -563,49 +544,15 @@ namespace Pi_Odonto.Controllers
         }
 
         // ========================================
-        // MÉTODOS AUXILIARES - DENTISTAS
+        // MÉTODOS AUXILIARES - DENTISTAS (REMOVIDOS)
         // ========================================
 
-        private List<DisponibilidadeItem> ObterDisponibilidadesPadrao()
-        {
-            var diasSemana = new[] { "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado" };
-            var horarios = new[] {
-                (TimeSpan.FromHours(8), TimeSpan.FromHours(12)),
-                (TimeSpan.FromHours(14), TimeSpan.FromHours(18))
-            };
+        // REMOVIDO: private List<DisponibilidadeItem> ObterDisponibilidadesPadrao() { ... }
+        // REMOVIDO: private List<DisponibilidadeItem> ObterDisponibilidadesComSelecoes(ICollection<DisponibilidadeDentista> existentes) { ... }
 
-            var lista = new List<DisponibilidadeItem>();
-            foreach (var dia in diasSemana)
-            {
-                foreach (var (inicio, fim) in horarios)
-                {
-                    lista.Add(new DisponibilidadeItem
-                    {
-                        DiaSemana = dia,
-                        HoraInicio = inicio,
-                        HoraFim = fim,
-                        Selecionado = false
-                    });
-                }
-            }
-            return lista;
-        }
-
-        private List<DisponibilidadeItem> ObterDisponibilidadesComSelecoes(ICollection<DisponibilidadeDentista> existentes)
-        {
-            var todas = ObterDisponibilidadesPadrao();
-            foreach (var item in todas)
-            {
-                item.Selecionado = existentes.Any(d =>
-                    d.DiaSemana == item.DiaSemana &&
-                    d.HoraInicio == item.HoraInicio &&
-                    d.HoraFim == item.HoraFim);
-            }
-            return todas;
-        }
 
         // ========================================
-        // FUNCIONALIDADES - VOLUNTÁRIOS
+        // FUNCIONALIDADES - VOLUNTÁRIOS (MANTIDO)
         // ========================================
 
         // GET: Solicitações de Voluntários

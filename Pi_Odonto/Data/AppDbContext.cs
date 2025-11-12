@@ -11,12 +11,12 @@ namespace Pi_Odonto.Data
         public DbSet<RecuperacaoSenhaToken> RecuperacaoSenhaTokens { get; set; }
         public DbSet<Dentista> Dentistas { get; set; }
         public DbSet<EscalaTrabalho> EscalaTrabalho { get; set; }
-        public DbSet<DisponibilidadeDentista> DisponibilidadesDentista { get; set; }
+        // REMOVIDO: public DbSet<DisponibilidadeDentista> DisponibilidadesDentista { get; set; }
         public DbSet<EscalaMensalDentista> EscalasMensaisDentista { get; set; }
         public DbSet<Agendamento> Agendamentos { get; set; }
         public DbSet<Atendimento> Atendimentos { get; set; }
 
-        // NOVOS DbSets - ADICIONE ESTAS 3 LINHAS
+        // NOVOS DbSets
         public DbSet<SolicitacaoVoluntario> SolicitacoesVoluntario { get; set; }
         public DbSet<Odontograma> Odontogramas { get; set; }
         public DbSet<TratamentoDente> TratamentosDente { get; set; }
@@ -46,8 +46,7 @@ namespace Pi_Odonto.Data
             modelBuilder.Entity<EscalaTrabalho>()
                 .ToTable("escala_trabalho");
 
-            modelBuilder.Entity<DisponibilidadeDentista>()
-                .ToTable("disponibilidade_dentista");
+            // REMOVIDO: modelBuilder.Entity<DisponibilidadeDentista>().ToTable("disponibilidade_dentista");
 
             modelBuilder.Entity<EscalaMensalDentista>()
                 .ToTable("escala_mensal_dentista");
@@ -78,12 +77,7 @@ namespace Pi_Odonto.Data
                 .HasForeignKey(d => d.IdEscala)
                 .OnDelete(DeleteBehavior.SetNull);
 
-            // Configuração do relacionamento Dentista -> DisponibilidadeDentista
-            modelBuilder.Entity<DisponibilidadeDentista>()
-                .HasOne(d => d.Dentista)
-                .WithMany(d => d.Disponibilidades)
-                .HasForeignKey(d => d.IdDentista)
-                .OnDelete(DeleteBehavior.Cascade);
+            // REMOVIDO: Configuração do relacionamento Dentista -> DisponibilidadeDentista
 
             // Configuração do relacionamento Dentista -> EscalaMensalDentista
             modelBuilder.Entity<EscalaMensalDentista>()

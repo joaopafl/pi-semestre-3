@@ -1,5 +1,7 @@
 @{
     ViewData["Title"] = "Calendário de Escalas dos Dentistas";
+    // Define a cultura para Português-Brasil
+    var culturaPtBr = new System.Globalization.CultureInfo("pt-BR");
 }
 
 @model List<Pi_Odonto.Models.EscalaMensalDentista>
@@ -22,18 +24,18 @@
         </div>
     </div>
 
-    @if (TempData["SuccessMessage"] != null)
+    @if (TempData["Sucesso"] != null)
     {
         <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="fas fa-check-circle"></i> @TempData["SuccessMessage"]
+            <i class="fas fa-check-circle"></i> @TempData["Sucesso"]
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     }
 
-    @if (TempData["ErrorMessage"] != null)
+    @if (TempData["Erro"] != null)
     {
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <i class="fas fa-exclamation-circle"></i> @TempData["ErrorMessage"]
+            <i class="fas fa-exclamation-circle"></i> @TempData["Erro"]
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     }
@@ -46,23 +48,38 @@
         </div>
     }
 
-    <!-- Navegação do Mês -->
     <div class="card mb-4">
         <div class="card-body">
             <div class="row align-items-center">
+                @{
+                    int ano = (int)ViewBag.Ano;
+                    int mes = (int)ViewBag.Mes;
+                    
+                    var mesAnterior = mes == 1 ? 12 : mes - 1;
+                    var anoAnterior = mes == 1 ? ano - 1 : ano;
+                    
+                    var mesProximo = mes == 12 ? 1 : mes + 1;
+                    var anoProximo = mes == 12 ? ano + 1 : ano;
+
+                    // Data de referência para redirecionamento
+                    var dataAnterior = new DateTime(anoAnterior, mesAnterior, 1);
+                    var dataProxima = new DateTime(anoProximo, mesProximo, 1);
+                }
+
                 <div class="col-md-4">
-                    <a href="@Url.Action("Calendario", new { ano = ViewBag.Ano, mes = ViewBag.Mes - 1 })"
+                    <a href="@Url.Action("Calendario", new { data = dataAnterior.ToString("yyyy-MM-dd") })"
                        class="btn btn-outline-primary">
                         <i class="fas fa-chevron-left"></i> Mês Anterior
                     </a>
                 </div>
                 <div class="col-md-4 text-center">
-                    <h3 class="mb-0">
-                        @System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName((int)ViewBag.Mes) @ViewBag.Ano
+                    <h3 class="mb-0 text-capitalize">
+                        @* Exibe o nome do mês em Português *@
+                        @culturaPtBr.DateTimeFormat.GetMonthName(mes) @ano
                     </h3>
                 </div>
                 <div class="col-md-4 text-end">
-                    <a href="@Url.Action("Calendario", new { ano = ViewBag.Ano, mes = ViewBag.Mes + 1 })"
+                    <a href="@Url.Action("Calendario", new { data = dataProxima.ToString("yyyy-MM-dd") })"
                        class="btn btn-outline-primary">
                         Próximo Mês <i class="fas fa-chevron-right"></i>
                     </a>
@@ -71,26 +88,28 @@
         </div>
     </div>
 
-    <!-- Calendário -->
     <div class="card">
         <div class="card-body">
             <div class="table-responsive">
                 <table class="table table-bordered">
                     <thead>
                         <tr>
-                            <th class="text-center" style="width: 14%">Domingo</th>
-                            <th class="text-center" style="width: 14%">Segunda</th>
-                            <th class="text-center" style="width: 14%">Terça</th>
-                            <th class="text-center" style="width: 14%">Quarta</th>
-                            <th class="text-center" style="width: 14%">Quinta</th>
-                            <th class="text-center" style="width: 14%">Sexta</th>
-                            <th class="text-center" style="width: 14%">Sábado</th>
+                            @* Define os dias da semana em Português *@
+                            <th class="text-center" style="width: 14%">Dom</th>
+                            <th class="text-center" style="width: 14%">Seg</th>
+                            <th class="text-center" style="width: 14%">Ter</th>
+                            <th class="text-center" style="width: 14%">Qua</th>
+                            <th class="text-center" style="width: 14%">Qui</th>
+                            <th class="text-center" style="width: 14%">Sex</th>
+                            <th class="text-center" style="width: 14%">Sáb</th>
                         </tr>
                     </thead>
                     <tbody>
                         @{
+                            // Faz o casting seguro das ViewBags, resolvendo o RuntimeBinderException
                             var primeiroDia = (DateTime)ViewBag.PrimeiroDia;
                             var ultimoDia = (DateTime)ViewBag.UltimoDia;
+                            // O casting é feito aqui, pois a Controller agora garante que ele exista
                             var escalasPorData = (Dictionary<DateTime, Dictionary<int, List<Pi_Odonto.Models.EscalaMensalDentista>>>)ViewBag.EscalasPorData;
                             var dentistas = (List<Pi_Odonto.Models.Dentista>)ViewBag.Dentistas;
                             var dentistasDict = dentistas.ToDictionary(d => d.Id, d => d.Nome);
@@ -109,33 +128,25 @@
                                     var isCurrentMonth = dia.Month == primeiroDia.Month;
                                     var isToday = dia.Date == DateTime.Today;
                                     var isPastDate = dia.Date < DateTime.Today;
-                                    var temEscalas = escalasPorData.ContainsKey(dia.Date);
+                                    
+                                    // Verificação de existência
+                                    var temEscalas = escalasPorData != null && escalasPorData.ContainsKey(dia.Date);
                                     var escalasDoDia = temEscalas ? escalasPorData[dia.Date] : new Dictionary<int, List<Pi_Odonto.Models.EscalaMensalDentista>>();
-                                    var totalEscalasDia = escalasDoDia.Values.Sum(lista => lista.Count);
+                                    var totalEscalasDia = escalasDoDia.Values.Sum(lista => lista.Count); // Contagem total de blocos
 
                                     <td class="@(isCurrentMonth ? "" : "text-muted") @(isToday ? "bg-light" : "") @(isPastDate ? "bg-secondary bg-opacity-10" : "")"
                                         style="height: 120px; vertical-align: top; position: relative;">
                                         <div class="d-flex justify-content-between align-items-start mb-1">
                                             <span class="fw-bold @(isToday ? "text-primary" : "") @(isPastDate ? "text-muted" : "")">@dia.Day</span>
+                                            
                                             @if (isCurrentMonth && !isPastDate)
                                             {
-                                                @* Só permite adicionar nova escala se não houver nenhuma escala neste dia e não for data passada *@
-                                                @if (totalEscalasDia == 0)
-                                                {
-                                                    <a href="@Url.Action("Criar", new { data = dia })"
-                                                       class="btn btn-sm btn-outline-success"
-                                                       title="Adicionar escala">
-                                                        <i class="fas fa-plus"></i>
-                                                    </a>
-                                                }
-                                                else
-                                                {
-                                                    <button class="btn btn-sm btn-outline-secondary"
-                                                            disabled
-                                                            title="Já existe um horário alocado. Delete o existente para adicionar outro.">
-                                                        <i class="fas fa-lock"></i>
-                                                    </button>
-                                                }
+                                                // Permite adicionar nova escala (redireciona para a view de criação múltipla)
+                                                <a href="@Url.Action("Criar", new { data = dia.ToString("yyyy-MM-dd") })"
+                                                    class="btn btn-sm btn-outline-success"
+                                                    title="Adicionar escalas">
+                                                    <i class="fas fa-plus"></i>
+                                                </a>
                                             }
                                             @if (isPastDate && isCurrentMonth)
                                             {
@@ -161,17 +172,21 @@
                                                             <div class="d-flex justify-content-between align-items-center mb-1">
                                                                 <small>
                                                                     @escala.HoraInicio.ToString(@"hh\:mm") - @escala.HoraFim.ToString(@"hh\:mm")
+                                                                    @if (!escala.Ativo)
+                                                                    {
+                                                                        <i class="fas fa-minus-circle text-danger" title="Bloco Inativo"></i>
+                                                                    }
                                                                 </small>
-                                                                <div>
+                                                                <div class="d-flex gap-1">
                                                                     <a href="@Url.Action("Editar", new { id = escala.Id })"
                                                                        class="btn btn-xs btn-outline-primary btn-sm"
                                                                        title="Editar">
                                                                         <i class="fas fa-edit"></i>
                                                                     </a>
-                                                                    <form asp-action="Excluir" asp-route-id="@escala.Id"
+                                                                    <form asp-action="Deletar" asp-route-id="@escala.Id"
                                                                           method="post"
                                                                           style="display: inline;"
-                                                                          onsubmit="return confirm('Tem certeza que deseja excluir esta escala?');">
+                                                                          onsubmit="return confirm('Tem certeza que deseja excluir esta escala? Isso não pode ser desfeito.');">
                                                                         <button type="submit"
                                                                                 class="btn btn-xs btn-outline-danger btn-sm"
                                                                                 title="Excluir">
@@ -196,17 +211,16 @@
         </div>
     </div>
 
-    <!-- Legenda -->
     <div class="card mt-4">
         <div class="card-body">
-            <h5>Legenda</h5>
+            <h5>Legenda de Dentistas</h5>
             <div class="row">
                 @foreach (var dentista in dentistas)
                 {
                     var cores = new[] { "primary", "success", "info", "warning", "danger" };
                     var corIndex = dentista.Id % cores.Length;
                     <div class="col-md-3 mb-2">
-                        <span class="badge bg-@cores[corIndex]">@dentista.Nome</span>
+                        <span class="badge bg-@cores[corIndex]">@dentista.Nome (@dentista.Cro)</span>
                     </div>
                 }
             </div>
@@ -224,6 +238,10 @@
         .btn-xs {
             padding: 0.1rem 0.3rem;
             font-size: 0.7rem;
+        }
+        
+        .d-flex.gap-1 > * {
+            margin-right: 2px; /* Adiciona um pequeno espaço entre os botões */
         }
     </style>
 }
