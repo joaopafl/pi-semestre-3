@@ -1,78 +1,204 @@
-@model Pi_Odonto.Models.Dentista
+@using System.Globalization
+@model List<Pi_Odonto.Models.EscalaMensalDentista>
 
 @{
     ViewData["Title"] = "Minha Escala de Trabalho";
+    var culturaPtBr = new CultureInfo("pt-BR");
+
+    // Casting seguro dos dados do calendário
+    var dentistaLogado = (Pi_Odonto.Models.Dentista)ViewBag.DentistaLogado;
+    var dentistas = (List<Pi_Odonto.Models.Dentista>)ViewBag.Dentistas; // Lista com 1 dentista
+    var dentistasDict = dentistas.ToDictionary(d => d.Id, d => d.Nome);
+
+    var escalasPorData = (Dictionary<DateTime, Dictionary<int, List<Pi_Odonto.Models.EscalaMensalDentista>>>)ViewBag.EscalasPorData;
 }
 
-<div class="container mt-4">
-    <div class="card">
-        <div class="card-header bg-primary text-white">
-            <h4 class="mb-0"><i class="fas fa-calendar-week"></i> Minha Escala de Trabalho</h4>
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="text-primary">
+                <i class="fas fa-calendar-alt"></i> Minha Escala de Trabalho
+            </h1>
+            <p class="text-muted">Visualização mensal da sua disponibilidade</p>
         </div>
+        <div class="col-md-4 text-end">
+            <button onclick="history.back()" class="btn btn-secondary btn-lg me-2">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </button>
+        </div>
+    </div>
+
+    @if (TempData["Sucesso"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle"></i> @TempData["Sucesso"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="card mb-4 shadow-sm">
         <div class="card-body">
-            <div class="mb-3">
-                <a href="/Dentista/Dashboard" class="btn btn-secondary">
-                    <i class="fas fa-arrow-left"></i> Voltar ao Dashboard
-                </a>
-            </div>
+            @{
+                // Lógica de navegação de mês
+                int ano = (int)ViewBag.Ano;
+                int mes = (int)ViewBag.Mes;
 
-            @if (Model.Disponibilidades != null && Model.Disponibilidades.Any())
-            {
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle"></i>
-                    <strong>Importante:</strong> Sua escala de trabalho é gerenciada pelo administrador do sistema.
+                var mesAnterior = mes == 1 ? 12 : mes - 1;
+                var anoAnterior = mes == 1 ? ano - 1 : ano;
+
+                var mesProximo = mes == 12 ? 1 : mes + 1;
+                var anoProximo = mes == 12 ? ano + 1 : ano;
+
+                var dataAnterior = new DateTime(anoAnterior, mesAnterior, 1);
+                var dataProxima = new DateTime(anoProximo, mesProximo, 1);
+            }
+            <div class="row align-items-center">
+                <div class="col-md-4">
+                    <a asp-action="EscalaTrabalho" asp-route-data="@dataAnterior.ToString("yyyy-MM-dd")"
+                       class="btn btn-outline-primary">
+                        <i class="fas fa-chevron-left"></i> Mês Anterior
+                    </a>
                 </div>
+                <div class="col-md-4 text-center">
+                    <h3 class="mb-0 text-capitalize">
+                        @culturaPtBr.DateTimeFormat.GetMonthName(mes) @ano
+                    </h3>
+                </div>
+                <div class="col-md-4 text-end">
+                    <a asp-action="EscalaTrabalho" asp-route-data="@dataProxima.ToString("yyyy-MM-dd")"
+                       class="btn btn-outline-primary">
+                        Próximo Mês <i class="fas fa-chevron-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
 
-                <table class="table table-hover">
+    <div class="card shadow">
+        <div class="card-body p-1">
+            <div class="table-responsive">
+                <table class="table table-bordered mb-0">
                     <thead>
                         <tr>
-                            <th>Dia da Semana</th>
-                            <th>Horário Início</th>
-                            <th>Horário Fim</th>
-                            <th>Duração</th>
+                            <th class="text-center bg-light" style="width: 14%">Dom</th>
+                            <th class="text-center bg-light" style="width: 14%">Seg</th>
+                            <th class="text-center bg-light" style="width: 14%">Ter</th>
+                            <th class="text-center bg-light" style="width: 14%">Qua</th>
+                            <th class="text-center bg-light" style="width: 14%">Qui</th>
+                            <th class="text-center bg-light" style="width: 14%">Sex</th>
+                            <th class="text-center bg-light" style="width: 14%">Sáb</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach (var disp in Model.Disponibilidades.OrderBy(d => d.DiaSemana))
+                        @{
+                            var primeiroDia = (DateTime)ViewBag.PrimeiroDia;
+                            var ultimoDia = (DateTime)ViewBag.UltimoDia;
+
+                            var diaAtual = primeiroDia.AddDays(-(int)primeiroDia.DayOfWeek);
+                            var fimMes = ultimoDia;
+                            var fimCalendario = fimMes.AddDays(6 - (int)fimMes.DayOfWeek);
+                        }
+
+                        @while (diaAtual <= fimCalendario)
                         {
                             <tr>
-                                <td><strong><i class="fas fa-calendar-day text-primary"></i> @disp.DiaSemana</strong></td>
-                                <td><span class="badge bg-success">@disp.HoraInicio.ToString(@"hh\:mm")</span></td>
-                                <td><span class="badge bg-danger">@disp.HoraFim.ToString(@"hh\:mm")</span></td>
-                                <td>
-                                    @{
-                                        var duracao = disp.HoraFim.Subtract(disp.HoraInicio);
+                                @for (int i = 0; i < 7; i++)
+                                {
+                                    var dia = diaAtual.AddDays(i);
+                                    var isCurrentMonth = dia.Month == primeiroDia.Month;
+                                    var isToday = dia.Date == DateTime.Today;
+                                    var isPastDate = dia.Date < DateTime.Today;
+
+                                    // Verificação de existência da escala (filtrada no Controller para o dentista logado)
+                                    var temEscalas = escalasPorData != null && escalasPorData.ContainsKey(dia.Date);
+                                    var escalasDoDia = temEscalas ? escalasPorData[dia.Date] : null;
+
+                                    // Estilo da Célula
+                                    var cellClass = "bg-white";
+                                    if (!isCurrentMonth)
+                                    {
+                                        cellClass = "text-muted bg-light";
                                     }
-                                    <span class="badge bg-info">@duracao.Hours h @duracao.Minutes min</span>
-                                </td>
+                                    if (isToday)
+                                    {
+                                        cellClass = "bg-info bg-opacity-10 border border-info";
+                                    }
+                                    if (isPastDate && isCurrentMonth)
+                                    {
+                                        cellClass = "bg-secondary bg-opacity-10 text-muted"; // Efeito de acinzentado/passado
+                                    }
+
+                                    <td class="@cellClass"
+                                        style="height: 100px; vertical-align: top; position: relative;">
+                                        <div class="d-flex justify-content-between align-items-start mb-1">
+                                            <span class="fw-bold @(isToday ? "text-primary" : "") @(isPastDate ? "text-muted" : "")">@dia.Day</span>
+
+                                            @if (isCurrentMonth && isPastDate)
+                                            {
+                                                <i class="fas fa-check-circle text-success" title="Data passada e finalizada"></i>
+                                            }
+                                        </div>
+
+                                        @if (temEscalas && escalasDoDia != null)
+                                        {
+                                            <div class="escalas-dia" style="font-size: 0.75rem;">
+                                                @foreach (var grupo in escalasDoDia)
+                                                {
+                                                    // Neste ponto, grupo.Key será o Id do Dentista Logado
+                                                    var corBase = isPastDate ? "secondary" : "primary";
+
+                                                    @foreach (var escala in grupo.Value.OrderBy(e => e.HoraInicio))
+                                                    {
+                                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                                            <small class="badge bg-@corBase" style="opacity: @(isPastDate ? 0.7 : 1);">
+                                                                <i class="fas fa-clock"></i>
+                                                                @escala.HoraInicio.ToString(@"hh\:mm") - @escala.HoraFim.ToString(@"hh\:mm")
+                                                            </small>
+                                                        </div>
+                                                    }
+                                                }
+                                            </div>
+                                        }
+                                    </td>
+                                }
                             </tr>
+                            diaAtual = diaAtual.AddDays(7);
                         }
                     </tbody>
                 </table>
+            </div>
+        </div>
+    </div>
 
-                <div class="row mt-4">
-                    <div class="col-md-4 text-center">
-                        <h5 class="text-primary">@Model.Disponibilidades.Select(d => d.DiaSemana).Distinct().Count()</h5>
-                        <small class="text-muted">Dias da Semana</small>
-                    </div>
-                    <div class="col-md-4 text-center">
-                        <h5 class="text-success">@Model.Disponibilidades.Count()</h5>
-                        <small class="text-muted">Períodos de Trabalho</small>
-                    </div>
-                    <div class="col-md-4 text-center">
-                        <h5 class="text-info">@Model.Disponibilidades.Sum(d => d.HoraFim.Subtract(d.HoraInicio).TotalHours).ToString("F1")h</h5>
-                        <small class="text-muted">Total Semanal</small>
-                    </div>
+    <div class="card mt-4 shadow-sm">
+        <div class="card-body">
+            <h5>Legenda</h5>
+            <div class="row">
+                <div class="col-md-6 mb-2">
+                    <span class="badge bg-primary"><i class="fas fa-user-tie"></i> @dentistaLogado.Nome (@dentistaLogado.Cro)</span>
+                    <p class="text-muted small mt-1 mb-0">Seus horários ativos aparecem em azul escuro.</p>
                 </div>
-            }
-            else
-            {
-                <div class="alert alert-warning text-center">
-                    <i class="fas fa-calendar-times fa-3x mb-3"></i>
-                    <h5>Nenhuma escala cadastrada</h5>
-                    <p>Entre em contato com o administrador para configurar sua escala de trabalho.</p>
+                <div class="col-md-6 mb-2">
+                    <span class="badge bg-secondary">Data Passada</span>
+                    <p class="text-muted small mt-1 mb-0">Datas passadas ficam acinzentadas e desabilitadas.</p>
                 </div>
-            }
+            </div>
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <style>
+        .escalas-dia {
+            max-height: 50px; /* Altura ajustada para o dentista */
+            overflow-y: auto;
+            /* Estilo para a barra de rolagem (opcional) */
+            scrollbar-width: thin;
+        }
+
+        /* Estilo para as células do calendário com escalas */
+        .table-bordered > :not(caption) > * > * {
+            border-width: 1px !important;
+        }
+    </style>
+}

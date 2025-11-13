@@ -33,7 +33,7 @@ namespace Pi_Odonto.Controllers
 
         private string GetRedirectAction()
         {
-            // Admin vai para Index, Dentista vai para MeusAtendimentos
+            // Admin vai para Index (neste controller), Dentista vai para a rota específica
             return IsAdmin() ? "Index" : "/Dentista/MeusAtendimentos";
         }
 
@@ -110,6 +110,9 @@ namespace Pi_Odonto.Controllers
                 viewModel.IdDentista = GetCurrentDentistaId();
             }
 
+            // CORREÇÃO: Define a URL de retorno para a View
+            ViewData["ReturnUrl"] = GetRedirectAction();
+
             return View(viewModel);
         }
 
@@ -152,6 +155,9 @@ namespace Pi_Odonto.Controllers
             // Recarregar dados para dropdowns em caso de erro
             viewModel.CriancasDisponiveis = await _context.Criancas.ToListAsync();
             viewModel.DentistasDisponiveis = await _context.Dentistas.ToListAsync();
+            
+            // Re-define a URL de retorno em caso de erro de validação
+            ViewData["ReturnUrl"] = GetRedirectAction(); 
 
             return View(viewModel);
         }
@@ -193,6 +199,9 @@ namespace Pi_Odonto.Controllers
                 CriancasDisponiveis = await _context.Criancas.ToListAsync(),
                 DentistasDisponiveis = await _context.Dentistas.ToListAsync()
             };
+
+            // Define a URL de retorno para a View de Edit
+            ViewData["ReturnUrl"] = GetRedirectAction();
 
             return View(viewModel);
         }
@@ -264,6 +273,9 @@ namespace Pi_Odonto.Controllers
             // Recarregar dados para dropdowns em caso de erro
             viewModel.CriancasDisponiveis = await _context.Criancas.ToListAsync();
             viewModel.DentistasDisponiveis = await _context.Dentistas.ToListAsync();
+            
+            // Re-define a URL de retorno em caso de erro de validação
+            ViewData["ReturnUrl"] = GetRedirectAction();
 
             return View(viewModel);
         }
@@ -368,6 +380,9 @@ namespace Pi_Odonto.Controllers
             {
                 return NotFound();
             }
+            
+            // Define a URL de retorno para a View de Delete
+            ViewData["ReturnUrl"] = GetRedirectAction();
 
             return View(atendimento);
         }

@@ -30,11 +30,11 @@ namespace Pi_Odonto.Controllers
             _context = context;
         }
 
-        // ====================================================================
-        // MÉTODOS AUXILIARES
-        // ====================================================================
+        // ====================================================================
+        // MÉTODOS AUXILIARES
+        // ====================================================================
 
-        private bool IsAdmin() => User.HasClaim("TipoUsuario", "Admin");
+        private bool IsAdmin() => User.HasClaim("TipoUsuario", "Admin");
 
         private bool IsDentista() => User.HasClaim("TipoUsuario", "Dentista");
 
@@ -77,8 +77,8 @@ namespace Pi_Odonto.Controllers
         private IQueryable<Agendamento> GetAgendamentosQueryBase()
         {
             IQueryable<Agendamento> query = _context.Agendamentos
-                .Include(a => a.Crianca)
-                .Include(a => a.Dentista);
+              .Include(a => a.Crianca)
+              .Include(a => a.Dentista);
 
             if (IsAdmin())
             {
@@ -100,23 +100,33 @@ namespace Pi_Odonto.Controllers
             return query.Where(a => a.Crianca!.IdResponsavel == responsavelId);
         }
 
-        private List<DateTime> GetNextAvailableDates(int count)
+        // =======================================================================================
+        // ✅ CORREÇÃO APLICADA: Busca datas disponíveis no banco de dados (EscalasMensaisDentista)
+        // Isso resolve o problema de não mostrar fins de semana (se houver escala) 
+        // e garante que apenas dias realmente escalados sejam mostrados.
+        // =======================================================================================
+        private async Task<List<DateTime>> GetNextAvailableDates(int count)
         {
-            var dates = new List<DateTime>();
-            var currentDate = DateTime.Today.AddDays(1);
+            // Busca no banco de dados as datas que possuem escalas ativas
+            var datasComEscala = await _context.EscalasMensaisDentista
+// Filtra datas que são hoje ou no futuro
+                .Where(e => e.DataEscala.Date >= DateTime.Today.Date)
+        .Where(e => e.Ativo) // Apenas escalas ativas
+                             // Seleciona apenas o campo DataEscala (apenas a parte da data)
+                .Select(e => e.DataEscala.Date)
+// Pega apenas datas únicas
+                .Distinct()
+// Ordena
+                .OrderBy(d => d)
+// Pega as próximas 'count' datas
+                .Take(count)
+        .ToListAsync();
 
-            while (dates.Count < count)
-            {
-                if (currentDate.DayOfWeek != DayOfWeek.Saturday && currentDate.DayOfWeek != DayOfWeek.Sunday)
-                {
-                    dates.Add(currentDate);
-                }
-                currentDate = currentDate.AddDays(1);
-            }
-            return dates;
+            return datasComEscala;
         }
+        // =======================================================================================
 
-        private string GetDayOfWeekString(DayOfWeek day)
+        private string GetDayOfWeekString(DayOfWeek day)
         {
             return day switch
             {
@@ -131,16 +141,17 @@ namespace Pi_Odonto.Controllers
             };
         }
 
-        // ====================================================================
-        // ACTIONS
-        // ====================================================================
+        // ====================================================================
+        // ACTIONS
+        // ====================================================================
 
-        [HttpGet]
+        [HttpGet]
         public async Task<IActionResult> Index()
         {
             try
             {
-                var availableDates = GetNextAvailableDates(7);
+                // ✅ ATUALIZADO: Usando o novo método assíncrono
+                var availableDates = await GetNextAvailableDates(7);
                 var children = await GetChildrenQueryBase().ToListAsync();
 
                 if (!children.Any())
@@ -149,22 +160,22 @@ namespace Pi_Odonto.Controllers
                     return RedirectToAction("MinhaAgenda");
                 }
 
-                // === NOVA VALIDAÇÃO: RESPONSÁVEL SÓ PODE AGENDAR CRIANÇAS SEM AGENDAMENTO ATIVO ===
-                if (IsResponsavel())
+                // === NOVA VALIDAÇÃO: RESPONSÁVEL SÓ PODE AGENDAR CRIANÇAS SEM AGENDAMENTO ATIVO ===
+                if (IsResponsavel())
                 {
                     var agora = DateTime.Now;
-                    
-                    // Busca IDs das crianças que JÁ TÊM agendamento ativo (data/hora futura)
-                    var criancasComAgendamentoAtivo = await _context.Agendamentos
-                        .Where(a => children.Select(c => c.Id).Contains(a.IdCrianca))
-                        .Where(a => a.DataAgendamento.Date > agora.Date || 
-                                   (a.DataAgendamento.Date == agora.Date && a.HoraAgendamento > agora.TimeOfDay))
-                        .Select(a => a.IdCrianca)
-                        .Distinct()
-                        .ToListAsync();
 
-                    // Filtra apenas crianças SEM agendamento ativo
-                    children = children.Where(c => !criancasComAgendamentoAtivo.Contains(c.Id)).ToList();
+                    // Busca IDs das crianças que JÁ TÊM agendamento ativo (data/hora futura)
+                    var criancasComAgendamentoAtivo = await _context.Agendamentos
+            .Where(a => children.Select(c => c.Id).Contains(a.IdCrianca))
+            .Where(a => a.DataAgendamento.Date > agora.Date ||
+                 (a.DataAgendamento.Date == agora.Date && a.HoraAgendamento > agora.TimeOfDay))
+            .Select(a => a.IdCrianca)
+            .Distinct()
+            .ToListAsync();
+
+                    // Filtra apenas crianças SEM agendamento ativo
+                    children = children.Where(c => !criancasComAgendamentoAtivo.Contains(c.Id)).ToList();
 
                     if (!children.Any())
                     {
@@ -191,60 +202,60 @@ namespace Pi_Odonto.Controllers
         }
 
         [HttpGet]
-public async Task<JsonResult> GetAvailableTimes(string dateString)
-{
-    // Validação da data
-    if (!DateTime.TryParse(dateString, out DateTime selectedDate))
-    {
-        return Json(new { success = false, message = "Formato de data inválido." });
-    }
+        public async Task<JsonResult> GetAvailableTimes(string dateString)
+        {
+            // Validação da data
+            if (!DateTime.TryParse(dateString, out DateTime selectedDate))
+            {
+                return Json(new { success = false, message = "Formato de data inválido." });
+            }
 
-    // 1. PUXAR TODAS AS ESCALAS (OS SLOTS DE 1 HORA) PARA A DATA SELECIONADA
-    // O filtro é feito pela DataEscala exata, e não mais pelo Dia da Semana.
-    var todasEscalasNaData = await _context.EscalasMensaisDentista // <-- NOVA FONTE DE DADOS
-        .Include(e => e.Dentista) // Para puxar o nome do dentista
-        .Where(e => e.DataEscala.Date == selectedDate.Date && e.Ativo)
+            // 1. PUXAR TODAS AS ESCALAS (OS SLOTS DE 1 HORA) PARA A DATA SELECIONADA
+            // O filtro é feito pela DataEscala exata, e não mais pelo Dia da Semana.
+            var todasEscalasNaData = await _context.EscalasMensaisDentista // <-- NOVA FONTE DE DADOS
+                .Include(e => e.Dentista) // Para puxar o nome do dentista
+                .Where(e => e.DataEscala.Date == selectedDate.Date && e.Ativo)
         .ToListAsync();
 
-    if (!todasEscalasNaData.Any())
-    {
-        return Json(new { success = true, times = new List<AvailableTimeSlot>() });
-    }
-
-    // 2. BUSCAR TODOS OS AGENDAMENTOS JÁ FEITOS PARA ESTA DATA
-    var bookedTimes = _context.Agendamentos
-                     .Where(a => a.DataAgendamento.Date == selectedDate.Date)
-                     // A chave para checagem de conflito é o Horário de Início e o Id do Dentista: "HH:mm-DentistaId"
-                     .ToDictionary(a => $"{a.HoraAgendamento.Hours:D2}:{a.HoraAgendamento.Minutes:D2}-{a.IdDentista}", a => true);
-
-    var finalAvailableSlots = new List<AvailableTimeSlot>();
-
-    // 3. COMPARAR ESCALAS COM AGENDAMENTOS (Escala = Slot)
-    foreach (var escala in todasEscalasNaData)
-    {
-        // HoraInicio da escala é o início do slot de 1 hora
-        var timeString = $"{escala.HoraInicio.Hours:D2}:{escala.HoraInicio.Minutes:D2}";
-        var slotKey = $"{timeString}-{escala.IdDentista}";
-
-        // Se o slot (escala) NÃO estiver ocupado (bookedTimes), ele está livre.
-        if (!bookedTimes.ContainsKey(slotKey))
-        {
-            finalAvailableSlots.Add(new AvailableTimeSlot
+            if (!todasEscalasNaData.Any())
             {
-                Time = timeString,
-                DentistaId = escala.IdDentista,
-                DentistaName = escala.Dentista?.Nome ?? "Dentista Não Encontrado"
-            });
+                return Json(new { success = true, times = new List<AvailableTimeSlot>() });
+            }
+
+            // 2. BUSCAR TODOS OS AGENDAMENTOS JÁ FEITOS PARA ESTA DATA
+            var bookedTimes = _context.Agendamentos
+              .Where(a => a.DataAgendamento.Date == selectedDate.Date)
+// A chave para checagem de conflito é o Horário de Início e o Id do Dentista: "HH:mm-DentistaId"
+                             .ToDictionary(a => $"{a.HoraAgendamento.Hours:D2}:{a.HoraAgendamento.Minutes:D2}-{a.IdDentista}", a => true);
+
+            var finalAvailableSlots = new List<AvailableTimeSlot>();
+
+            // 3. COMPARAR ESCALAS COM AGENDAMENTOS (Escala = Slot)
+            foreach (var escala in todasEscalasNaData)
+            {
+                // HoraInicio da escala é o início do slot de 1 hora
+                var timeString = $"{escala.HoraInicio.Hours:D2}:{escala.HoraInicio.Minutes:D2}";
+                var slotKey = $"{timeString}-{escala.IdDentista}";
+
+                // Se o slot (escala) NÃO estiver ocupado (bookedTimes), ele está livre.
+                if (!bookedTimes.ContainsKey(slotKey))
+                {
+                    finalAvailableSlots.Add(new AvailableTimeSlot
+                    {
+                        Time = timeString,
+                        DentistaId = escala.IdDentista,
+                        DentistaName = escala.Dentista?.Nome ?? "Dentista Não Encontrado"
+                    });
+                }
+            }
+
+            // Ordena por horário e retorna
+            var orderedSlots = finalAvailableSlots
+                .OrderBy(s => TimeSpan.Parse(s.Time))
+                .ToList();
+
+            return Json(new { success = true, times = orderedSlots });
         }
-    }
-
-    // Ordena por horário e retorna
-    var orderedSlots = finalAvailableSlots
-                        .OrderBy(s => TimeSpan.Parse(s.Time))
-                        .ToList();
-
-    return Json(new { success = true, times = orderedSlots });
-}
 
         [HttpPost]
         public async Task<IActionResult> Confirmar(AppointmentViewModel model)
@@ -252,14 +263,14 @@ public async Task<JsonResult> GetAvailableTimes(string dateString)
             if (model.AgendamentoId > 0) return BadRequest("Action Inválida para Edição.");
 
             if (!DateTime.TryParse(model.SelectedDateString, out DateTime dataConsulta) ||
-                !TimeSpan.TryParse(model.SelectedTime, out TimeSpan horaConsulta))
+              !TimeSpan.TryParse(model.SelectedTime, out TimeSpan horaConsulta))
             {
                 TempData["ErrorMessage"] = "Formato de data ou hora inválido.";
                 return RedirectToAction("Index");
             }
 
             var crianca = await GetChildrenQueryBase()
-                .FirstOrDefaultAsync(c => c.Id == model.SelectedChildId);
+              .FirstOrDefaultAsync(c => c.Id == model.SelectedChildId);
 
             if (crianca == null)
             {
@@ -267,15 +278,15 @@ public async Task<JsonResult> GetAvailableTimes(string dateString)
                 return RedirectToAction("Index");
             }
 
-            // === VALIDAÇÃO: RESPONSÁVEL NÃO PODE TER 2 AGENDAMENTOS ATIVOS PARA A MESMA CRIANÇA ===
-            if (IsResponsavel())
+            // === VALIDAÇÃO: RESPONSÁVEL NÃO PODE TER 2 AGENDAMENTOS ATIVOS PARA A MESMA CRIANÇA ===
+            if (IsResponsavel())
             {
                 var agora = DateTime.Now;
                 var temAgendamentoAtivo = await _context.Agendamentos
-                    .Where(a => a.IdCrianca == model.SelectedChildId)
-                    .Where(a => a.DataAgendamento.Date > agora.Date || 
-                               (a.DataAgendamento.Date == agora.Date && a.HoraAgendamento > agora.TimeOfDay))
-                    .AnyAsync();
+                  .Where(a => a.IdCrianca == model.SelectedChildId)
+                  .Where(a => a.DataAgendamento.Date > agora.Date ||
+                       (a.DataAgendamento.Date == agora.Date && a.HoraAgendamento > agora.TimeOfDay))
+                  .AnyAsync();
 
                 if (temAgendamentoAtivo)
                 {
@@ -313,7 +324,7 @@ public async Task<JsonResult> GetAvailableTimes(string dateString)
         public async Task<IActionResult> Editar(int id)
         {
             var agendamento = await GetAgendamentosQueryBase()
-                .FirstOrDefaultAsync(a => a.Id == id);
+              .FirstOrDefaultAsync(a => a.Id == id);
 
             if (agendamento == null)
             {
@@ -321,8 +332,8 @@ public async Task<JsonResult> GetAvailableTimes(string dateString)
                 return RedirectToAction("MinhaAgenda");
             }
 
-            var availableDates = GetNextAvailableDates(7);
-            var children = await GetChildrenQueryBase().ToListAsync();
+            var availableDates = await GetNextAvailableDates(7); // ✅ ATUALIZADO: Adicionado await
+            var children = await GetChildrenQueryBase().ToListAsync();
 
             var vm = new AppointmentViewModel
             {
@@ -347,7 +358,7 @@ public async Task<JsonResult> GetAvailableTimes(string dateString)
             if (model.AgendamentoId <= 0) return BadRequest("ID de agendamento inválido.");
 
             var agendamentoToUpdate = await GetAgendamentosQueryBase()
-                .FirstOrDefaultAsync(a => a.Id == model.AgendamentoId);
+              .FirstOrDefaultAsync(a => a.Id == model.AgendamentoId);
 
             if (agendamentoToUpdate == null)
             {
@@ -356,7 +367,7 @@ public async Task<JsonResult> GetAvailableTimes(string dateString)
             }
 
             var novaCrianca = await GetChildrenQueryBase()
-                .FirstOrDefaultAsync(c => c.Id == model.SelectedChildId);
+              .FirstOrDefaultAsync(c => c.Id == model.SelectedChildId);
 
             if (novaCrianca == null)
             {
@@ -365,16 +376,16 @@ public async Task<JsonResult> GetAvailableTimes(string dateString)
             }
 
             if (!DateTime.TryParse(model.SelectedDateString, out DateTime novaData) ||
-                !TimeSpan.TryParse(model.SelectedTime, out TimeSpan novaHora))
+              !TimeSpan.TryParse(model.SelectedTime, out TimeSpan novaHora))
             {
                 TempData["ErrorMessage"] = "Formato de data ou hora inválido.";
                 return RedirectToAction("Editar", new { id = model.AgendamentoId });
             }
 
             var agendamentoExistente = await _context.Agendamentos
-                .Where(a => a.Id != model.AgendamentoId)
-                .Where(a => a.IdCrianca == model.SelectedChildId && a.DataAgendamento.Date == novaData.Date)
-                .FirstOrDefaultAsync();
+              .Where(a => a.Id != model.AgendamentoId)
+              .Where(a => a.IdCrianca == model.SelectedChildId && a.DataAgendamento.Date == novaData.Date)
+              .FirstOrDefaultAsync();
 
             if (agendamentoExistente != null)
             {
@@ -408,8 +419,8 @@ public async Task<JsonResult> GetAvailableTimes(string dateString)
         public async Task<IActionResult> MinhaAgenda()
         {
             IQueryable<Agendamento> query = GetAgendamentosQueryBase()
-                .OrderByDescending(a => a.DataAgendamento)
-                .ThenBy(a => a.HoraAgendamento);
+              .OrderByDescending(a => a.DataAgendamento)
+              .ThenBy(a => a.HoraAgendamento);
 
             var agendamentos = await query.ToListAsync();
 
@@ -421,7 +432,7 @@ public async Task<JsonResult> GetAvailableTimes(string dateString)
         public async Task<IActionResult> Cancelar(int id)
         {
             var agendamento = await GetAgendamentosQueryBase()
-                .FirstOrDefaultAsync(a => a.Id == id);
+              .FirstOrDefaultAsync(a => a.Id == id);
 
             if (agendamento == null)
             {

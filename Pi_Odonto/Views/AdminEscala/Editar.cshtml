@@ -2,12 +2,15 @@
     ViewData["Title"] = "Editar Escala de Dentista";
     // Define uma lista de horários de trabalho padrão (blocos de 1 hora)
     var HorariosPadrao = new List<string> {
-        "08:00", "09:00", "10:00", "11:00", "12:00", 
+        "08:00", "09:00", "10:00", "11:00", "12:00",
         "13:00", "14:00", "15:00", "16:00", "17:00"
     };
-    
+
     // Obtém a hora de início atual como string hh:mm para seleção
     string HoraInicioAtual = Model.HoraInicio.ToString(@"hh\:mm");
+
+    // NOVO: Obtém os horários ocupados (Geral - de qualquer dentista exceto a escala atual)
+    var HorariosOcupados = (List<string>)ViewBag.HorariosOcupadosStr;
 }
 
 @model Pi_Odonto.Models.EscalaMensalDentista
@@ -46,9 +49,10 @@
                             <label asp-for="DataEscala" class="form-label fw-bold">
                                 <i class="fas fa-calendar text-primary"></i> Data
                             </label>
-                            <input asp-for="DataEscala" type="date" class="form-control" 
-                                   value="@Model.DataEscala.ToString("yyyy-MM-dd")" required />
+                            <input asp-for="DataEscala" type="date" class="form-control"
+                                   value="@Model.DataEscala.ToString("yyyy-MM-dd")" readonly />
                             <span asp-validation-for="DataEscala" class="text-danger"></span>
+                            <small class="text-muted">Para alterar a data, exclua e recrie a escala.</small>
                         </div>
 
                         <div class="row">
@@ -59,7 +63,16 @@
                                 <select asp-for="HoraInicio" class="form-select" id="HoraInicioSelect" required>
                                     @foreach (var horario in HorariosPadrao)
                                     {
-                                        <option value="@horario:00" selected="@(horario == HoraInicioAtual)">
+                                        string horarioValue = $"{horario}:00";
+                                        string horarioComparacao = horario;
+
+                                        // Verifica se o horário está ocupado por OUTRO bloco (qualquer dentista)
+                                        bool isOcupado = HorariosOcupados.Contains(horarioComparacao);
+
+                                        <option value="@horarioValue"
+                                                selected="@(horario == HoraInicioAtual)"
+                                                disabled="@(isOcupado)"
+                                                title="@(isOcupado ? $"Horário {horario} já ocupado por outro bloco" : "")">
                                             @horario
                                         </option>
                                     }
@@ -71,15 +84,15 @@
                                 <label asp-for="HoraFim" class="form-label fw-bold">
                                     <i class="fas fa-clock text-primary"></i> Hora de Fim
                                 </label>
-                                <input asp-for="HoraFim" type="time" class="form-control" 
+                                <input asp-for="HoraFim" type="time" class="form-control"
                                        id="HoraFimInput"
-                                       value="@Model.HoraFim.ToString(@"hh\:mm")" 
+                                       value="@Model.HoraFim.ToString(@"hh\:mm")"
                                        step="3600" required readonly />
                                 <small class="text-muted">Calculado automaticamente (1 hora após início)</small>
                                 <span asp-validation-for="HoraFim" class="text-danger"></span>
                             </div>
                         </div>
-                        
+
                         <div class="mb-3 form-check">
                             <input asp-for="Ativo" type="checkbox" class="form-check-input" />
                             <label asp-for="Ativo" class="form-check-label fw-bold">
@@ -88,7 +101,7 @@
                         </div>
 
                         <div class="d-flex justify-content-between">
-                            <a href="@Url.Action("Calendario", new { data = Model.DataEscala.ToString("yyyy-MM-dd") })" 
+                            <a href="@Url.Action("Calendario", new { data = Model.DataEscala.ToString("yyyy-MM-dd") })"
                                class="btn btn-secondary">
                                 <i class="fas fa-arrow-left"></i> Voltar para Calendário
                             </a>
@@ -108,20 +121,20 @@
         function calcularHoraFim() {
             var horaInicioSelect = document.getElementById('HoraInicioSelect');
             var horaFimInput = document.getElementById('HoraFimInput');
-            
+
             if (horaInicioSelect.value) {
-                // A horaInicioSelect.value já está no formato HH:mm:ss, mas só precisamos do HH:mm para o Date
-                var horaInicioStr = horaInicioSelect.value.substring(0, 5); 
-                
+                // Pega o valor (HH:mm:ss) e extrai HH:mm
+                var horaInicioStr = horaInicioSelect.value.substring(0, 5);
+
                 // Cria um objeto Date (Data é irrelevante)
                 var horaInicio = new Date('2000-01-01T' + horaInicioStr + ':00');
-                
+
                 // Adiciona 1 hora
                 horaInicio.setHours(horaInicio.getHours() + 1);
-                
+
                 // Formata para HH:mm
                 var horaFim = horaInicio.toTimeString().slice(0, 5);
-                
+
                 // Atualiza o campo readonly
                 horaFimInput.value = horaFim;
             }

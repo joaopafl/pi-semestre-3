@@ -346,12 +346,12 @@ namespace Pi_Odonto.Controllers
                 if (dentista != null && PasswordHelper.VerifyPassword(model.Senha, dentista.Senha ?? ""))
                 {
                     var claims = new List<Claim>
-            {
-                new Claim(ClaimTypes.Name, dentista.Nome),
-                new Claim(ClaimTypes.Email, dentista.Email),
-                new Claim("DentistaId", dentista.Id.ToString()),
-                new Claim("TipoUsuario", "Dentista")
-            };
+                    {
+                        new Claim(ClaimTypes.Name, dentista.Nome),
+                        new Claim(ClaimTypes.Email, dentista.Email),
+                        new Claim("DentistaId", dentista.Id.ToString()),
+                        new Claim("TipoUsuario", "Dentista")
+                    };
 
                     var claimsIdentity = new ClaimsIdentity(claims, "DentistaAuth");
 

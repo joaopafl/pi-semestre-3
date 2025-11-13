@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Pi_Odonto.Data;
 using Pi_Odonto.Helpers;
 using Pi_Odonto.Models;
-using Pi_Odonto.ViewModels;
+using Pi_Odonto.ViewModels; // Garanta que este namespace exista ou remova/ajuste conforme seu projeto
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 
 namespace Pi_Odonto.Controllers
 {
+    // Aplica a política de autenticação para Dentistas
     [Authorize(Policy = "DentistaOnly", AuthenticationSchemes = "DentistaAuth")]
     public class DentistaController : Controller
     {
@@ -46,7 +47,6 @@ namespace Pi_Odonto.Controllers
 
             if (dentistaId == 0)
             {
-                Console.WriteLine("DentistaId não encontrado nos claims");
                 return RedirectToAction("DentistaLogin", "Auth");
             }
 
@@ -56,7 +56,6 @@ namespace Pi_Odonto.Controllers
 
             if (dentista == null)
             {
-                Console.WriteLine($"Dentista com ID {dentistaId} não encontrado no banco");
                 return RedirectToAction("DentistaLogin", "Auth");
             }
 
@@ -85,31 +84,64 @@ namespace Pi_Odonto.Controllers
         }
 
         // ==========================================================
-        // ESCALA DE TRABALHO DO DENTISTA (REFATORADO PARA ESCALA MENSAL)
+        // ESCALA DE TRABALHO DO DENTISTA (CALENDÁRIO MENSAL)
         // ==========================================================
 
         [HttpGet]
-        public async Task<IActionResult> EscalaTrabalho()
+        public async Task<IActionResult> EscalaTrabalho(DateTime? data) // Adicionado 'data' para navegação
         {
             if (!IsDentista())
                 return RedirectToAction("DentistaLogin", "Auth");
 
             var dentistaId = GetCurrentDentistaId();
 
-            // Puxa o dentista com suas escalas mensais
-            var escalas = await _context.EscalasMensaisDentista
-                .Where(e => e.IdDentista == dentistaId)
-                .OrderByDescending(e => e.DataEscala)
+            if (dentistaId == 0)
+                return RedirectToAction("DentistaLogin", "Auth");
+
+            var dataReferencia = data ?? DateTime.Today;
+
+            // Calcula o primeiro dia do mês e o último dia do mês
+            var primeiroDiaDoMes = new DateTime(dataReferencia.Year, dataReferencia.Month, 1);
+            var ultimoDiaDoMes = primeiroDiaDoMes.AddMonths(1).AddDays(-1);
+
+            // 1. Popula as ViewBags para Navegação e Título
+            ViewBag.Ano = dataReferencia.Year;
+            ViewBag.Mes = dataReferencia.Month;
+            ViewBag.PrimeiroDia = primeiroDiaDoMes;
+            ViewBag.UltimoDia = ultimoDiaDoMes;
+
+            // 2. Busca o dentista logado para a legenda
+            var dentistaLogado = await _context.Dentistas.FindAsync(dentistaId);
+            ViewBag.DentistaLogado = dentistaLogado;
+            // Cria uma lista com o dentista logado para a lógica de iteração da View
+            ViewBag.Dentistas = new List<Dentista> { dentistaLogado };
+
+            // 3. Busca as escalas APENAS DO DENTISTA LOGADO para o mês de referência
+            var escalasNoMes = await _context.EscalasMensaisDentista
+                .Where(e => e.IdDentista == dentistaId &&
+                            e.DataEscala.Year == dataReferencia.Year &&
+                            e.DataEscala.Month == dataReferencia.Month)
+                .OrderBy(e => e.DataEscala)
                 .ThenBy(e => e.HoraInicio)
                 .ToListAsync();
 
-            ViewBag.Dentista = await _context.Dentistas.FindAsync(dentistaId);
-            
-            return View(escalas);
+            // 4. Cria o dicionário de escalas agrupadas (Data -> DentistaId -> Lista de Escalas)
+            // Essencial para a View em formato calendário
+            var escalasPorData = escalasNoMes
+                .GroupBy(e => e.DataEscala.Date)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.GroupBy(e => e.IdDentista)
+                          .ToDictionary(d => d.Key, d => d.ToList())
+                );
+            ViewBag.EscalasPorData = escalasPorData;
+
+            // Retorna a lista de escalas para a View usar como Model (opcional, mas mantido)
+            return View(escalasNoMes);
         }
 
         // ==========================================================
-        // CRIAR DISPONIBILIDADE (REFATORADO PARA ESCALA MENSAL)
+        // CRIAR DISPONIBILIDADE (Mantido, mas sugere-se controle pelo Admin)
         // ==========================================================
 
         [HttpGet]
@@ -121,7 +153,7 @@ namespace Pi_Odonto.Controllers
             var viewModel = new EscalaMensalDentista
             {
                 IdDentista = GetCurrentDentistaId(),
-                DataEscala = DateTime.Today 
+                DataEscala = DateTime.Today
             };
 
             return View(viewModel);
@@ -139,20 +171,23 @@ namespace Pi_Odonto.Controllers
             model.Ativo = true;
             model.DataCadastro = DateTime.Now;
 
+            // Remove a validação do Model.Id, pois é gerado no banco
+            ModelState.Remove(nameof(model.Id));
+
             if (ModelState.IsValid)
             {
                 _context.EscalasMensaisDentista.Add(model);
                 _context.SaveChanges();
 
                 TempData["Sucesso"] = $"Escala cadastrada para {model.DataEscala:dd/MM/yyyy} com sucesso!";
-                return RedirectToAction("EscalaTrabalho");
+                return RedirectToAction("EscalaTrabalho", new { data = model.DataEscala.ToString("yyyy-MM-dd") });
             }
 
             return View(model);
         }
 
         // ==========================================================
-        // EDITAR DISPONIBILIDADE (REFATORADO PARA ESCALA MENSAL)
+        // EDITAR DISPONIBILIDADE
         // ==========================================================
 
         [HttpGet]
@@ -163,7 +198,6 @@ namespace Pi_Odonto.Controllers
 
             var dentistaId = GetCurrentDentistaId();
 
-            // CORRIGIDO CS1061: Usa 'Id'
             var escala = _context.EscalasMensaisDentista
                 .FirstOrDefault(e => e.Id == id && e.IdDentista == dentistaId);
 
@@ -185,7 +219,6 @@ namespace Pi_Odonto.Controllers
 
             var dentistaId = GetCurrentDentistaId();
 
-            // CORRIGIDO CS1061: Usa 'Id'
             var escalaExistente = _context.EscalasMensaisDentista
                 .FirstOrDefault(e => e.Id == model.Id && e.IdDentista == dentistaId);
 
@@ -206,14 +239,14 @@ namespace Pi_Odonto.Controllers
                 _context.SaveChanges();
 
                 TempData["Sucesso"] = "Escala atualizada com sucesso!";
-                return RedirectToAction("EscalaTrabalho");
+                return RedirectToAction("EscalaTrabalho", new { data = model.DataEscala.ToString("yyyy-MM-dd") });
             }
 
             return View(model);
         }
 
         // ==========================================================
-        // DELETAR DISPONIBILIDADE (REFATORADO PARA ESCALA MENSAL)
+        // DELETAR DISPONIBILIDADE
         // ==========================================================
 
         [HttpPost]
@@ -225,7 +258,6 @@ namespace Pi_Odonto.Controllers
 
             var dentistaId = GetCurrentDentistaId();
 
-            // CORRIGIDO CS1061: Usa 'Id'
             var escala = _context.EscalasMensaisDentista
                 .FirstOrDefault(e => e.Id == id && e.IdDentista == dentistaId);
 
@@ -235,11 +267,13 @@ namespace Pi_Odonto.Controllers
                 return RedirectToAction("EscalaTrabalho");
             }
 
+            // Você pode adicionar a verificação de agendamentos futuros aqui se desejar, como no AdminController
+
             _context.EscalasMensaisDentista.Remove(escala);
             _context.SaveChanges();
 
             TempData["Sucesso"] = "Escala removida com sucesso!";
-            return RedirectToAction("EscalaTrabalho");
+            return RedirectToAction("EscalaTrabalho", new { data = escala.DataEscala.ToString("yyyy-MM-dd") });
         }
 
         // ==========================================================
@@ -255,7 +289,6 @@ namespace Pi_Odonto.Controllers
             var dentistaId = GetCurrentDentistaId();
 
             var dentista = _context.Dentistas
-                .Include(d => d.EscalaTrabalho)
                 .FirstOrDefault(d => d.Id == dentistaId);
 
             if (dentista == null)
@@ -282,6 +315,7 @@ namespace Pi_Odonto.Controllers
             if (dentista == null)
                 return RedirectToAction("DentistaLogin", "Auth");
 
+            // View Model para evitar expor a senha
             var viewModel = new EditarPerfilDentistaViewModel
             {
                 Nome = dentista.Nome,
@@ -308,7 +342,7 @@ namespace Pi_Odonto.Controllers
             if (dentista == null)
                 return RedirectToAction("DentistaLogin", "Auth");
 
-            // Remove validação de senha se estiver vazia
+            // Remove validação de senha se estiver vazia (para não exigir a alteração)
             if (string.IsNullOrEmpty(model.NovaSenha))
             {
                 ModelState.Remove(nameof(model.NovaSenha));
@@ -317,7 +351,6 @@ namespace Pi_Odonto.Controllers
 
             if (ModelState.IsValid)
             {
-                // Atualizar apenas os campos permitidos
                 dentista.Nome = model.Nome;
                 dentista.Email = model.Email;
                 dentista.Telefone = model.Telefone;
@@ -331,7 +364,7 @@ namespace Pi_Odonto.Controllers
 
                 _context.SaveChanges();
 
-                TempData["MensagemSucesso"] = "Perfil atualizado com sucesso!";
+                TempData["MensagemSucesso"] = "Perfil atualizado com sucesso! Você precisará se logar novamente para ver as alterações.";
                 return RedirectToAction("PerfilAtualizado");
             }
 
@@ -376,11 +409,13 @@ namespace Pi_Odonto.Controllers
     }
 
     // ==========================================================
-    // VIEW MODEL PARA EDITAR PERFIL DO DENTISTA (CORRIGIDO CS8618)
+    // VIEW MODEL PARA EDITAR PERFIL DO DENTISTA (Deve estar em Pi_Odonto.ViewModels)
     // ==========================================================
+    // NOTA: Se esta classe estiver em um arquivo separado chamado EditarPerfilDentistaViewModel.cs 
+    // na pasta ViewModels, remova-a daqui. Se não, mantenha-a.
     public class EditarPerfilDentistaViewModel
     {
-        // Adicionando '?' para resolver os avisos CS8618
+        // Propriedades Nullable para resolver CS8618
         public string? Nome { get; set; }
         public string? Email { get; set; }
         public string? Telefone { get; set; }

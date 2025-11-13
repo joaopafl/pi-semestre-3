@@ -2,9 +2,11 @@
     ViewData["Title"] = "Criar Escala de Dentista";
     // Define uma lista de horários de trabalho padrão (blocos de 1 hora)
     var HorariosPadrao = new List<string> {
-        "08:00", "09:00", "10:00", "11:00", "12:00", 
+        "08:00", "09:00", "10:00", "11:00", "12:00",
         "13:00", "14:00", "15:00", "16:00", "17:00"
     };
+    // NOVO: Variável para passar os dados do controller para o JS (lista de horários ocupados)
+    var HorariosOcupadosJson = (string)ViewBag.HorariosOcupadosJson;
 }
 
 @model Pi_Odonto.Models.EscalaMensalDentista
@@ -29,7 +31,7 @@
                             <label class="form-label fw-bold">
                                 <i class="fas fa-user-md text-primary"></i> Dentista
                             </label>
-                            <select name="idDentista" class="form-select" required>
+                            <select name="idDentista" class="form-select" id="dentistaSelect" required>
                                 <option value="">Selecione um dentista</option>
                                 @foreach (var dentista in (List<Pi_Odonto.Models.Dentista>)ViewBag.Dentistas)
                                 {
@@ -43,10 +45,10 @@
                             <label class="form-label fw-bold">
                                 <i class="fas fa-calendar text-primary"></i> Data
                             </label>
-                            <input name="dataEscala" type="date" class="form-control" 
-                                   value="@(((DateTime?)ViewBag.DataSelecionada)?.ToString("yyyy-MM-dd") ?? DateTime.Today.ToString("yyyy-MM-dd"))" 
+                            <input name="dataEscala" id="dataInput" type="date" class="form-control"
+                                   value="@(((DateTime?)ViewBag.DataSelecionada)?.ToString("yyyy-MM-dd") ?? DateTime.Today.ToString("yyyy-MM-dd"))"
                                    required />
-                            </div>
+                        </div>
 
                         <h6 class="text-secondary mb-3 mt-4"><i class="fas fa-caret-right"></i> Seleção de Horários (Blocos de 1h)</h6>
                         <hr class="mt-1 mb-3" />
@@ -55,14 +57,14 @@
                             <label class="form-label fw-bold mb-3">
                                 <i class="fas fa-clock text-success"></i> Selecione os Horários de Início:
                             </label>
-                            <div class="row">
+                            <div class="row" id="horariosContainer">
                                 @foreach (var horario in HorariosPadrao)
                                 {
                                     <div class="col-6 col-sm-4 col-md-3">
                                         <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" 
-                                                   name="horariosSelecionados" 
-                                                   id="horario_@horario.Replace(":", "")" 
+                                            <input class="form-check-input" type="checkbox"
+                                                   name="horariosSelecionados"
+                                                   id="horario_@horario.Replace(":", "")"
                                                    value="@horario:00" />
                                             <label class="form-check-label" for="horario_@horario.Replace(":", "")">
                                                 @horario - @(DateTime.Parse(horario).AddHours(1).ToString("HH:mm"))
@@ -75,8 +77,8 @@
                         </div>
 
                         <div class="alert alert-warning">
-                            <i class="fas fa-exclamation-triangle"></i> 
-                            Verifique se o dentista já possui escalas criadas para a data selecionada antes de salvar.
+                            <i class="fas fa-exclamation-triangle"></i>
+                            **IMPORTANTE:** A lista de horários disponíveis se ajusta à **Data** selecionada, pois horários ocupados por **qualquer** dentista ficam indisponíveis.
                         </div>
 
                         <div class="d-flex justify-content-between">
@@ -95,4 +97,57 @@
 </div>
 
 @section Scripts {
-    }
+    <script>
+        // Dados JSON dos horários ocupados (lista simples de strings HH:mm)
+        const horariosOcupados = @Html.Raw(HorariosOcupadosJson);
+        const dataInput = document.getElementById('dataInput');
+        const dentistaSelect = document.getElementById('dentistaSelect');
+        const checkboxes = document.querySelectorAll('input[name="horariosSelecionados"]');
+
+        function atualizarHorariosDisponiveis() {
+            const idDentista = dentistaSelect.value;
+
+            checkboxes.forEach(cb => {
+                const horarioValue = cb.value; // Ex: 08:00:00
+                const horarioStr = horarioValue.substring(0, 5); // Pega apenas HH:mm
+                const isOcupado = horariosOcupados.includes(horarioStr);
+
+                // Desabilita se o horário estiver ocupado OU se nenhum dentista foi selecionado
+                const shouldBeDisabled = isOcupado || !idDentista;
+
+                cb.disabled = shouldBeDisabled;
+                cb.checked = !shouldBeDisabled && cb.checked; // Desmarca se estiver desabilitado
+
+                // Estilo visual e Tooltip
+                if (shouldBeDisabled) {
+                    cb.parentElement.classList.add('text-danger');
+                    cb.parentElement.classList.remove('text-muted');
+                    if (isOcupado) {
+                       cb.title = `Horário ${horarioStr} já ocupado por outro bloco nesta data.`;
+                    } else {
+                       cb.title = 'Selecione um dentista para continuar.';
+                    }
+                } else {
+                    cb.parentElement.classList.remove('text-danger');
+                    cb.parentElement.classList.remove('text-muted');
+                    cb.title = '';
+                }
+            });
+        }
+
+        // 1. Ouvir mudanças no dentista
+        dentistaSelect.addEventListener('change', atualizarHorariosDisponiveis);
+
+        // 2. Ouvir mudanças na data e redirecionar para recarregar a lista de horários ocupados
+        // Isso garante que o Controller traga a lista correta de horários ocupados para a nova data.
+        dataInput.addEventListener('change', function() {
+            const novaData = this.value;
+            // Preserva o Id do dentista na URL se necessário, mas o foco é recarregar a data
+            window.location.href = '@Url.Action("Criar", "AdminEscala")?data=' + novaData;
+        });
+
+        // 3. Executar ao carregar a página
+        atualizarHorariosDisponiveis();
+
+    </script>
+}
