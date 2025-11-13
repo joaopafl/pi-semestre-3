@@ -24,6 +24,7 @@
         </div>
     </div>
 
+    @* Mantém os alertas de TempData para sucesso/erro de outras ações (Editar, Criar, Deletar falha de segurança) *@
     @if (TempData["Sucesso"] != null)
     {
         <div class="alert alert-success alert-dismissible fade show" role="alert">
@@ -39,8 +40,10 @@
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     }
-
-    @if (TempData["WarningMessage"] != null)
+    
+    @* ATENÇÃO: A lógica de AgendamentoVinculado agora está no JavaScript,
+       mas esta tag TempData pode ser usada pelo Controller para outros avisos (não relacionados ao modal) *@
+    @if (TempData["WarningMessage"] != null && TempData["AgendamentoVinculado"] == null)
     {
         <div class="alert alert-warning alert-dismissible fade show" role="alert">
             <i class="fas fa-exclamation-triangle"></i> @TempData["WarningMessage"]
@@ -169,6 +172,10 @@
                                                         <span class="badge bg-@cores[corIndex] mb-1">@dentistaNome</span>
                                                         @foreach (var escala in grupo.Value.OrderBy(e => e.HoraInicio))
                                                         {
+                                                            // VERIFICAÇÃO DE PASSADO: Impede edição/exclusão de escalas já encerradas
+                                                            var dataHoraFim = escala.DataEscala.Date.Add(escala.HoraFim);
+                                                            var isPast = dataHoraFim < DateTime.Now;
+                                                            
                                                             <div class="d-flex justify-content-between align-items-center mb-1">
                                                                 <small>
                                                                     @escala.HoraInicio.ToString(@"hh\:mm") - @escala.HoraFim.ToString(@"hh\:mm")
@@ -178,21 +185,29 @@
                                                                     }
                                                                 </small>
                                                                 <div class="d-flex gap-1">
-                                                                    <a href="@Url.Action("Editar", new { id = escala.Id })"
-                                                                       class="btn btn-xs btn-outline-primary btn-sm"
-                                                                       title="Editar">
-                                                                        <i class="fas fa-edit"></i>
-                                                                    </a>
-                                                                    <form asp-action="Deletar" asp-route-id="@escala.Id"
-                                                                          method="post"
-                                                                          style="display: inline;"
-                                                                          onsubmit="return confirm('Tem certeza que deseja excluir esta escala? Isso não pode ser desfeito.');">
-                                                                        <button type="submit"
+                                                                    @if (!isPast) // Mostra botões apenas se a escala NÃO tiver passado
+                                                                    {
+                                                                        @* O clique em Editar irá para o Controller que faz a verificação antes de exibir a view *@
+                                                                        <a href="@Url.Action("Editar", new { id = escala.Id })"
+                                                                           class="btn btn-xs btn-outline-primary btn-sm"
+                                                                           title="Editar">
+                                                                            <i class="fas fa-edit"></i>
+                                                                        </a>
+                                                                        
+                                                                        @* O clique em Deletar chama a função JS que faz a verificação AJAX *@
+                                                                        <button type="button"
                                                                                 class="btn btn-xs btn-outline-danger btn-sm"
-                                                                                title="Excluir">
+                                                                                title="Excluir"
+                                                                                onclick="openDeleteModal(@escala.Id)"> 
                                                                             <i class="fas fa-trash"></i>
                                                                         </button>
-                                                                    </form>
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        <span class="badge bg-secondary" title="Bloqueado: Horário encerrado">
+                                                                            <i class="fas fa-lock"></i>
+                                                                        </span>
+                                                                    }
                                                                 </div>
                                                             </div>
                                                         }
@@ -228,6 +243,70 @@
     </div>
 </div>
 
+{{-- **MODAL 1: CONFIRMAÇÃO DE EXCLUSÃO** --}}
+<div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="confirmDeleteModalLabel">
+                    <i class="fas fa-trash-alt"></i> Confirmar Exclusão de Escala
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-3">
+                    <i class="fas fa-exclamation-triangle fa-3x text-warning"></i>
+                </div>
+                <p class="text-center fw-bold">
+                    Tem certeza de que deseja excluir este horário da escala?
+                </p>
+                <p class="text-muted text-center small">
+                    A exclusão removerá o horário do calendário.
+                </p>
+            </div>
+            <div class="modal-footer justify-content-between">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                
+                <form id="deleteForm" method="post" style="display: inline;">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash-alt"></i> Excluir Definitivamente
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- **MODAL 2: AVISO DE AGENDAMENTO VINCULADO** --}}
+<div class="modal fade" id="warningModal" tabindex="-1" aria-labelledby="warningModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title" id="warningModalLabel">
+                    <i class="fas fa-exclamation-triangle"></i> Atenção!
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-3">
+                    <i class="fas fa-exclamation-circle fa-4x text-warning"></i>
+                </div>
+                <p class="fw-bold text-center">
+                    A data selecionada possui um agendamento vinculado e não pode ser editada ou deletada.
+                </p>
+                <p class="text-muted small text-center">
+                    Se preferir, faça alterações diretamente na área "Minha Agenda".
+                </p>
+            </div>
+            <div class="modal-footer justify-content-center">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">OK</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
 @section Scripts {
     <style>
         .escalas-dia {
@@ -241,7 +320,70 @@
         }
         
         .d-flex.gap-1 > * {
-            margin-right: 2px; /* Adiciona um pequeno espaço entre os botões */
+            margin-right: 2px;
+        }
+
+        .btn-close-white {
+            filter: invert(1) grayscale(100%) brightness(200%);
         }
     </style>
+
+    <script>
+        // Função para abrir o modal de aviso de agendamento vinculado
+        function openWarningModal() {
+            var warningModal = new bootstrap.Modal(document.getElementById('warningModal'));
+            warningModal.show();
+        }
+
+        // NOVO: Função que verifica o agendamento via AJAX antes de abrir qualquer modal
+        async function openDeleteModal(escalaId) {
+            
+            // 1. URL para verificação via AJAX
+            const checkUrl = '@Url.Action("VerificarAgendamento", "AdminEscala", new { id = "__id__" })'.replace('__id__', escalaId);
+            
+            try {
+                // Requisição GET para verificar se tem agendamento
+                const response = await fetch(checkUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const result = await response.json();
+
+                if (result.hasAgendamento) {
+                    // 2. Se tiver agendamento, mostra o modal de aviso IMEDIATAMENTE
+                    openWarningModal();
+                } else {
+                    // 3. Se NÃO tiver agendamento, mostra o modal de confirmação de exclusão
+                    
+                    // Constrói a URL de POST para o formulário de exclusão
+                    const deleteUrl = '@Url.Action("Deletar", "AdminEscala", new { id = "__id__" })'.replace('__id__', escalaId);
+                    
+                    // Define a action do formulário
+                    var deleteForm = document.getElementById('deleteForm');
+                    deleteForm.setAttribute('action', deleteUrl);
+
+                    // Abre o modal de confirmação
+                    var confirmModal = new bootstrap.Modal(document.getElementById('confirmDeleteModal'));
+                    confirmModal.show();
+                }
+            } catch (error) {
+                console.error('Erro ao verificar agendamento:', error);
+                alert('Erro na comunicação com o servidor ao tentar verificar a escala.');
+            }
+        }
+
+        // LÓGICA DE EDIÇÃO (Bloqueio ao clicar em Editar e retornar para o calendário)
+        $(document).ready(function() {
+            // Verifica se o Controller setou o TempData para abrir o modal de aviso (usado para o fluxo de EDIÇÃO)
+            @if (TempData["AgendamentoVinculado"] != null && TempData["AgendamentoVinculado"].ToString() == "true")
+            {
+                <text>
+                    openWarningModal();
+                </text>
+            }
+        });
+    </script>
 }

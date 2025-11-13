@@ -9,7 +9,8 @@ using System.Security.Claims;
 
 namespace Pi_Odonto.Controllers
 {
-    [Authorize]
+    // CORRIGIDO: Adicionados os esquemas de autenticação
+    [Authorize(AuthenticationSchemes = "AdminAuth,ResponsavelAuth")]
     public class PerfilController : Controller
     {
         private readonly AppDbContext _context;
@@ -525,27 +526,5 @@ namespace Pi_Odonto.Controllers
                 return Json(new { success = false, message = "Erro interno do servidor." });
             }
         }
-
-        [HttpGet]
-[AllowAnonymous] // TEMPORÁRIO
-[Route("Perfil/DebugAdmin")]
-public IActionResult DebugAdmin()
-{
-    var claims = User.Claims.Select(c => new {
-        Type = c.Type,
-        Value = c.Value
-    }).ToList();
-    
-    var isAdmin = IsAdmin();
-    var responsavelId = GetCurrentResponsavelId();
-    
-    return Json(new {
-        IsAdmin = isAdmin,
-        ResponsavelId = responsavelId,
-        Claims = claims,
-        UserIdentityName = User.Identity?.Name,
-        IsAuthenticated = User.Identity?.IsAuthenticated
-    });
-}
     }
 }

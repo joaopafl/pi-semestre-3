@@ -9,7 +9,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Security.Claims;
 using System.Globalization;
-using System.Text.Json; // Adicionar para serialização JSON
+using System.Text.Json;
 
 namespace Pi_Odonto.Controllers
 {
@@ -32,7 +32,7 @@ namespace Pi_Odonto.Controllers
         }
 
         // ==========================================================
-        // CALENDÁRIO GERAL DE ESCALAS (INALTERADO)
+        // CALENDÁRIO GERAL DE ESCALAS
         // ==========================================================
 
         // GET: Admin/Escala/Calendario
@@ -89,7 +89,7 @@ namespace Pi_Odonto.Controllers
         // CRIAR ESCALA (Bloco Múltiplo - Checkboxes)
         // ==========================================================
 
-        // GET: Admin/Escala/Criar (ATUALIZADO para buscar horários de TODOS os dentistas)
+        // GET: Admin/Escala/Criar
         [HttpGet("Criar")]
         public async Task<IActionResult> Criar(DateTime? data)
         {
@@ -108,7 +108,7 @@ namespace Pi_Odonto.Controllers
 
             ViewBag.DataSelecionada = dataSelecionada;
 
-            // NOVO: Busca as escalas existentes para a data selecionada (TODOS os dentistas)
+            // Busca as escalas existentes para a data selecionada (TODOS os dentistas)
             var horariosOcupados = await _context.EscalasMensaisDentista
                 .Where(e => e.DataEscala.Date == dataSelecionada.Date)
                 .Select(e => e.HoraInicio.ToString(@"hh\:mm")) // Seleciona apenas o horário
@@ -121,7 +121,7 @@ namespace Pi_Odonto.Controllers
             return View();
         }
 
-        // POST: Admin/Escala/CriarMultiplos (ATUALIZADO para verificar ocupação geral)
+        // POST: Admin/Escala/CriarMultiplos
         [HttpPost("CriarMultiplos")]
         [ValidateAntiForgeryToken]
         public IActionResult CriarMultiplos(
@@ -148,7 +148,7 @@ namespace Pi_Odonto.Controllers
                 {
                     TimeSpan horaFim = horaInicio.Add(TimeSpan.FromHours(1));
 
-                    // ALTERAÇÃO: Verifica se JÁ EXISTE um bloco (para QUALQUER dentista) na Data e HoraInicio
+                    // Verifica se JÁ EXISTE um bloco (para QUALQUER dentista) na Data e HoraInicio
                     bool jaExiste = _context.EscalasMensaisDentista.Any(e =>
                         e.DataEscala.Date == dataEscala.Date && // Apenas Data
                         e.HoraInicio == horaInicio); // Apenas Hora
@@ -201,7 +201,7 @@ namespace Pi_Odonto.Controllers
         // EDITAR ESCALA (Bloco Único - Dropdown)
         // ==========================================================
 
-        // GET: Admin/Escala/Editar/5 (ATUALIZADO para buscar horários de TODOS os dentistas)
+        // GET: Admin/Escala/Editar/5
         [HttpGet("Editar/{id}")]
         public async Task<IActionResult> Editar(int id)
         {
@@ -219,12 +219,28 @@ namespace Pi_Odonto.Controllers
                 return RedirectToAction("Calendario");
             }
 
+            // VERIFICAÇÃO DE EDIÇÃO: Se houver agendamento futuro, bloqueia a edição (redireciona para o calendário e exibe o modal de aviso via JS)
+            var temAgendamento = await _context.Agendamentos.AnyAsync(a =>
+                a.IdDentista == escala.IdDentista &&
+                a.DataAgendamento.Date == escala.DataEscala.Date &&
+                a.HoraAgendamento == escala.HoraInicio);
+
+            if (temAgendamento)
+            {
+                // Configura o TempData para que a View exiba o modal de aviso
+                TempData["AgendamentoVinculado"] = "true";
+                TempData["WarningMessage"] = "Atenção a data selecionada possui um agendamento vinculado e não pode ser editada ou deletada, se preferir pode fazer alterações na área minha agenda.";
+                
+                // Redireciona para o calendário para exibir o aviso no modal.
+                return RedirectToAction("Calendario", new { data = escala.DataEscala.ToString("yyyy-MM-dd") });
+            }
+
             ViewBag.Dentistas = await _context.Dentistas
                 .Where(d => d.Ativo || d.Id == escala.IdDentista)
                 .OrderBy(d => d.Nome)
                 .ToListAsync();
 
-            // ALTERAÇÃO: Busca todos os horários ocupados para esta data, independentemente do dentista.
+            // Busca todos os horários ocupados para esta data, independentemente do dentista.
             var horariosOcupados = await _context.EscalasMensaisDentista
                 .Where(e => e.DataEscala.Date == escala.DataEscala.Date &&
                             e.Id != id) // Exclui a escala atual da lista de ocupados
@@ -239,7 +255,7 @@ namespace Pi_Odonto.Controllers
             return View(escala);
         }
 
-        // POST: Admin/Escala/Editar/5 (ATUALIZADO para verificar ocupação geral)
+        // POST: Admin/Escala/Editar/5
         [HttpPost("Editar/{id}")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Editar(int id, EscalaMensalDentista model)
@@ -255,7 +271,21 @@ namespace Pi_Odonto.Controllers
 
             if (ModelState.IsValid)
             {
-                // ALTERAÇÃO: Verifica se JÁ EXISTE outro bloco (para QUALQUER dentista) na Data e HoraInicio
+                // Adicionando a verificação de agendamento (redundância de segurança)
+                var temAgendamento = await _context.Agendamentos.AnyAsync(a =>
+                    a.IdDentista == model.IdDentista &&
+                    a.DataAgendamento.Date == model.DataEscala.Date &&
+                    a.HoraAgendamento == model.HoraInicio);
+                
+                if (temAgendamento)
+                {
+                    TempData["Erro"] = "Esta escala possui agendamentos futuros vinculados. Não é permitido salvar alterações.";
+                    // Se houver erro, precisamos recarregar as ViewBags para retornar a View
+                    ViewBag.Dentistas = await _context.Dentistas.Where(d => d.Ativo || d.Id == model.IdDentista).OrderBy(d => d.Nome).ToListAsync();
+                    return View(model);
+                }
+
+                // Verifica se JÁ EXISTE outro bloco (para QUALQUER dentista) na Data e HoraInicio
                 var jaExiste = await _context.EscalasMensaisDentista.AnyAsync(e =>
                     e.DataEscala.Date == model.DataEscala.Date && // Apenas Data
                     e.HoraInicio == model.HoraInicio && // Apenas Hora
@@ -265,7 +295,7 @@ namespace Pi_Odonto.Controllers
                 {
                     TempData["Erro"] = $"O horário de {model.HoraInicio.ToString(@"hh\:mm")} já está ocupado por outro dentista ou bloco de escala nesta data. Por favor, escolha um horário diferente.";
 
-                    // Popula a ViewBag de dentistas
+                    // Popula a ViewBag de dentistas (necessário para retornar a View)
                     ViewBag.Dentistas = await _context.Dentistas.Where(d => d.Ativo || d.Id == model.IdDentista).OrderBy(d => d.Nome).ToListAsync();
 
                     // Recarrega os horários ocupados (para a View)
@@ -311,12 +341,13 @@ namespace Pi_Odonto.Controllers
                 }
             }
 
+            // Popula a ViewBag de dentistas (necessário para retornar a View)
             ViewBag.Dentistas = await _context.Dentistas.Where(d => d.Ativo || d.Id == model.IdDentista).OrderBy(d => d.Nome).ToListAsync();
             return View(model);
         }
 
         // ==========================================================
-        // DELETAR ESCALA (INALTERADO)
+        // DELETAR ESCALA (Revertido para TempData padrão)
         // ==========================================================
 
         // POST: Admin/Escala/Deletar/5
@@ -339,7 +370,7 @@ namespace Pi_Odonto.Controllers
 
             var dataReferencia = escala.DataEscala;
 
-            // Verifica se há agendamentos futuros neste bloco para impedir a exclusão
+            // VERIFICAÇÃO DE SEGURANÇA: Se o JS falhar, o Controller ainda bloqueia.
             var temAgendamento = await _context.Agendamentos.AnyAsync(a =>
                 a.IdDentista == escala.IdDentista &&
                 a.DataAgendamento.Date == escala.DataEscala.Date &&
@@ -347,7 +378,7 @@ namespace Pi_Odonto.Controllers
 
             if (temAgendamento)
             {
-                TempData["Erro"] = "Esta escala não pode ser excluída, pois possui agendamentos futuros vinculados.";
+                TempData["Erro"] = "Esta escala possui agendamentos futuros vinculados e não pode ser excluída.";
                 return RedirectToAction("Calendario", new { data = dataReferencia.ToString("yyyy-MM-dd") });
             }
 
@@ -356,6 +387,30 @@ namespace Pi_Odonto.Controllers
 
             TempData["Sucesso"] = "Escala removida com sucesso!";
             return RedirectToAction("Calendario", new { data = dataReferencia.ToString("yyyy-MM-dd") });
+        }
+        
+        // ==========================================================
+        // VERIFICAÇÃO RÁPIDA (AJAX) - NOVO PARA JS
+        // ==========================================================
+
+        // GET: Admin/Escala/VerificarAgendamento/5
+        [HttpGet("VerificarAgendamento/{id}")]
+        public async Task<IActionResult> VerificarAgendamento(int id)
+        {
+            var escala = await _context.EscalasMensaisDentista.FindAsync(id);
+
+            if (escala == null)
+            {
+                return Json(new { hasAgendamento = false });
+            }
+
+            // Verifica se há agendamentos futuros neste bloco
+            var temAgendamento = await _context.Agendamentos.AnyAsync(a =>
+                a.IdDentista == escala.IdDentista &&
+                a.DataAgendamento.Date == escala.DataEscala.Date &&
+                a.HoraAgendamento == escala.HoraInicio);
+
+            return Json(new { hasAgendamento = temAgendamento });
         }
     }
 }

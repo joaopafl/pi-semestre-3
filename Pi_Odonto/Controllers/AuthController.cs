@@ -39,7 +39,7 @@ namespace Pi_Odonto.Controllers
             return View();
         }
 
-        // POST: Login de Responsável
+        // POST: Login de Responsável (CORRIGIDO: Usando ResponsavelAuth)
         [HttpPost]
         [Route("Login")]
         public async Task<IActionResult> Login(LoginViewModel model)
@@ -59,7 +59,8 @@ namespace Pi_Odonto.Controllers
                         new Claim("TipoUsuario", "Responsavel")
                     };
 
-                    var claimsIdentity = new ClaimsIdentity(claims, "AdminAuth");
+                    // Define o esquema de autenticação correto
+                    var claimsIdentity = new ClaimsIdentity(claims, "ResponsavelAuth"); // <--- CORRIGIDO
 
                     var authProperties = new AuthenticationProperties
                     {
@@ -67,7 +68,8 @@ namespace Pi_Odonto.Controllers
                         ExpiresUtc = model.LembrarMe ? DateTimeOffset.UtcNow.AddDays(30) : DateTimeOffset.UtcNow.AddHours(2)
                     };
 
-                    await HttpContext.SignInAsync("AdminAuth",
+                    // Faz o Sign-in usando o esquema ResponsavelAuth
+                    await HttpContext.SignInAsync("ResponsavelAuth", // <--- CORRIGIDO
                         new ClaimsPrincipal(claimsIdentity), authProperties);
 
                     return RedirectToAction("Index", "Perfil");
@@ -92,19 +94,14 @@ namespace Pi_Odonto.Controllers
                     return RedirectToAction("Login");
                 }
 
-                // Verificar se o responsável existe
                 var responsavel = await _context.Responsaveis
                     .FirstOrDefaultAsync(r => r.Email.ToLower() == email.ToLower() && r.Ativo);
 
-                // Por segurança, sempre mostramos a mesma mensagem, 
-                // independente do responsável existir ou não
                 if (responsavel != null)
                 {
-                    // Gerar token único
                     var token = GerarTokenSeguro();
-                    var dataExpiracao = DateTime.Now.AddHours(1); // Token válido por 1 hora
+                    var dataExpiracao = DateTime.Now.AddHours(1);
 
-                    // Salvar token no banco
                     var recuperacaoToken = new RecuperacaoSenhaToken
                     {
                         Email = email.ToLower(),
@@ -117,7 +114,6 @@ namespace Pi_Odonto.Controllers
                     _context.RecuperacaoSenhaTokens.Add(recuperacaoToken);
                     await _context.SaveChangesAsync();
 
-                    // Enviar email
                     await _emailService.EnviarEmailRecuperacaoSenhaAsync(
                         email,
                         responsavel.Nome,
@@ -149,7 +145,6 @@ namespace Pi_Odonto.Controllers
                 return RedirectToAction("Login");
             }
 
-            // Verificar se o token existe e é válido
             var recuperacaoToken = await _context.RecuperacaoSenhaTokens
                 .FirstOrDefaultAsync(t => t.Token == token && !t.Usado && t.DataExpiracao > DateTime.Now);
 
@@ -179,7 +174,6 @@ namespace Pi_Odonto.Controllers
 
             try
             {
-                // Verificar token
                 var recuperacaoToken = await _context.RecuperacaoSenhaTokens
                     .FirstOrDefaultAsync(t => t.Token == model.Token && !t.Usado && t.DataExpiracao > DateTime.Now);
 
@@ -189,7 +183,6 @@ namespace Pi_Odonto.Controllers
                     return RedirectToAction("Login");
                 }
 
-                // Buscar responsável
                 var responsavel = await _context.Responsaveis
                     .FirstOrDefaultAsync(r => r.Email.ToLower() == recuperacaoToken.Email);
 
@@ -199,11 +192,9 @@ namespace Pi_Odonto.Controllers
                     return RedirectToAction("Login");
                 }
 
-                // Atualizar senha do responsável
                 responsavel.Senha = PasswordHelper.HashPassword(model.NovaSenha);
                 responsavel.DataAtualizacao = DateTime.Now;
 
-                // Marcar token como usado
                 recuperacaoToken.Usado = true;
 
                 await _context.SaveChangesAsync();
@@ -226,7 +217,6 @@ namespace Pi_Odonto.Controllers
         [Route("Admin/Login")]
         public IActionResult AdminLogin()
         {
-            // Se já estiver logado como admin, redireciona
             if (User.Identity?.IsAuthenticated == true && User.HasClaim("TipoUsuario", "Admin"))
             {
                 return RedirectToAction("Dashboard", "Admin");
@@ -241,11 +231,9 @@ namespace Pi_Odonto.Controllers
         {
             if (ModelState.IsValid)
             {
-                // Buscar o admin no banco de dados
                 var admin = _context.Responsaveis
                     .FirstOrDefault(r => r.Email == model.Email && r.Ativo);
 
-                // Verificar se existe e se é o admin (você pode criar um campo específico depois)
                 if (admin != null &&
                     model.Email == "admin@piodonto.com" &&
                     PasswordHelper.VerifyPassword(model.Senha, admin.Senha ?? ""))
@@ -272,50 +260,35 @@ namespace Pi_Odonto.Controllers
             return View(model);
         }
 
-        // POST: Logout universal (detecta automaticamente o tipo de usuário)
+        // POST: Logout universal (CORRIGIDO: Logout de Responsável usa ResponsavelAuth)
         [HttpPost]
         [Route("Logout")]
         public async Task<IActionResult> Logout()
         {
-            // Verifica qual tipo de usuário está logado
             var tipoUsuario = User.FindFirst("TipoUsuario")?.Value;
 
             if (tipoUsuario == "Admin")
             {
-                // Faz logout do esquema AdminAuth
                 await HttpContext.SignOutAsync("AdminAuth");
                 return RedirectToAction("AdminLogin", "Auth");
             }
             else if (tipoUsuario == "Responsavel")
             {
-                // Faz logout do esquema AdminAuth (Responsável também usa AdminAuth)
-                await HttpContext.SignOutAsync("AdminAuth");
+                // Faz logout do esquema ResponsavelAuth
+                await HttpContext.SignOutAsync("ResponsavelAuth"); // <--- CORRIGIDO
                 return RedirectToAction("Login", "Auth");
             }
             else if (tipoUsuario == "Dentista")
             {
-                // Faz logout do esquema DentistaAuth
                 await HttpContext.SignOutAsync("DentistaAuth");
                 return RedirectToAction("DentistaLogin", "Auth");
             }
 
-            // Fallback: se não detectar o tipo, faz logout de ambos os esquemas
+            // Fallback
             await HttpContext.SignOutAsync("AdminAuth");
             await HttpContext.SignOutAsync("DentistaAuth");
+            await HttpContext.SignOutAsync("ResponsavelAuth"); // Adicionado fallback
             return RedirectToAction("Index", "Home");
-        }
-
-        // GET: Área restrita - só para testar se está funcionando
-        [HttpGet]
-        [Route("AreaRestrita")]
-        public IActionResult AreaRestrita()
-        {
-            if (User.Identity?.IsAuthenticated != true)
-            {
-                return RedirectToAction("Login");
-            }
-
-            return View();
         }
 
         // GET: Login de Dentista
@@ -323,17 +296,15 @@ namespace Pi_Odonto.Controllers
         [Route("Auth/DentistaLogin")]
         public IActionResult DentistaLogin()
         {
-            // SE JÁ ESTIVER LOGADO COMO DENTISTA, vai direto pro Dashboard
             if (User.Identity?.IsAuthenticated == true && User.HasClaim("TipoUsuario", "Dentista"))
             {
                 return RedirectToAction("Dashboard", "Dentista");
             }
 
-            // Se não estiver logado, mostra a tela de login
             return View();
         }
 
-        // POST: Login de Dentista (não precisa mudar, já está correto)
+        // POST: Login de Dentista
         [HttpPost]
         [Route("Auth/DentistaLogin")]
         public async Task<IActionResult> DentistaLogin(DentistaLoginViewModel model)
@@ -389,17 +360,14 @@ namespace Pi_Odonto.Controllers
                     .Substring(0, 32);
             }
         }
-        // Metodo para verificar se determinado ususario possui direitos de acesso
 
         [HttpGet]
         [Route("Auth/AcessoNegado")]
         public IActionResult AcessoNegado()
         {
-            // Identificar de onde veio
             var returnUrl = Request.Query["ReturnUrl"].ToString();
             ViewBag.ReturnUrl = returnUrl;
 
-            // Identificar tipo de usuário logado
             var tipoUsuario = User.FindFirst("TipoUsuario")?.Value;
             ViewBag.TipoUsuario = tipoUsuario;
 

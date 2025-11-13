@@ -147,22 +147,29 @@
         }
 
         .btn-login {
-            background: linear-gradient(135deg, var(--cor-secundaria), var(--cor-amor));
-            border: none;
-            border-radius: 12px;
-            padding: 1rem 2rem; /* Padding aumentado */
-            font-weight: 600;
-            font-size: 1.1rem; /* Aumentado */
-            color: white;
-            transition: all 0.3s ease;
-            box-shadow: 0 6px 20px rgba(102, 187, 106, 0.3);
-        }
+    background: linear-gradient(135deg, #66BB6A, #43A047); /* Gradiente verde */
+    border: none;
+    border-radius: 12px;
+    padding: 1rem 2rem;
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: white;
+    transition: all 0.3s ease;
+    box-shadow: 0 6px 20px rgba(102, 187, 106, 0.4); /* Sombra verde */
+}
 
-        .btn-login:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 30px rgba(102, 187, 106, 0.4);
-            color: white;
-        }
+.btn-login:hover {
+    background: linear-gradient(135deg, #43A047, #2E7D32); /* Verde mais escuro no hover */
+    transform: translateY(-2px);
+    box-shadow: 0 10px 30px rgba(102, 187, 106, 0.5);
+    color: white;
+}
+
+/* Opcional: Se quiser um efeito de brilho adicional */
+.btn-login:active {
+    transform: translateY(0);
+    box-shadow: 0 4px 15px rgba(102, 187, 106, 0.3);
+}
 
         .btn-back {
             background: transparent;
