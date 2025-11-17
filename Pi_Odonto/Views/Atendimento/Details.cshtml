@@ -2,6 +2,8 @@
 
 @{
     ViewData["Title"] = "Detalhes do Atendimento";
+    // Define a rota de retorno, caso não venha do Controller
+    var returnUrl = ViewData["ReturnUrl"]?.ToString() ?? "/Dentista/MeusAtendimentos";
 }
 
 <div class="container-fluid">
@@ -13,14 +15,14 @@
                         <i class="fas fa-eye"></i> Detalhes do Atendimento
                     </h3>
                     <div class="card-tools">
-                        <a asp-action="Index" class="btn btn-secondary btn-sm">
+                        @* BOTÃO "VOLTAR" (TOPO) - CORRIGIDO PARA USAR A ROTA DINÂMICA *@
+                        <a href="@returnUrl" class="btn btn-secondary btn-sm">
                             <i class="fas fa-arrow-left"></i> Voltar
                         </a>
                     </div>
                 </div>
                 <div class="card-body">
                     <div class="row">
-                        <!-- Informações Básicas -->
                         <div class="col-md-6">
                             <div class="card border-primary">
                                 <div class="card-header bg-primary text-white">
@@ -71,7 +73,6 @@
                             </div>
                         </div>
 
-                        <!-- Paciente e Dentista -->
                         <div class="col-md-6">
                             <div class="card border-success">
                                 <div class="card-header bg-success text-white">
@@ -108,26 +109,12 @@
                                                 </small>
                                             }
                                         </dd>
-
-                                        @* Agenda removida temporariamente *@
-                                        @* @if (Model.IdAgenda.HasValue)
-                                        {
-                                            <dt class="col-sm-4">
-                                                <i class="fas fa-calendar-check"></i> Agenda:
-                                            </dt>
-                                            <dd class="col-sm-8">
-                                                <span class="badge bg-secondary">
-                                                    Agenda #@Model.IdAgenda
-                                                </span>
-                                            </dd>
-                                        } *@
                                     </dl>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Observações -->
                     @if (!string.IsNullOrEmpty(Model.Observacao))
                     {
                         <div class="row mt-4">
@@ -148,7 +135,6 @@
                         </div>
                     }
 
-                    <!-- Informações de Relacionamentos -->
                     <div class="row mt-4">
                         <div class="col-12">
                             <div class="card border-secondary">
@@ -213,13 +199,10 @@
                         </div>
                     </div>
 
-                    <!-- Botões de Ação -->
                     <div class="row mt-4">
                         <div class="col-12">
-                            <div class="d-flex justify-content-between">
-                                <a asp-action="Index" class="btn btn-secondary">
-                                    <i class="fas fa-arrow-left"></i> Voltar para Lista
-                                </a>
+                            <div class="d-flex justify-content-end"> 
+                                @* O BOTÃO "Voltar para Lista" FOI REMOVIDO DAQUI *@
                                 <div>
                                     <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">
                                         <i class="fas fa-edit"></i> Editar

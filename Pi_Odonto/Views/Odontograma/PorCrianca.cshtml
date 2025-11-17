@@ -395,7 +395,7 @@
     }
 
     /* Responsivo */
-    @@media (max-width: 768px) {
+    media (max-width: 768px) {
         .dente {
             width: 45px;
             height: 60px;
@@ -445,7 +445,7 @@
         animation: spin 1s linear infinite;
     }
 
-    @@keyframes spin {
+    keyframes spin {
         0% { transform: rotate(0deg); }
         100% { transform: rotate(360deg); }
     }
@@ -468,18 +468,12 @@
                 <p class="mb-0 opacity-90">Registro completo da saúde bucal</p>
             </div>
             <div class="d-flex gap-2">
-                @if (isAdmin)
-                {
-                    <a href="/Odontograma/Index" class="btn btn-light btn-sm">
-                        <i class="fas fa-list"></i> Todos
-                    </a>
-                }
+                <a href="/Odontograma/Index" class="btn btn-light btn-sm">
+                    <i class="fas fa-arrow-left"></i> Voltar
+                </a>
                 <a href="/Odontograma/Imprimir/@Model.Id" class="btn btn-light btn-sm" target="_blank">
                     <i class="fas fa-print"></i> Imprimir
                 </a>
-                <button onclick="window.close()" class="btn btn-light btn-sm">
-                    <i class="fas fa-times"></i> Fechar Aba
-                </button>
             </div>
         </div>
     </div>
@@ -752,7 +746,7 @@
             dentistaNome = t.Dentista?.Nome ?? "Não especificado"
         })));
 
-        const isAdmin = @(isAdmin ? "true" : "false");
+        const isAdmin = @(isAdmin.ToString().ToLower());
 
         document.addEventListener('DOMContentLoaded', function() {
             atualizarVisualizacaoDentes();

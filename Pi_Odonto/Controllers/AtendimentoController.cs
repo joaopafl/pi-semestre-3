@@ -85,6 +85,9 @@ namespace Pi_Odonto.Controllers
             {
                 return RedirectToAction("AcessoNegado", "Auth");
             }
+            
+            // NOVO: Adicionar a URL de retorno
+            ViewData["ReturnUrl"] = GetRedirectAction(); // Adiciona a rota correta (Index ou /Dentista/MeusAtendimentos)
 
             return View(atendimento);
         }
