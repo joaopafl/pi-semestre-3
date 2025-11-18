@@ -22,9 +22,10 @@
             <p class="text-muted">Visualização mensal da sua disponibilidade</p>
         </div>
         <div class="col-md-4 text-end">
-            <button onclick="history.back()" class="btn btn-secondary btn-lg me-2">
+            @* MODIFICAÇÃO AQUI: Usa asp-action e asp-controller para ir para Dentista/Dashboard *@
+            <a asp-action="Dashboard" asp-controller="Dentista" class="btn btn-secondary btn-lg me-2">
                 <i class="fas fa-arrow-left"></i> Voltar
-            </button>
+            </a>
         </div>
     </div>
 
