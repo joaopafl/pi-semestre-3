@@ -33,8 +33,9 @@ namespace Pi_Odonto.Controllers
 
         private string GetRedirectAction()
         {
-            // Admin vai para Index (neste controller), Dentista vai para a rota específica
-            return IsAdmin() ? "Index" : "/Dentista/MeusAtendimentos";
+            // Admin vai para a rota base do Controller (/Atendimento)
+            // Dentista vai para sua rota específica (/Dentista/MeusAtendimentos)
+            return IsAdmin() ? "/Atendimento" : "/Dentista/MeusAtendimentos";
         }
 
         // ==========================================================
@@ -86,8 +87,8 @@ namespace Pi_Odonto.Controllers
                 return RedirectToAction("AcessoNegado", "Auth");
             }
             
-            // NOVO: Adicionar a URL de retorno
-            ViewData["ReturnUrl"] = GetRedirectAction(); // Adiciona a rota correta (Index ou /Dentista/MeusAtendimentos)
+            // NOVO: Adicionar a URL de retorno (usando a rota corrigida)
+            ViewData["ReturnUrl"] = GetRedirectAction(); 
 
             return View(atendimento);
         }
@@ -113,7 +114,7 @@ namespace Pi_Odonto.Controllers
                 viewModel.IdDentista = GetCurrentDentistaId();
             }
 
-            // CORREÇÃO: Define a URL de retorno para a View
+            // Define a URL de retorno
             ViewData["ReturnUrl"] = GetRedirectAction();
 
             return View(viewModel);

@@ -4,7 +4,6 @@
 }
 
 <div class="container-fluid mt-4">
-    <!-- Header -->
     <div class="row mb-4">
         <div class="col-md-8">
             <h1 class="text-primary">
@@ -23,7 +22,6 @@
     </div>
 
     <div class="row">
-        <!-- Dados do Responsável -->
         <div class="col-md-8">
             <div class="card">
                 <div class="card-header bg-primary text-white">
@@ -145,7 +143,6 @@
             </div>
         </div>
 
-        <!-- Resumo -->
         <div class="col-md-4">
             <div class="card">
                 <div class="card-header bg-info text-white">
@@ -167,27 +164,31 @@
                     <hr>
 
                     <div class="d-grid gap-2">
-                        <form method="post" action="/Admin/Responsaveis/ToggleStatus/@Model.Id" class="d-inline">
-                            <button type="submit" class="btn @(Model.Ativo ? "btn-outline-warning" : "btn-outline-success") btn-sm w-100"
-                                    onclick="return confirm('@(Model.Ativo ? "Desativar" : "Ativar") este responsável?')">
+                        <form method="post" action="/Admin/Responsaveis/ToggleStatus/@Model.Id" class="d-inline js-action-form">
+                            @* Botão ATIVAR/DESATIVAR agora aciona o modal *@
+                            <button type="button" 
+                                    class="btn @(Model.Ativo ? "btn-outline-warning" : "btn-outline-success") btn-sm w-100 js-confirm-action"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#confirmActionModal"
+                                    data-action-url="/Admin/Responsaveis/ToggleStatus/@Model.Id" 
+                                    data-message="Tem certeza que deseja @(Model.Ativo ? "DESATIVAR" : "ATIVAR") o responsável @Model.Nome?"
+                                    data-header-class="@(Model.Ativo ? "bg-warning" : "bg-success")"
+                                    data-confirm-text="@(Model.Ativo ? "Sim, Desativar" : "Sim, Ativar")"
+                                    data-is-danger="false">
                                 <i class="fas @(Model.Ativo ? "fa-ban" : "fa-check")"></i>
                                 @(Model.Ativo ? "Desativar" : "Ativar")
                             </button>
+                            @* O campo de token anti-forgery precisa estar aqui, caso o formulário original use. Se não usar, remova o input abaixo. *@
+                            @* <input type="hidden" name="__RequestVerificationToken" value="@Html.AntiForgeryToken()" /> *@
                         </form>
 
-                        <form method="post" action="/Admin/Responsaveis/Excluir/@Model.Id" class="d-inline">
-                            <button type="submit" class="btn btn-outline-danger btn-sm w-100"
-                                    onclick="return confirm('ATENÇÃO: Isso excluirá permanentemente o responsável E todas as suas crianças! Deseja continuar?')">
-                                <i class="fas fa-trash"></i> Excluir
-                            </button>
-                        </form>
+                        @* O formulário de EXCLUIR foi REMOVIDO aqui. *@
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Crianças -->
     <div class="row mt-4">
         <div class="col-12">
             <div class="card">
@@ -252,6 +253,91 @@
     </div>
 </div>
 
+@* NOVO MODAL DE CONFIRMAÇÃO *@
+<div class="modal fade" id="confirmActionModal" tabindex="-1" aria-labelledby="confirmActionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white" id="modalHeader">
+                <h5 class="modal-title" id="confirmActionModalLabel">Confirmação Necessária</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p id="modalMessage" class="lead text-center">Tem certeza que deseja realizar esta ação?</p>
+                @* O alerta de perigo (modalWarning) foi mantido, mas será ocultado por padrão para a ação de Ativar/Desativar *@
+                <div class="alert alert-warning mt-3" id="modalWarning" style="display:none;">
+                    <i class="fas fa-exclamation-triangle"></i> Esta ação é permanente e não pode ser desfeita!
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+                <button type="button" class="btn btn-danger" id="confirmActionButton">
+                    <i class="fas fa-check"></i> Confirmar
+                </button>
+                <form method="post" id="actionForm" style="display: none;"></form>
+            </div>
+        </div>
+    </div>
+</div>
+
+
 @section Scripts {
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
+    
+    @* NOVO SCRIPT PARA O MODAL *@
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const confirmActionButton = document.getElementById('confirmActionButton');
+            const actionForm = document.getElementById('actionForm');
+
+            // Event listener para abrir o modal
+            document.querySelectorAll('.js-confirm-action').forEach(button => {
+                button.addEventListener('click', function (event) {
+                    
+                    // Captura os dados customizados dos atributos data-
+                    const actionUrl = this.getAttribute('data-action-url');
+                    const message = this.getAttribute('data-message');
+                    const headerClass = this.getAttribute('data-header-class') || 'bg-danger';
+                    const confirmText = this.getAttribute('data-confirm-text') || 'Confirmar';
+                    const isDanger = this.getAttribute('data-is-danger') === 'true'; // Será false para ToggleStatus
+
+                    // Pega o form original (pai) para copiar o token de anti-forgery
+                    const originalForm = this.closest('.js-action-form');
+                    
+                    // 1. Atualiza o conteúdo do modal
+                    document.getElementById('modalMessage').innerHTML = message;
+
+                    // 2. Atualiza o cabeçalho e cor do botão
+                    const modalHeader = document.getElementById('modalHeader');
+                    modalHeader.className = `modal-header text-white ${headerClass}`;
+
+                    // Para ToggleStatus, o botão será primário ou sucesso/aviso, não danger.
+                    confirmActionButton.className = `btn ${isDanger ? 'btn-danger' : 'btn-primary'}`;
+                    confirmActionButton.innerHTML = `<i class="fas fa-check"></i> ${confirmText}`;
+
+                    // 3. Exibe/Oculta o alerta de perigo (Deve estar oculto para ToggleStatus)
+                    document.getElementById('modalWarning').style.display = isDanger ? 'block' : 'none';
+
+                    // 4. Configura o formulário oculto
+                    actionForm.action = actionUrl;
+                    actionForm.innerHTML = ''; // Limpa o form
+
+                    // 5. Copia o token de anti-forgery (Importante!)
+                    // Verifica se existe um input com o nome do token e o clona para o form de submissão.
+                    const antiForgeryToken = originalForm.querySelector('input[name="__RequestVerificationToken"]');
+                    if (antiForgeryToken) {
+                        actionForm.appendChild(antiForgeryToken.cloneNode(true));
+                    }
+                });
+            });
+
+
+            // Listener para o clique no botão de CONFIRMAR do modal
+            confirmActionButton.addEventListener('click', function() {
+                // Envia o formulário oculto com a URL e token corretos
+                actionForm.submit();
+            });
+        });
+    </script>
 }

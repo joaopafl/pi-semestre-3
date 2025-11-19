@@ -85,7 +85,6 @@
                             </div>
                         </div>
 
-                        <!-- Seção de Escala de Trabalho -->
                         <div class="row">
                             <div class="col-md-12">
                                 <div class="mb-3">
@@ -103,7 +102,6 @@
                             </div>
                         </div>
 
-                        <!-- Seção de Disponibilidades -->
                         <div class="row">
                             <div class="col-md-12">
                                 <div class="mb-3">
@@ -152,7 +150,8 @@
                         </div>
 
                         <div class="d-flex justify-content-between">
-                            <a href="@Url.Action("Index")" class="btn btn-secondary">
+                            @* AQUI ESTÁ A ALTERAÇÃO: Mudança para a rota absoluta /Admin/Dentistas *@
+                            <a href="/Admin/Dentistas" class="btn btn-secondary">
                                 <i class="fas fa-arrow-left"></i> Voltar para Lista
                             </a>
                             <button type="submit" class="btn btn-warning">

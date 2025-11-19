@@ -2,8 +2,8 @@
 
 @{
     ViewData["Title"] = "Detalhes do Atendimento";
-    // Define a rota de retorno, caso não venha do Controller
-    var returnUrl = ViewData["ReturnUrl"]?.ToString() ?? "/Dentista/MeusAtendimentos";
+    // Define a rota de retorno padrão para o listagem principal de Atendimento
+    var returnUrl = ViewData["ReturnUrl"]?.ToString() ?? "/Atendimento";
 }
 
 <div class="container-fluid">
@@ -15,7 +15,7 @@
                         <i class="fas fa-eye"></i> Detalhes do Atendimento
                     </h3>
                     <div class="card-tools">
-                        @* BOTÃO "VOLTAR" (TOPO) - CORRIGIDO PARA USAR A ROTA DINÂMICA *@
+                        @* BOTÃO "VOLTAR" (TOPO) - USANDO A ROTA DINÂMICA *@
                         <a href="@returnUrl" class="btn btn-secondary btn-sm">
                             <i class="fas fa-arrow-left"></i> Voltar
                         </a>
@@ -165,29 +165,18 @@
                                         </div>
                                         <div class="col-md-6">
                                             <dl class="row">
-                                                <dt class="col-sm-4">Agenda:</dt>
-                                                <dd class="col-sm-8">
-                                                    @if (Model.IdAgenda.HasValue)
-                                                    {
-                                                        <span class="badge bg-info">#@Model.IdAgenda</span>
-                                                    }
-                                                    else
-                                                    {
-                                                        <span class="badge bg-secondary">Não vinculado</span>
-                                                    }
-                                                </dd>
-
+                                                @* REMOVIDO: Seção "Agenda" removida conforme solicitado. *@
+                                                
                                                 <dt class="col-sm-4">Odontograma:</dt>
                                                 <dd class="col-sm-8">
+                                                    @* ATUALIZADO: Transformado em link para o Odontograma da Criança *@
+                                                    <a href="/Odontograma/PorCrianca/@Model.IdCrianca" class="btn btn-sm btn-outline-warning text-dark p-0 px-1" role="button">
+                                                        <i class="fas fa-external-link-alt"></i> Redirecionar para Odontograma
+                                                    </a>
                                                     @if (Model.IdOdontograma.HasValue)
                                                     {
-                                                        <span class="badge bg-warning text-dark">#@Model.IdOdontograma</span>
-                                                    }
-                                                    else
-                                                    {
-                                                        <span class="badge bg-secondary">Não vinculado</span>
-                                                        <small class="text-muted d-block">
-                                                            (Será implementado posteriormente)
+                                                        <small class="text-muted d-block mt-1">
+                                                            Vínculo ID: #@Model.IdOdontograma
                                                         </small>
                                                     }
                                                 </dd>

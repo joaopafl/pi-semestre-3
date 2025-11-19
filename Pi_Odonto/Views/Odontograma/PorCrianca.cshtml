@@ -9,9 +9,10 @@
 
 <style>
     :root {
-        --cor-primaria: #2c5282;
-        --cor-secundaria: #4a90e2;
-        --cor-esperanca: #48bb78;
+        --cor-primaria: #2c5282; /* Azul Escuro */
+        --cor-secundaria: #4a90e2; /* Azul Claro */
+        --cor-esperanca: #48bb78; /* Verde */
+        --cor-perigo: #ef4444; /* Vermelho */
         --cor-dente-sadio: #ffffff;
         --cor-dente-carie: #ef4444;
         --cor-dente-restauracao: #3b82f6;
@@ -105,11 +106,24 @@
         border-bottom: 2px solid var(--cor-secundaria);
     }
 
+    .dentes-row {
+        margin-bottom: 15px;
+    }
+
+    .dentes-row:last-child {
+        margin-bottom: 0;
+    }
+
     .dentes-grid {
         display: flex;
         justify-content: center;
         flex-wrap: wrap;
         gap: 10px;
+    }
+
+    .dentes-grid.deciduos {
+        max-width: 600px;
+        margin: 0 auto;
     }
 
     .dente {
@@ -455,10 +469,87 @@
         padding: 6px 12px;
         font-size: 0.85rem;
     }
+
+    /* Modal Styling Improvements */
+    .modal-content {
+        border: none;
+        border-radius: 8px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+
+    .modal-header-custom {
+        background: var(--cor-primaria); /* Usa a cor primária para o cabeçalho */
+        color: white;
+        border-bottom: 1px solid var(--cor-secundaria);
+        padding: 15px 20px;
+    }
+    
+    .modal-header-success {
+        background: var(--cor-esperanca);
+        color: white;
+        border-bottom: 1px solid #38a169;
+    }
+    
+    .modal-header-error {
+        background: var(--cor-perigo);
+        color: white;
+        border-bottom: 1px solid #dc2626;
+    }
+
+    .modal-footer {
+        border-top: 1px solid #e2e8f0;
+        padding: 15px 20px;
+    }
+    
+    .btn-salvar-modal {
+        background: var(--cor-secundaria);
+        color: white;
+    }
+    
+    .btn-salvar-modal:hover {
+        background: var(--cor-primaria);
+        color: white;
+    }
+
+    .btn-cancelar-modal {
+        background: #e2e8f0;
+        color: #4a5568;
+    }
+
+    .btn-cancelar-modal:hover {
+        background: #cbd5e0;
+    }
+
+    /* Assegura que os botões do modal sigam a base .btn-odonto style */
+    .modal-footer .btn {
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-weight: 600;
+        transition: all 0.3s;
+        border: none;
+        cursor: pointer;
+        font-size: 0.85rem;
+    }
+
+    /* Botão OK do modal de alerta */
+    .btn-ok-modal {
+        background: var(--cor-primaria);
+        color: white;
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-weight: 600;
+        transition: all 0.3s;
+        border: none;
+        cursor: pointer;
+        font-size: 0.85rem;
+    }
+
+    .btn-ok-modal:hover {
+        background: var(--cor-secundaria);
+    }
 </style>
 
 <div class="odontograma-container">
-    <!-- Header -->
     <div class="header-odonto">
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
             <div>
@@ -478,7 +569,6 @@
         </div>
     </div>
 
-    <!-- Informações do Paciente -->
     <div class="info-paciente">
         <h4 class="text-primary">
             <i class="fas fa-user-circle"></i> Informações do Paciente
@@ -517,7 +607,6 @@
         </div>
     </div>
 
-    <!-- Legenda -->
     <div class="legenda-container">
         <div class="legenda-title">
             <i class="fas fa-palette"></i> Legenda de Status
@@ -550,53 +639,94 @@
         </div>
     </div>
 
-    <!-- Arcada Superior -->
     <div class="arcada-container">
         <div class="arcada-title">
             <i class="fas fa-angle-up"></i> ARCADA SUPERIOR
         </div>
-        <div class="dentes-grid" id="arcadaSuperior">
-            @for (int i = 18; i >= 11; i--)
-            {
-                <div class="dente" data-numero="@i" onclick="selecionarDente(@i)">
-                    <span class="dente-numero">@i</span>
-                    <i class="fas fa-tooth dente-icon"></i>
-                </div>
-            }
-            @for (int i = 21; i <= 28; i++)
-            {
-                <div class="dente" data-numero="@i" onclick="selecionarDente(@i)">
-                    <span class="dente-numero">@i</span>
-                    <i class="fas fa-tooth dente-icon"></i>
-                </div>
-            }
+        
+        <div class="dentes-row">
+            <div class="dentes-grid" id="arcadaSuperiorPermanente">
+                @for (int i = 18; i >= 11; i--)
+                {
+                    <div class="dente" data-numero="@i" onclick="selecionarDente(@i)">
+                        <span class="dente-numero">@i</span>
+                        <i class="fas fa-tooth dente-icon"></i>
+                    </div>
+                }
+                @for (int i = 21; i <= 28; i++)
+                {
+                    <div class="dente" data-numero="@i" onclick="selecionarDente(@i)">
+                        <span class="dente-numero">@i</span>
+                        <i class="fas fa-tooth dente-icon"></i>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="dentes-row">
+            <div class="dentes-grid deciduos" id="arcadaSuperiorDeciduos">
+                @for (int i = 55; i >= 51; i--)
+                {
+                    <div class="dente" data-numero="@i" onclick="selecionarDente(@i)">
+                        <span class="dente-numero">@i</span>
+                        <i class="fas fa-tooth dente-icon"></i>
+                    </div>
+                }
+                @for (int i = 61; i <= 65; i++)
+                {
+                    <div class="dente" data-numero="@i" onclick="selecionarDente(@i)">
+                        <span class="dente-numero">@i</span>
+                        <i class="fas fa-tooth dente-icon"></i>
+                    </div>
+                }
+            </div>
         </div>
     </div>
 
-    <!-- Arcada Inferior -->
     <div class="arcada-container">
         <div class="arcada-title">
             <i class="fas fa-angle-down"></i> ARCADA INFERIOR
         </div>
-        <div class="dentes-grid" id="arcadaInferior">
-            @for (int i = 48; i >= 41; i--)
-            {
-                <div class="dente" data-numero="@i" onclick="selecionarDente(@i)">
-                    <span class="dente-numero">@i</span>
-                    <i class="fas fa-tooth dente-icon"></i>
-                </div>
-            }
-            @for (int i = 31; i <= 38; i++)
-            {
-                <div class="dente" data-numero="@i" onclick="selecionarDente(@i)">
-                    <span class="dente-numero">@i</span>
-                    <i class="fas fa-tooth dente-icon"></i>
-                </div>
-            }
+
+        <div class="dentes-row">
+            <div class="dentes-grid deciduos" id="arcadaInferiorDeciduos">
+                @for (int i = 85; i >= 81; i--)
+                {
+                    <div class="dente" data-numero="@i" onclick="selecionarDente(@i)">
+                        <span class="dente-numero">@i</span>
+                        <i class="fas fa-tooth dente-icon"></i>
+                    </div>
+                }
+                @for (int i = 71; i <= 75; i++)
+                {
+                    <div class="dente" data-numero="@i" onclick="selecionarDente(@i)">
+                        <span class="dente-numero">@i</span>
+                        <i class="fas fa-tooth dente-icon"></i>
+                    </div>
+                }
+            </div>
+        </div>
+        
+        <div class="dentes-row">
+            <div class="dentes-grid" id="arcadaInferiorPermanente">
+                @for (int i = 48; i >= 41; i--)
+                {
+                    <div class="dente" data-numero="@i" onclick="selecionarDente(@i)">
+                        <span class="dente-numero">@i</span>
+                        <i class="fas fa-tooth dente-icon"></i>
+                    </div>
+                }
+                @for (int i = 31; i <= 38; i++)
+                {
+                    <div class="dente" data-numero="@i" onclick="selecionarDente(@i)">
+                        <span class="dente-numero">@i</span>
+                        <i class="fas fa-tooth dente-icon"></i>
+                    </div>
+                }
+            </div>
         </div>
     </div>
 
-    <!-- Painel de Tratamentos do Dente Selecionado -->
     <div class="tratamentos-panel" id="tratamentosPanel" style="display: none;">
         <div class="tratamentos-header">
             <h4 class="mb-0">
@@ -613,7 +743,6 @@
         <div id="listaTratamentos"></div>
     </div>
 
-    <!-- Observações Gerais -->
     <div class="observacoes-container">
         <h4 class="text-primary">
             <i class="fas fa-clipboard"></i> Observações Gerais
@@ -632,13 +761,12 @@
     </div>
 </div>
 
-<!-- Modal Adicionar/Editar Tratamento -->
 @if (isAdmin)
 {
     <div class="modal fade" id="modalTratamento" tabindex="-1">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
-                <div class="modal-header bg-primary text-white">
+                <div class="modal-header modal-header-custom">
                     <h5 class="modal-title" id="modalTratamentoTitle">
                         <i class="fas fa-tooth"></i> Adicionar Tratamento
                     </h5>
@@ -716,8 +844,8 @@
                     </form>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-primary" onclick="salvarTratamento()">
+                    <button type="button" class="btn btn-cancelar-modal" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-salvar-modal" onclick="salvarTratamento()">
                         <i class="fas fa-save"></i> Salvar
                     </button>
                 </div>
@@ -726,7 +854,46 @@
     </div>
 }
 
-<!-- Loading Overlay -->
+<div class="modal fade" id="alertModal" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div id="alertModalHeader" class="modal-header">
+                <h5 class="modal-title" id="alertModalTitle"></h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="alertModalMessage">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-ok-modal" data-bs-dismiss="modal">OK</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="confirmExclusaoModal" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header modal-header-error">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle"></i> Confirmação Necessária
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Tem certeza que deseja excluir este tratamento? Esta ação não pode ser desfeita.</p>
+            </div>
+            <div class="modal-footer justify-content-between">
+                <button type="button" class="btn btn-cancelar-modal" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+                <button type="button" class="btn-odonto btn-excluir" id="confirmExclusaoBtn">
+                    <i class="fas fa-trash"></i> Sim, Excluir
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="loading-overlay" id="loadingOverlay">
     <div class="spinner"></div>
 </div>
@@ -751,6 +918,40 @@
         document.addEventListener('DOMContentLoaded', function() {
             atualizarVisualizacaoDentes();
         });
+
+        // Função para exibir o modal de alerta personalizado
+        function showAlertModal(titulo, mensagem, isSuccess = false) {
+            const modalHeader = document.getElementById('alertModalHeader');
+            
+            modalHeader.classList.remove('modal-header-success', 'modal-header-error');
+            if (isSuccess) {
+                modalHeader.classList.add('modal-header-success');
+            } else {
+                modalHeader.classList.add('modal-header-error');
+            }
+
+            document.getElementById('alertModalTitle').innerHTML = titulo;
+            document.getElementById('alertModalMessage').textContent = mensagem;
+
+            new bootstrap.Modal(document.getElementById('alertModal')).show();
+        }
+
+        // NOVO: Função para exibir o modal de confirmação personalizado
+        function showConfirmModal(callback) {
+            const modal = new bootstrap.Modal(document.getElementById('confirmExclusaoModal'));
+            const confirmBtn = document.getElementById('confirmExclusaoBtn');
+            
+            // Remove qualquer listener anterior para evitar execuções duplas
+            confirmBtn.onclick = null; 
+
+            // Adiciona o novo listener que executa o callback e fecha o modal
+            confirmBtn.onclick = function() {
+                modal.hide();
+                callback();
+            };
+
+            modal.show();
+        }
 
         function selecionarDente(numeroDente) {
             document.querySelectorAll('.dente').forEach(d => d.classList.remove('selecionado'));
@@ -778,11 +979,11 @@
                 if (data.success) {
                     exibirTratamentos(data.tratamentos);
                 } else {
-                    alert('Erro ao carregar tratamentos: ' + data.message);
+                    showAlertModal('Erro de Carregamento', 'Erro ao carregar tratamentos: ' + data.message);
                 }
             } catch (error) {
                 console.error('Erro:', error);
-                alert('Erro ao carregar tratamentos.');
+                showAlertModal('Erro de Comunicação', 'Erro ao carregar tratamentos.');
             } finally {
                 hideLoading();
             }
@@ -836,6 +1037,7 @@
 
         function atualizarVisualizacaoDentes() {
             const tratamentosPorDente = {};
+            // Agrupa todos os tratamentos por número de dente
             tratamentos.forEach(t => {
                 if (!tratamentosPorDente[t.numeroDente]) {
                     tratamentosPorDente[t.numeroDente] = [];
@@ -853,36 +1055,43 @@
                 if (badgeExistente) badgeExistente.remove();
 
                 if (tratamentosDoDente.length > 0) {
+                    // Ordena os tratamentos pela data (o mais recente fica na posição [0])
+                    tratamentosDoDente.sort((a, b) => {
+                        const dateA = a.dataTratamento ? new Date(a.dataTratamento) : new Date(0); 
+                        const dateB = b.dataTratamento ? new Date(b.dataTratamento) : new Date(0);
+                        return dateB - dateA;
+                    });
+                    
                     const ultimoTratamento = tratamentosDoDente[0];
-                    const tipo = ultimoTratamento.tipoTratamento.toLowerCase();
+                    const tipo = ultimoTratamento.tipoTratamento.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); 
 
-                    if (tipo.includes('cárie') || tipo.includes('carie')) {
+                    // Aplica a cor/status do último tratamento (o mais recente)
+                    if (tipo.includes('carie')) {
                         denteEl.classList.add('carie');
-                    } else if (tipo.includes('restauração') || tipo.includes('restauracao')) {
+                    } else if (tipo.includes('restauracao')) {
                         denteEl.classList.add('restauracao');
                     } else if (tipo.includes('canal')) {
                         denteEl.classList.add('canal');
-                    } else if (tipo.includes('extração') || tipo.includes('extracao')) {
+                    } else if (tipo.includes('extracao')) {
                         denteEl.classList.add('extracao');
                     } else if (tipo.includes('ausente')) {
                         denteEl.classList.add('ausente');
-                    } else if (tipo.includes('hígido') || tipo.includes('higido')) {
+                    } else if (tipo.includes('higido')) {
                         denteEl.classList.add('higido');
                     }
 
-                    if (tratamentosDoDente.length > 0) {
-                        const badge = document.createElement('span');
-                        badge.className = 'dente-badge';
-                        badge.textContent = tratamentosDoDente.length;
-                        denteEl.appendChild(badge);
-                    }
+                    // Adiciona o badge com a contagem total de tratamentos
+                    const badge = document.createElement('span');
+                    badge.className = 'dente-badge';
+                    badge.textContent = tratamentosDoDente.length;
+                    denteEl.appendChild(badge);
                 }
             });
         }
 
         function abrirModalAdicionarTratamento() {
             if (!denteSelecionadoAtual) {
-                alert('Selecione um dente primeiro.');
+                showAlertModal('Atenção', 'Selecione um dente primeiro.');
                 return;
             }
 
@@ -901,7 +1110,7 @@
             try {
                 const tratamento = tratamentos.find(t => t.id === id);
                 if (!tratamento) {
-                    alert('Tratamento não encontrado.');
+                    showAlertModal('Erro', 'Tratamento não encontrado.');
                     return;
                 }
 
@@ -918,7 +1127,7 @@
                 new bootstrap.Modal(document.getElementById('modalTratamento')).show();
             } catch (error) {
                 console.error('Erro:', error);
-                alert('Erro ao carregar dados do tratamento.');
+                showAlertModal('Erro de Carregamento', 'Erro ao carregar dados do tratamento.');
             } finally {
                 hideLoading();
             }
@@ -941,7 +1150,7 @@
             };
 
             if (!dados.tipoTratamento || !dados.status) {
-                alert('Preencha os campos obrigatórios.');
+                showAlertModal('Atenção', 'Preencha os campos obrigatórios.');
                 return;
             }
 
@@ -970,55 +1179,55 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    alert(data.message);
+                    showAlertModal('Sucesso', data.message, true);
                     bootstrap.Modal.getInstance(document.getElementById('modalTratamento')).hide();
-                    location.reload();
+                    
+                    setTimeout(() => location.reload(), 1500); 
                 } else {
-                    alert('Erro: ' + data.message);
+                    showAlertModal('Erro', 'Erro: ' + data.message);
                 }
             } catch (error) {
                 console.error('Erro:', error);
-                alert('Erro ao salvar tratamento.');
+                showAlertModal('Erro de Comunicação', 'Erro ao salvar tratamento.');
             } finally {
                 hideLoading();
             }
         }
 
         async function excluirTratamento(id) {
-            if (!confirm('Tem certeza que deseja excluir este tratamento?')) {
-                return;
-            }
+            // Usa o modal de confirmação personalizado
+            showConfirmModal(async () => {
+                showLoading();
 
-            showLoading();
+                try {
+                    const formData = new FormData();
+                    formData.append('id', id);
+                    
+                    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+                    if (token) {
+                        formData.append('__RequestVerificationToken', token);
+                    }
 
-            try {
-                const formData = new FormData();
-                formData.append('id', id);
-                
-                const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
-                if (token) {
-                    formData.append('__RequestVerificationToken', token);
+                    const response = await fetch('/Odontograma/ExcluirTratamento', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        showAlertModal('Sucesso', data.message, true);
+                        setTimeout(() => location.reload(), 1500);
+                    } else {
+                        showAlertModal('Erro', 'Erro: ' + data.message);
+                    }
+                } catch (error) {
+                    console.error('Erro:', error);
+                    showAlertModal('Erro de Comunicação', 'Erro ao excluir tratamento.');
+                } finally {
+                    hideLoading();
                 }
-
-                const response = await fetch('/Odontograma/ExcluirTratamento', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    alert(data.message);
-                    location.reload();
-                } else {
-                    alert('Erro: ' + data.message);
-                }
-            } catch (error) {
-                console.error('Erro:', error);
-                alert('Erro ao excluir tratamento.');
-            } finally {
-                hideLoading();
-            }
+            });
         }
 
         async function salvarObservacoes() {
@@ -1044,13 +1253,13 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    alert(data.message);
+                    showAlertModal('Sucesso', data.message, true);
                 } else {
-                    alert('Erro: ' + data.message);
+                    showAlertModal('Erro', 'Erro: ' + data.message);
                 }
             } catch (error) {
                 console.error('Erro:', error);
-                alert('Erro ao salvar observações.');
+                showAlertModal('Erro de Comunicação', 'Erro ao salvar observações.');
             } finally {
                 hideLoading();
             }
@@ -1064,6 +1273,4 @@
             document.getElementById('loadingOverlay').classList.remove('active');
         }
     </script>
-
-    @Html.AntiForgeryToken()
 }

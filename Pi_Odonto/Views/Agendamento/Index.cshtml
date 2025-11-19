@@ -1,896 +1,674 @@
 @model Pi_Odonto.ViewModels.AppointmentViewModel
-
 @using Pi_Odonto.Models
-
-
+@using System.Globalization
 
 @{
-
     ViewBag.Title = "Agendamento de Consulta Odontológica";
-
     var actionName = ViewBag.Action ?? "Confirmar";
-
     var isEditing = ViewBag.IsEditing ?? false;
-
+    var culturePtBr = new CultureInfo("pt-BR");
 }
 
-
-
-<link rel="stylesheet" href="~/css/Agendamento.css" asp-append-version="true" />
-
-
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
 
 <style>
-
-    /* Estilos do Autocomplete */
-
-    .autocomplete-wrapper {
-        position: relative;
-        width: 100%;
+    /* =========================================
+       VARIAVEIS E TEMA
+       ========================================= */
+    :root {
+        --primary-color: #0d9488; /* Teal moderno */
+        --primary-hover: #0f766e;
+        --bg-soft: #f0fdfa; 
+        --text-dark: #1e293b;
+        --text-gray: #64748b;
+        --border-color: #e2e8f0;
+        --white: #ffffff;
+        --radius: 12px;
     }
 
-
-
-    .autocomplete-input {
-        width: 100%;
-        padding: 10px;
-        font-size: 15px;
-        border: 2px solid #ddd;
-        border-radius: 8px;
-        transition: all 0.3s;
+    body {
+        background-color: #f1f5f9;
+        font-family: 'Segoe UI', system-ui, sans-serif;
     }
 
-
-
-        .autocomplete-input:focus {
-            outline: none;
-            border-color: var(--green-main);
-            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
-        }
-
-
-
-    .autocomplete-list {
-        position: absolute;
-        top: 100%;
-        left: 0;
-        right: 0;
-        background: white;
-        border: 2px solid var(--green-main);
-        border-top: none;
-        border-radius: 0 0 8px 8px;
-        max-height: 200px;
-        overflow-y: auto;
-        z-index: 1000;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        display: none;
+    .card-wp {
+        background: var(--white);
+        /* LARGURA AUMENTADA */
+        max-width: 800px; 
+        margin: 40px auto;
+        padding: 40px;
+        border-radius: 24px;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
     }
 
-
-
-        .autocomplete-list.show {
-            display: block;
-        }
-
-
-
-    .autocomplete-item {
-        padding: 12px;
-        cursor: pointer;
-        transition: background-color 0.2s;
-        border-bottom: 1px solid #eee;
-    }
-
-
-
-        .autocomplete-item:last-child {
-            border-bottom: none;
-        }
-
-
-
-        .autocomplete-item:hover,
-        .autocomplete-item.active {
-            background-color: #f0f9f0;
-        }
-
-
-
-    .autocomplete-no-results {
-        padding: 12px;
-        color: #999;
+    .page-title {
+        color: var(--primary-color);
+        font-weight: 700;
+        font-size: 1.75rem;
+        margin-bottom: 30px;
         text-align: center;
     }
 
+    h3.section-label {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: var(--text-dark);
+        margin-bottom: 12px;
+        margin-top: 24px;
+    }
+
+    /* --- Botão Voltar --- */
+    .btn-back {
+        text-decoration: none; 
+        color: var(--text-gray); 
+        display: inline-flex; 
+        align-items: center; 
+        margin-bottom: 20px;
+        transition: all 0.2s;
+        font-weight: 500;
+        padding: 5px 10px;
+        border-radius: 8px;
+    }
+    .btn-back:hover {
+        color: var(--primary-color) !important;
+        background-color: #eef7f7;
+    }
+
+    /* =========================================
+       AUTOCOMPLETE (PESQUISA)
+       ========================================= */
+    .autocomplete-wrapper { position: relative; width: 100%; }
+    .input-group-icon { position: relative; }
+
+    .search-icon {
+        position: absolute;
+        left: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #9ca3af;
+        font-size: 1.1rem;
+        pointer-events: none;
+    }
+
+    .autocomplete-input {
+        width: 100%;
+        padding: 14px 14px 14px 45px;
+        font-size: 1rem;
+        border: 2px solid var(--border-color);
+        border-radius: var(--radius);
+        background-color: #f8fafc;
+        transition: all 0.2s ease;
+        color: var(--text-dark);
+    }
+
+    .autocomplete-input:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        background-color: var(--white);
+        box-shadow: 0 0 0 4px rgba(13, 148, 136, 0.1);
+    }
+
+    .autocomplete-list {
+        position: absolute;
+        top: 105%;
+        left: 0;
+        right: 0;
+        background: var(--white);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius);
+        max-height: 250px;
+        overflow-y: auto;
+        z-index: 100;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        display: none;
+    }
+    .autocomplete-list.show { display: block; }
+
+    .autocomplete-item {
+        padding: 12px 16px;
+        cursor: pointer;
+        border-bottom: 1px solid #f1f5f9;
+        color: var(--text-dark);
+        transition: background 0.2s;
+    }
+    .autocomplete-item:hover { background-color: var(--bg-soft); color: var(--primary-color); }
+    
+    /* =========================================
+       SELEÇÃO DE DATA (SCROLL INFINITO)
+       ========================================= */
+    .dates-scroll-container {
+        display: flex;
+        flex-wrap: nowrap; /* Não quebra linha, força o scroll */
+        gap: 12px;
+        overflow-x: auto; /* Scroll lateral */
+        padding: 5px 5px 15px 5px;
+        
+        /* UX Mobile */
+        -webkit-overflow-scrolling: touch;
+        scroll-behavior: smooth;
+        scroll-snap-type: x mandatory; 
+        scrollbar-width: thin; 
+        scrollbar-color: var(--primary-color) #f1f5f9;
+    }
+    
+    .dates-scroll-container::-webkit-scrollbar { height: 6px; }
+    .dates-scroll-container::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 10px; }
+    .dates-scroll-container::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 10px; }
+
+    .date-card {
+        flex: 0 0 auto; /* Impede o card de encolher */
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-width: 75px;
+        height: 90px;
+        background: var(--white);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        cursor: pointer;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        color: var(--text-gray);
+        position: relative;
+        scroll-snap-align: start; 
+    }
+
+    .date-card:hover {
+        border-color: var(--primary-color);
+        background-color: var(--bg-soft);
+        transform: translateY(-2px);
+    }
+
+    .date-card.selected {
+        background-color: var(--primary-color);
+        color: var(--white);
+        border-color: var(--primary-color);
+        box-shadow: 0 4px 6px -1px rgba(13, 148, 136, 0.4);
+        transform: scale(1.05);
+    }
+
+    .date-card .week-day {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        font-weight: 600;
+        margin-bottom: 4px;
+        letter-spacing: 0.5px;
+    }
+
+    .date-card .day-number {
+        font-size: 1.5rem;
+        font-weight: 800;
+        line-height: 1;
+    }
+
+    /* =========================================
+       HORÁRIOS (MANHÃ / TARDE)
+       ========================================= */
+    .period-title {
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        color: #94a3b8;
+        margin: 15px 0 8px 0;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .period-title::after { content: ''; flex: 1; height: 1px; background: #e2e8f0; }
+
+    .times-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(85px, 1fr));
+        gap: 10px;
+    }
+
+    .time-btn {
+        padding: 10px;
+        border: 1px solid var(--border-color);
+        background: var(--white);
+        border-radius: 10px;
+        color: var(--text-dark);
+        font-weight: 600;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .time-btn:hover {
+        border-color: var(--primary-color);
+        color: var(--primary-color);
+        background-color: var(--bg-soft);
+    }
+
+    .time-btn.selected {
+        background-color: var(--primary-color);
+        color: var(--white);
+        border-color: var(--primary-color);
+        box-shadow: 0 2px 4px rgba(13, 148, 136, 0.3);
+    }
+
+    .error-agendamento-text {
+        color: #ef4444;
+        font-size: 0.9rem;
+        text-align: center;
+        padding: 20px;
+        background: #fef2f2;
+        border-radius: 8px;
+    }
+
+    /* =========================================
+       MODAL
+       ========================================= */
+    .modal-header-custom {
+        background-color: var(--primary-color);
+        color: white;
+        border-radius: 12px 12px 0 0;
+    }
+    .confirm-btn {
+        background-color: var(--primary-color);
+        color: white;
+        border: none;
+        padding: 10px 24px;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: background 0.2s;
+    }
+    .confirm-btn:hover { background-color: var(--primary-hover); }
+    .btn-outline {
+        background: transparent;
+        border: 1px solid #cbd5e1;
+        color: #64748b;
+        padding: 10px 24px;
+        border-radius: 8px;
+        font-weight: 600;
+    }
+    .btn-outline:hover { background: #f8fafc; color: #334155; }
 </style>
-
-
 
 <div class="card-wp">
 
-
+    <a href="@ViewBag.ReturnUrl" class="btn-back">
+        <i class="bi bi-arrow-left me-2" style="font-size: 1.2rem;"></i>
+        Voltar
+    </a>
 
     @if (TempData["ErrorMessage"] != null)
-
     {
-
-        <div class="alert-banner error-banner">
-
-            <i class="bi bi-x-octagon-fill"></i>
-
-            <p>@TempData["ErrorMessage"]</p>
-
+        <div class="alert alert-danger d-flex align-items-center" role="alert">
+            <i class="bi bi-exclamation-octagon-fill flex-shrink-0 me-2"></i>
+            <div>@TempData["ErrorMessage"]</div>
         </div>
-
     }
 
-
-
-    <h1 class="page-title">
-
-        @(isEditing ? "Editar Agendamento" : "Agendamento de Consulta Odontológica")
-
-        <i class="bi bi-calendar-heart-fill"></i>
-
-    </h1>
-
-
+    <div class="page-title">
+        <i class="bi bi-tooth"></i> Agendamento Odontológico
+          
+        <div style="font-size: 1rem; font-weight: 400; color: var(--text-gray); margin-top: 5px;">
+            @(isEditing ? "Editar Agendamento" : "Novo Agendamento")
+        </div>
+    </div>
 
     <form method="post" asp-action="@actionName" asp-controller="Agendamento" id="agendamentoForm">
 
-
-
         <input type="hidden" id="childInput" asp-for="SelectedChildId" />
-
         <input type="hidden" id="dateInput" asp-for="SelectedDateString" />
-
         <input type="hidden" id="timeInput" asp-for="SelectedTime" />
-
         <input type="hidden" id="dentistInput" asp-for="SelectedDentistaId" />
+        @if (isEditing) { <input type="hidden" asp-for="AgendamentoId" /> }
 
-
-
-        @if (isEditing)
-
-        {
-
-            <input type="hidden" asp-for="AgendamentoId" />
-
-        }
-
-
-
-        <h3>Digite o nome da criança a ser atendida:</h3>
-
-        <div class="select-row">
-
-            <div class="autocomplete-wrapper">
-
+        <h3 class="section-label">Quem será atendido?</h3>
+        <div class="autocomplete-wrapper">
+            <div class="input-group-icon">
+                <i class="bi bi-search search-icon"></i>
                 <input type="text"
                        id="childSearchInput"
                        class="autocomplete-input"
-                       placeholder="Digite o nome da criança..."
+                       placeholder="Busque pelo nome da criança..."
                        autocomplete="off"
                        oninput="filterChildren(this.value)"
                        onfocus="showAutocomplete()" />
-
-                <div id="childAutocompleteList" class="autocomplete-list">
-
-                    @foreach (Crianca c in Model.Children)
-
-                    {
-
-                        var isSelected = isEditing && Model.SelectedChildId == c.Id;
-
-                        <div class="autocomplete-item @(isSelected ? "preselected" : "")"
-                             data-id="@c.Id"
-                             data-name="@c.Nome"
-                             onclick="selectChild(@c.Id, '@c.Nome')">
-
-                            @c.Nome
-
-                        </div>
-
-                    }
-
-                </div>
-
             </div>
-
+            
+            <div id="childAutocompleteList" class="autocomplete-list">
+                @foreach (Crianca c in Model.Children)
+                {
+                    var isSelected = isEditing && Model.SelectedChildId == c.Id;
+                    <div class="autocomplete-item @(isSelected ? "preselected" : "")"
+                         data-id="@c.Id"
+                         data-name="@c.Nome"
+                         onclick="selectChild(@c.Id, '@c.Nome')">
+                        @c.Nome
+                    </div>
+                }
+                <div class="autocomplete-no-results" style="display:none; padding:15px; text-align:center; color:#94a3b8;">
+                    Nenhuma criança encontrada.
+                </div>
+            </div>
         </div>
-
-
-
-
 
         <div id="datesSection" style="display:none;">
-
-            <h3>Selecione o dia do atendimento:</h3>
-
-            <div class="dates-row">
-
+            <h3 class="section-label">Selecione o dia</h3>
+            
+            <div class="dates-scroll-container">
                 @foreach (var d in Model.AvailableDates)
-
                 {
-
                     var dateStr = d.ToString("yyyy-MM-dd");
-
                     var isSelected = isEditing && Model.SelectedDateString == dateStr;
-
-
+                    var diaSemana = d.ToString("ddd", culturePtBr).ToUpper().Replace(".", "");
+                    var diaNumero = d.Day;
 
                     <button type="button"
-                            class="date-btn @(isSelected ? "selected" : "")"
+                            class="date-card @(isSelected ? "selected" : "")"
                             data-date="@dateStr"
                             onclick="selectDateAndLoadTimes('@dateStr', this)">
-
-                        @d.ToString("dd/MM")
-
+                        <span class="week-day">@diaSemana</span>
+                        <span class="day-number">@diaNumero</span>
                     </button>
-
                 }
-
             </div>
-
         </div>
-
-
 
         <div id="timesSection" style="display:none;">
-
-            <h3>Selecione o horário do atendimento:</h3>
-
-            <div id="timesGrid" class="times-grid">
+            <h3 class="section-label">Horários Disponíveis</h3>
+            
+            <div id="morningContainerWrapper" style="display:none">
+                <div class="period-title">Manhã</div>
+                <div id="timesGridMorning" class="times-grid"></div>
             </div>
 
+            <div id="afternoonContainerWrapper" style="display:none">
+                <div class="period-title">Tarde</div>
+                <div id="timesGridAfternoon" class="times-grid"></div>
+            </div>
+            
+            <div id="noTimesMessage" style="display:none"></div>
         </div>
-
-
 
     </form>
-
 </div>
 
-
-
-
-
-<div class="modal fade" id="summaryModal" tabindex="-1" aria-labelledby="summaryModalLabel" aria-hidden="true">
-
+<div class="modal fade" id="summaryModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-
-        <div class="modal-content" style="border-radius: 12px;">
-
-            <div class="modal-header" style="background-color: var(--green-main); color: white; border-radius: 12px 12px 0 0;">
-
-                <h5 class="modal-title" id="summaryModalLabel">
-
-                    <i class="bi bi-calendar-heart-fill"></i>
-
-                    @(isEditing ? "Confirmar Edição" : "Resumo do Agendamento")
-
+        <div class="modal-content" style="border-radius: 16px; border:none; overflow:hidden;">
+            <div class="modal-header modal-header-custom">
+                <h5 class="modal-title fw-bold">
+                    <i class="bi bi-check-circle-fill me-2"></i>Confirmação
                 </h5>
-
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-
             </div>
-
-            <div class="modal-body">
-
-                <div class="summary-details" style="text-align: left;">
-
-                    <p><span class="sq-icon"></span> <strong>Criança selecionada:</strong> <span id="summaryChildNameModal"></span></p>
-
-
-
-                    <p><span class="sq-icon"></span> <strong>Responsável:</strong> @User.Identity.Name</p>
-
-
-
-                    <p>
-
-                        <span class="sq-icon"></span>
-
-                        <strong>Dentista:</strong>
-
-                        <div id="summaryDentistSelectDiv" class="d-inline-block">
-
-                            <span id="summaryDentistNameModal"></span>
-
+            <div class="modal-body p-4">
+                <div class="d-flex flex-column gap-3">
+                    <div>
+                        <small class="text-muted text-uppercase fw-bold" style="font-size:0.7rem">Paciente</small>
+                        <div class="fs-5 fw-bold text-dark" id="summaryChildNameModal"></div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <small class="text-muted text-uppercase fw-bold" style="font-size:0.7rem">Data</small>
+                            <div class="fs-5 text-dark"><i class="bi bi-calendar-event me-1 text-primary"></i> <span id="summaryDateModal"></span></div>
                         </div>
+                        <div>
+                            <small class="text-muted text-uppercase fw-bold" style="font-size:0.7rem">Horário</small>
+                            <div class="fs-5 text-dark"><i class="bi bi-clock me-1 text-primary"></i> <span id="summaryTimeModal"></span></div>
+                        </div>
+                    </div>
 
-                    </p>
-
-
-
-                    <hr>
-
-                    <p style="font-size: 1.2rem;"><span class="sq-icon" style="background-color: var(--blue-main);"></span> <strong>Data:</strong> <span id="summaryDateModal" style="font-weight: bold;"></span></p>
-
-                    <p style="font-size: 1.2rem;"><span class="sq-icon" style="background-color: var(--blue-main);"></span> <strong>Horário:</strong> <span id="summaryTimeModal" style="font-weight: bold;"></span></p>
-
+                    <div class="bg-light p-3 rounded-3 mt-2 border">
+                        <small class="text-muted text-uppercase fw-bold" style="font-size:0.7rem">Profissional</small>
+                        <div id="summaryDentistSelectDiv" class="fw-bold text-dark">
+                            <span id="summaryDentistNameModal"></span>
+                        </div>
+                    </div>
                 </div>
-
             </div>
-
-            <div class="modal-footer actions" style="justify-content: space-around; border-top: none;">
-
+            <div class="modal-footer border-0 bg-light p-3 d-flex justify-content-between">
+                <button type="button" class="btn-outline" data-bs-dismiss="modal">Voltar</button>
                 <button type="button" class="confirm-btn" onclick="confirmAndSubmit()">
-
-                    @(isEditing ? "Atualizar Agendamento" : "Confirmar Agendamento")
-
+                    @(isEditing ? "Salvar Alterações" : "Confirmar Agendamento")
                 </button>
-
-                <button type="button" class="btn-outline" data-bs-dismiss="modal">Revisar</button>
-
             </div>
-
         </div>
-
     </div>
-
 </div>
-
-
-
-
 
 @section Scripts {
-
     <script>
-
         let selectedDateDisplay = '';
-
         let selectedChildName = '';
-
         let availableSlotsByTime = {};
-
         let allChildren = [];
-
-
-
-        const summaryModal = new bootstrap.Modal(document.getElementById('summaryModal'));
-
-
-
-        // =======================================================
-
-        // FUNÇÕES DE AUTOCOMPLETE
-
-        // =======================================================
-
-
-
-        // Inicializa a lista de crianças ao carregar a página
+        let summaryModalObj;
 
         document.addEventListener('DOMContentLoaded', () => {
+            summaryModalObj = new bootstrap.Modal(document.getElementById('summaryModal'));
 
+            // Autocomplete Setup
             const items = document.querySelectorAll('.autocomplete-item');
-
             items.forEach(item => {
-
-                allChildren.push({
-
-                    id: item.dataset.id,
-
-                    name: item.dataset.name
-
-                });
-
+                allChildren.push({ id: item.dataset.id, name: item.dataset.name });
             });
-
-
-
-            // Se está em modo de edição, pré-seleciona a criança
 
             const preselected = document.querySelector('.autocomplete-item.preselected');
-
             if (preselected) {
-
-                const childId = preselected.dataset.id;
-
-                const childName = preselected.dataset.name;
-
-                selectChild(childId, childName);
-
+                selectChild(preselected.dataset.id, preselected.dataset.name);
             }
-
-
-
-            // Handler para fechar autocomplete ao clicar fora
 
             document.addEventListener('click', (e) => {
-
-                if (!e.target.closest('.autocomplete-wrapper')) {
-
-                    hideAutocomplete();
-
-                }
-
+                if (!e.target.closest('.autocomplete-wrapper')) hideAutocomplete();
             });
 
+            // Restaurar Estado
+            const childInput = document.getElementById('childInput');
+            const dateInput = document.getElementById('dateInput');
+            if (childInput.value && dateInput.value) {
+                enableDates();
+                const dateButton = document.querySelector(`.date-card[data-date="${dateInput.value}"]`);
+                if (dateButton) {
+                    // Espera um pouco para a UI renderizar e então simula o clique
+                    setTimeout(() => dateButton.click(), 50); 
+                }
+            }
         });
 
-
-
+        // --- Lógica Autocomplete ---
         function filterChildren(searchTerm) {
-
             const list = document.getElementById('childAutocompleteList');
-
             const items = list.querySelectorAll('.autocomplete-item');
-
+            const noResults = list.querySelector('.autocomplete-no-results');
             const normalizedSearch = searchTerm.toLowerCase().trim();
-
-
-
             let hasResults = false;
 
-
-
             items.forEach(item => {
-
-                const childName = item.dataset.name.toLowerCase();
-
-                if (childName.includes(normalizedSearch)) {
-
+                const name = item.dataset.name.toLowerCase();
+                if (name.includes(normalizedSearch)) {
                     item.style.display = 'block';
-
                     hasResults = true;
-
                 } else {
-
                     item.style.display = 'none';
-
                 }
-
             });
 
-
-
-            // Mostra/esconde a lista
-
             if (searchTerm.length > 0) {
-
                 list.classList.add('show');
-
-
-
-                // Se não houver resultados, mostra mensagem
-
-                if (!hasResults) {
-
-                    let noResults = list.querySelector('.autocomplete-no-results');
-
-                    if (!noResults) {
-
-                        noResults = document.createElement('div');
-
-                        noResults.className = 'autocomplete-no-results';
-
-                        noResults.textContent = 'Nenhuma criança encontrada';
-
-                        list.appendChild(noResults);
-
-                    }
-
-                    noResults.style.display = 'block';
-
-                } else {
-
-                    const noResults = list.querySelector('.autocomplete-no-results');
-
-                    if (noResults) noResults.style.display = 'none';
-
-                }
-
+                noResults.style.display = hasResults ? 'none' : 'block';
             } else {
-
                 list.classList.remove('show');
-
             }
-
         }
-
-
 
         function showAutocomplete() {
-
-            const input = document.getElementById('childSearchInput');
-
-            if (input.value.length > 0) {
-
+            if (document.getElementById('childSearchInput').value.length > 0) 
                 document.getElementById('childAutocompleteList').classList.add('show');
-
-            }
-
         }
-
-
 
         function hideAutocomplete() {
-
             document.getElementById('childAutocompleteList').classList.remove('show');
-
         }
 
-
-
-        function selectChild(childId, childName) {
-
-            selectedChildName = childName;
-
-
-
-            // Atualiza o input visual
-
-            document.getElementById('childSearchInput').value = childName;
-
-
-
-            // Atualiza o input oculto
-
-            document.getElementById('childInput').value = childId;
-
-
-
-            // Esconde a lista
-
+        function selectChild(id, name) {
+            selectedChildName = name;
+            document.getElementById('childSearchInput').value = name;
+            document.getElementById('childInput').value = id;
             hideAutocomplete();
-
-
-
-            // Habilita a seção de datas
-
             enableDates();
-
         }
 
-
-
-        // =======================================================
-
-        // FUNÇÕES DE EXIBIÇÃO E SELEÇÃO
-
-        // =======================================================
-
-
-
+        // --- Lógica Datas e Horários ---
         function enableDates() {
+            const childVal = document.getElementById('childInput').value;
+            const datesSec = document.getElementById('datesSection');
+            const timesSec = document.getElementById('timesSection');
 
-            const childInput = document.getElementById('childInput');
-
-            const datesSection = document.getElementById('datesSection');
-
-            const timesSection = document.getElementById('timesSection');
-
-
-
-            if (childInput.value !== "") {
-
-                datesSection.style.display = 'block';
-
+            if (childVal) {
+                datesSec.style.display = 'block';
+                datesSec.style.opacity = 0;
+                setTimeout(() => datesSec.style.opacity = 1, 50);
+                datesSec.style.transition = 'opacity 0.5s';
             } else {
-
-                datesSection.style.display = 'none';
-
-                timesSection.style.display = 'none';
-
-                summaryModal.hide();
-
+                datesSec.style.display = 'none';
+                timesSec.style.display = 'none';
             }
-
         }
-
-
 
         async function selectDateAndLoadTimes(selectedDate, button) {
-
-            document.querySelectorAll('.dates-row .date-btn').forEach(btn => btn.classList.remove('selected'));
-
+            // Visual
+            document.querySelectorAll('.date-card').forEach(btn => btn.classList.remove('selected'));
             button.classList.add('selected');
-
-
+            
+            button.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
 
             document.getElementById('dateInput').value = selectedDate;
+            const daySpan = button.querySelector('.day-number').textContent;
+            const weekSpan = button.querySelector('.week-day').textContent;
+            selectedDateDisplay = `${weekSpan}, ${daySpan}`; 
 
-            selectedDateDisplay = button.textContent;
+            // Reset UI
+            const timesSec = document.getElementById('timesSection');
+            const morningGrid = document.getElementById('timesGridMorning');
+            const afternoonGrid = document.getElementById('timesGridAfternoon');
+            const noTimesMsg = document.getElementById('noTimesMessage');
+            
+            timesSec.style.display = 'block';
+            morningGrid.innerHTML = '';
+            afternoonGrid.innerHTML = '';
+            document.getElementById('morningContainerWrapper').style.display = 'none';
+            document.getElementById('afternoonContainerWrapper').style.display = 'none';
+            
+            noTimesMsg.style.display = 'block';
+            noTimesMsg.innerHTML = '<div class="text-center text-muted"><span class="spinner-border spinner-border-sm"></span> Carregando...</div>';
 
-
-
-            const timesGrid = document.getElementById('timesGrid');
-
-            timesGrid.innerHTML = '<h4>Carregando horários...</h4>';
-
-            document.getElementById('timesSection').style.display = 'block';
-
-            summaryModal.hide();
-
-
-
+            // Fetch Data
             const url = `/Agendamento/GetAvailableTimes?dateString=${selectedDate}`;
-
-
-
-            const isEditing = @(ViewBag.IsEditing ? "true" : "false");
-
-            const selectedTimeForEdit = isEditing && '@Model.SelectedTime' ? '@Model.SelectedTime' : null;
-
-
+            const isEditing = @(isEditing.ToString().ToLower());
+            const selectedTimeForEdit = '@Model.SelectedTime';
+            const selectedDentistForEdit = '@Model.SelectedDentistaId';
 
             try {
-
                 const response = await fetch(url);
-
                 const data = await response.json();
 
-
-
-                timesGrid.innerHTML = '';
-
                 availableSlotsByTime = {};
-
-
+                noTimesMsg.innerHTML = '';
+                noTimesMsg.style.display = 'none';
 
                 if (data.success && data.times.length > 0) {
+                    let hasMorning = false;
+                    let hasAfternoon = false;
 
-
-
+                    // Agrupar slots por horário (para lidar com múltiplos dentistas no mesmo horário)
                     data.times.forEach(slot => {
-
-                        const timeKey = slot.time;
-
-                        if (!availableSlotsByTime[timeKey]) {
-
-                            availableSlotsByTime[timeKey] = [];
-
-                        }
-
+                        const timeKey = slot.time; 
+                        if (!availableSlotsByTime[timeKey]) availableSlotsByTime[timeKey] = [];
                         availableSlotsByTime[timeKey].push(slot);
-
                     });
-
-
 
                     Object.keys(availableSlotsByTime).forEach(time => {
-
                         const slots = availableSlotsByTime[time];
+                        const btn = document.createElement('button');
+                        btn.type = 'button';
+                        btn.className = 'time-btn';
+                        btn.textContent = time;
+                        btn.onclick = () => showSummaryModal(slots, btn);
 
-                        const timeButton = document.createElement('button');
-
-                        timeButton.type = 'button';
-
-                        timeButton.className = 'time-btn';
-
-                        timeButton.textContent = time;
-
-
-
-                        timeButton.onclick = () => showSummaryModal(slots, timeButton);
-
-
-
-                        if (isEditing && time === selectedTimeForEdit) {
-
-                            timeButton.classList.add('selected');
-
-                            showSummaryModal(slots, timeButton, true);
-
+                        // Lógica para pré-selecionar o horário e dentista na edição
+                        if (isEditing && time === selectedTimeForEdit && slots.some(s => s.dentistaId == selectedDentistForEdit)) {
+                            btn.classList.add('selected');
+                            showSummaryModal(slots, btn, true); // Chama o modal sem mostrá-lo (apenas preenche os dados)
                         }
 
-
-
-                        timesGrid.appendChild(timeButton);
-
+                        const hour = parseInt(time.split(':')[0]);
+                        if (hour < 12) {
+                            morningGrid.appendChild(btn);
+                            hasMorning = true;
+                        } else {
+                            afternoonGrid.appendChild(btn);
+                            hasAfternoon = true;
+                        }
                     });
 
-
+                    if(hasMorning) document.getElementById('morningContainerWrapper').style.display = 'block';
+                    if(hasAfternoon) document.getElementById('afternoonContainerWrapper').style.display = 'block';
 
                 } else {
-
-                    timesGrid.innerHTML = '<p class="error-agendamento-text">Nenhum horário disponível para este dia.</p>';
-
+                    noTimesMsg.style.display = 'block';
+                    noTimesMsg.innerHTML = '<div class="error-agendamento-text">Não há horários disponíveis para este dia.</div>';
                 }
-
-            } catch (error) {
-
-                console.error('Erro ao buscar horários:', error);
-
-                timesGrid.innerHTML = `
-
-                    <p class="error-agendamento-text">
-
-                        <i class="bi bi-exclamation-triangle-fill"></i> Falha ao carregar horários. Tente selecionar outra data.
-
-                    </p>
-
-                `;
-
+            } catch (e) {
+                noTimesMsg.style.display = 'block';
+                noTimesMsg.innerHTML = '<div class="error-agendamento-text">Erro ao carregar os horários. Tente novamente.</div>';
             }
-
         }
-
-
 
         function showSummaryModal(slots, button, isInitialLoad = false) {
-
-            const isEditing = @(ViewBag.IsEditing ? "true" : "false");
-
-            const currentDentistIdForEdit = isEditing && @Model.SelectedDentistaId ? @Model.SelectedDentistaId : null;
-
-
-
             if (!isInitialLoad) {
-
-                document.querySelectorAll('.times-grid .time-btn').forEach(btn => btn.classList.remove('selected'));
-
+                document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('selected'));
                 button.classList.add('selected');
-
             }
 
-
-
-            const dentistSelectDiv = document.getElementById('summaryDentistSelectDiv');
-
-            dentistSelectDiv.innerHTML = '';
-
-
-
-            let selectedSlot = slots.find(s => s.dentistaId === currentDentistIdForEdit) || slots[0];
-
-
-
-            if (slots.length > 1) {
-
-                let selectHtml = '<select id="dentistSelection" class="form-select" onchange="updateDentistInputs(this.value)">';
-
-
-
-                slots.forEach(slot => {
-
-                    const selected = (isEditing && slot.dentistaId === currentDentistIdForEdit) || (!isEditing && slots.indexOf(slot) === 0);
-
-                    selectHtml += `<option value="${slot.dentistaId}" data-name="${slot.dentistaName}" ${selected ? 'selected' : ''}>${slot.dentistaName}</option>`;
-
-                });
-
-                selectHtml += '</select>';
-
-                dentistSelectDiv.innerHTML = selectHtml;
-
-
-
-            } else {
-
-                dentistSelectDiv.innerHTML = `<span id="summaryDentistNameModal">${selectedSlot.dentistaName}</span>`;
-
-            }
-
-
+            const isEditing = @(isEditing.ToString().ToLower());
+            const currentDentistId = isEditing ? '@Model.SelectedDentistaId' : null;
+            
+            // Tenta pré-selecionar o dentista atual na edição, senão pega o primeiro slot
+            let selectedSlot = slots.find(s => s.dentistaId == currentDentistId) || slots[0];
 
             document.getElementById('timeInput').value = slots[0].time;
-
             document.getElementById('dentistInput').value = selectedSlot.dentistaId;
 
-
-
             document.getElementById('summaryChildNameModal').textContent = selectedChildName;
-
             document.getElementById('summaryDateModal').textContent = selectedDateDisplay;
-
             document.getElementById('summaryTimeModal').textContent = slots[0].time;
 
+            const dentistDiv = document.getElementById('summaryDentistSelectDiv');
+            dentistDiv.innerHTML = '';
 
-
-            if (slots.length === 1) {
-
-                 const nameSpan = document.getElementById('summaryDentistNameModal');
-
-                 if(nameSpan) nameSpan.textContent = selectedSlot.dentistaName;
-
+            if (slots.length > 1) {
+                // Cria um <select> se houver mais de um dentista no mesmo horário
+                let selectHtml = `<select class="form-select" onchange="document.getElementById('dentistInput').value = this.value">`;
+                slots.forEach(s => {
+                    const sel = (s.dentistaId == selectedSlot.dentistaId) ? 'selected' : '';
+                    selectHtml += `<option value="${s.dentistaId}" ${sel}>${s.dentistaName}</option>`;
+                });
+                selectHtml += `</select>`;
+                dentistDiv.innerHTML = selectHtml;
+            } else {
+                // Apenas exibe o nome se houver apenas um dentista
+                dentistDiv.textContent = selectedSlot.dentistaName;
             }
 
-
-
-            if (!isInitialLoad) {
-
-                summaryModal.show();
-
-            } else if (isEditing && slots.length > 1) {
-
-                updateDentistInputs(selectedSlot.dentistaId);
-
-            }
-
+            if (!isInitialLoad) summaryModalObj.show();
         }
-
-
-
-        function updateDentistInputs(selectedDentistId) {
-
-            const timeKey = document.getElementById('timeInput').value;
-
-            const slotsForTime = availableSlotsByTime[timeKey];
-
-
-
-            if (slotsForTime) {
-
-                const selectedSlot = slotsForTime.find(s => s.dentistaId == selectedDentistId);
-
-                if (selectedSlot) {
-
-                    document.getElementById('dentistInput').value = selectedSlot.dentistaId;
-
-
-
-                    const nameSpan = document.getElementById('summaryDentistNameModal');
-
-                    if(nameSpan) nameSpan.textContent = selectedSlot.dentistaName;
-
-                }
-
-            }
-
-        }
-
-
 
         function confirmAndSubmit() {
-
-            if (document.getElementById('childInput').value === "" || document.getElementById('dateInput').value === "" || document.getElementById('timeInput').value === "" || document.getElementById('dentistInput').value === "") {
-
-                alert("Por favor, complete a seleção de Criança, Data, Horário e Dentista.");
-
-                return;
-
+            if(!document.getElementById('childInput').value || 
+               !document.getElementById('dateInput').value || 
+               !document.getElementById('timeInput').value) {
+               alert("Preencha todos os dados.");
+               return;
             }
-
-            summaryModal.hide();
-
+            summaryModalObj.hide();
             document.getElementById('agendamentoForm').submit();
-
         }
-
-
-
-        // =======================================================
-
-        // INICIALIZAÇÃO E EDIÇÃO
-
-        // =======================================================
-
-
-
-        document.addEventListener('DOMContentLoaded', () => {
-
-             const childInput = document.getElementById('childInput');
-
-             const dateInput = document.getElementById('dateInput');
-
-
-
-             if (childInput.value && dateInput.value) {
-
-                 enableDates();
-
-
-
-                 const dateButton = document.querySelector(`.date-btn[data-date="${dateInput.value}"]`);
-
-                 if (dateButton) {
-
-                     setTimeout(() => {
-
-                         dateButton.click();
-
-                     }, 10);
-
-                 }
-
-             }
-
-        });
-
     </script>
-
 }

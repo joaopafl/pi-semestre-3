@@ -122,7 +122,8 @@
                         </div>
 
                         <div class="d-flex justify-content-between">
-                            <a href="@Url.Action("Index")" class="btn btn-secondary">
+                            @* AQUI ESTÁ A ALTERAÇÃO: Mudança para a rota absoluta /Admin/Dentistas *@
+                            <a href="/Admin/Dentistas" class="btn btn-secondary">
                                 <i class="fas fa-arrow-left"></i> Voltar para Lista
                             </a>
                             <button type="submit" class="btn btn-success">
@@ -187,7 +188,12 @@
                     const container = primeiroCheckbox.closest('.col-md-6');
                     const label = container.querySelector('.form-check-label');
                     
-                    if (label && !label.querySelector('.select-all-btn')) {
+                    // Encontrar o container pai correto para adicionar o botão
+                    const parentDiv = primeiroCheckbox.closest('.col-md-6');
+                    
+                    if (parentDiv && !parentDiv.querySelector('.select-all-btn')) {
+                        
+                        // Criar um elemento para envolver o botão e a legenda, se necessário, ou apenas o botão
                         const selectAllBtn = document.createElement('button');
                         selectAllBtn.type = 'button';
                         selectAllBtn.className = 'btn btn-sm btn-outline-primary select-all-btn mt-1';
@@ -198,14 +204,13 @@
                             selectAllBtn.textContent = allChecked ? 'Selecionar Todos' : 'Desselecionar Todos';
                         };
                         
-                        // Adicionar o botão após o primeiro checkbox do dia
-                        if (checkboxes[0].checked) {
+                        // Verificar o estado inicial para definir o texto do botão
+                        if (Array.from(checkboxes).every(cb => cb.checked)) {
                             selectAllBtn.textContent = 'Desselecionar Todos';
                         }
                         
-                        // Encontrar o primeiro checkbox do dia e adicionar o botão
-                        const firstCheckboxContainer = checkboxes[0].closest('.col-md-6');
-                        firstCheckboxContainer.appendChild(selectAllBtn);
+                        // Adicionar o botão ao final do contêiner do primeiro checkbox do dia
+                        parentDiv.appendChild(selectAllBtn);
                     }
                 }
             });

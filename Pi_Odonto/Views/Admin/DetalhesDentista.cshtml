@@ -6,7 +6,6 @@
 <div class="container mt-4">
     <div class="row">
         <div class="col-md-8 mx-auto">
-            <!-- Header -->
             <div class="card shadow-lg">
                 <div class="card-header bg-info text-white text-center">
                     <h2 class="mb-0">
@@ -14,7 +13,6 @@
                     </h2>
                 </div>
 
-                <!-- Dados do Dentista -->
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-6">
@@ -91,7 +89,6 @@
                 </div>
             </div>
 
-            <!-- Disponibilidades do Dentista -->
             @if (Model.Disponibilidades != null && Model.Disponibilidades.Any())
             {
                 <div class="card shadow-lg mt-4">
@@ -122,17 +119,16 @@
                 </div>
             }
 
-            <!-- Ações -->
             <div class="card shadow-lg mt-4">
                 <div class="card-body text-center">
                     <div class="btn-group" role="group">
-                        <a href="@Url.Action("Edit", new { id = Model.Id })" class="btn btn-warning btn-lg">
+                        <a href="@Url.Action("EditarDentista", new { id = Model.Id })" class="btn btn-warning btn-lg">
                             <i class="fas fa-edit"></i> Editar
                         </a>
                         <a href="@Url.Action("Delete", new { id = Model.Id })" class="btn btn-danger btn-lg">
                             <i class="fas fa-trash"></i> Excluir
                         </a>
-                        <a href="@Url.Action("Index")" class="btn btn-secondary btn-lg">
+                        <a href="/Admin/Dentistas" class="btn btn-secondary btn-lg">
                             <i class="fas fa-list"></i> Voltar para Lista
                         </a>
                     </div>

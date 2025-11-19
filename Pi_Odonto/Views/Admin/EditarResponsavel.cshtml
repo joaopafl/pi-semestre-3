@@ -5,7 +5,6 @@
 @model ResponsavelCriancaViewModel
 
 <div class="container-fluid mt-4">
-    <!-- Header -->
     <div class="row mb-4">
         <div class="col-md-8">
             <h1 class="text-warning">
@@ -20,7 +19,6 @@
         </div>
     </div>
 
-    <!-- Mensagens -->
     @if (TempData["Sucesso"] != null)
     {
         <div class="alert alert-success alert-dismissible fade show" role="alert">
@@ -30,10 +28,10 @@
     }
 
     <div class="row">
-        <!-- Formulário Principal -->
         <div class="col-lg-8">
             <div class="card">
-                <div class="card-header bg-warning text-dark">
+                @* CORRIGIDO: Cor do Header para #0072B9 *@
+                <div class="card-header text-white" style="background-color: #0072B9!important;">
                     <h5 class="mb-0">
                         <i class="fas fa-edit"></i> Dados do Responsável
                     </h5>
@@ -42,7 +40,8 @@
                     <form asp-action="EditarResponsavel" method="post" id="editForm">
                         <input type="hidden" asp-for="Responsavel.Id" />
 
-                        <div asp-validation-summary="All" class="alert alert-danger"></div>
+                        @* CORRIGIDO: Removida a classe 'alert' para tirar a faixa vermelha/rosada de fundo *@
+                        <div asp-validation-summary="All" class="text-danger mb-3"></div>
 
                         <div class="row">
                             <div class="col-md-6">
@@ -94,7 +93,6 @@
                             <span asp-validation-for="Responsavel.Endereco" class="text-danger"></span>
                         </div>
 
-                        <!-- Seção de Senha -->
                         <div class="card mt-4">
                             <div class="card-header bg-light">
                                 <h6 class="mb-0">
@@ -104,7 +102,7 @@
                             <div class="card-body">
                                 <div class="alert alert-info">
                                     <i class="fas fa-info-circle"></i>
-                                    <strong>Deixe em branco</strong> se não quiser alterar a senha atual.
+                                    Deixe em branco se não quiser alterar a senha atual.
                                 </div>
 
                                 <div class="row">
@@ -131,7 +129,6 @@
                             </div>
                         </div>
 
-                        <!-- Status -->
                         <div class="card mt-4">
                             <div class="card-header bg-light">
                                 <h6 class="mb-0">
@@ -149,7 +146,6 @@
                             </div>
                         </div>
 
-                        <!-- Seção das Crianças -->
                         <div class="card mt-4">
                             <div class="card-header bg-primary text-white">
                                 <h6 class="mb-0">
@@ -226,11 +222,10 @@
             </div>
         </div>
 
-        <!-- Informações Laterais -->
         <div class="col-lg-4">
-            <!-- Informações do Cadastro -->
             <div class="card">
-                <div class="card-header bg-info text-white">
+                @* CORRIGIDO: Cor do Header para #0072B9 *@
+                <div class="card-header text-white" style="background-color: #0072B9!important;">
                     <h6 class="mb-0">
                         <i class="fas fa-info-circle"></i> Informações do Cadastro
                     </h6>
@@ -263,7 +258,6 @@
                 </div>
             </div>
 
-            <!-- Ações Rápidas -->
             <div class="card mt-3">
                 <div class="card-header bg-secondary text-white">
                     <h6 class="mb-0">
@@ -272,12 +266,22 @@
                 </div>
                 <div class="card-body">
                     <div class="d-grid gap-2">
-                        <a href="/Admin/Responsaveis/Detalhes/@Model.Responsavel.Id" class="btn btn-outline-info btn-sm">
+                        @* CORRIGIDO: Cor do botão "Ver Detalhes" para um azul mais escuro (btn-outline-primary) *@
+                        <a href="/Admin/Responsaveis/Detalhes/@Model.Responsavel.Id" class="btn btn-outline-primary btn-sm">
                             <i class="fas fa-eye"></i> Ver Detalhes
                         </a>
 
-                        <form method="post" asp-action="ToggleStatus" asp-route-id="@Model.Responsavel.Id" class="d-inline">
-                            <button type="submit" class="btn btn-outline-warning btn-sm w-100" onclick="return confirm('Alterar status da conta?')">
+                        @* NOVO: Botão Toggle Status com Modal *@
+                        <form method="post" asp-action="ToggleStatus" asp-route-id="@Model.Responsavel.Id" class="d-inline js-action-form">
+                            <button type="button" 
+                                    class="btn @(Model.Responsavel.Ativo ? "btn-outline-warning" : "btn-outline-success") btn-sm w-100 js-confirm-action"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#confirmActionModal"
+                                    data-action-url="/Admin/Responsaveis/ToggleStatus/@Model.Responsavel.Id" 
+                                    data-message="Tem certeza que deseja @(Model.Responsavel.Ativo ? "DESATIVAR" : "ATIVAR") o responsável @Model.Responsavel.Nome?"
+                                    data-header-class="@(Model.Responsavel.Ativo ? "bg-warning" : "bg-success")"
+                                    data-confirm-text="@(Model.Responsavel.Ativo ? "Sim, Desativar" : "Sim, Ativar")"
+                                    data-is-danger="false">
                                 @if (Model.Responsavel.Ativo)
                                 {
                                     <text><i class="fas fa-ban"></i> Desativar Conta</text>
@@ -291,11 +295,7 @@
 
                         <hr>
 
-                        <form method="post" asp-action="ExcluirResponsavel" asp-route-id="@Model.Responsavel.Id" class="d-inline">
-                            <button type="submit" class="btn btn-outline-danger btn-sm w-100" onclick="return confirm('ATENÇÃO: Esta ação excluirá permanentemente o responsável e suas crianças. Tem certeza?')">
-                                <i class="fas fa-trash"></i> Excluir Permanentemente
-                            </button>
-                        </form>
+                        @* REMOVIDO: Botão Excluir Permanentemente foi removido aqui. *@
                     </div>
                 </div>
             </div>
@@ -303,34 +303,63 @@
     </div>
 </div>
 
+@* NOVO MODAL DE CONFIRMAÇÃO (Para Ativar/Desativar) *@
+<div class="modal fade" id="confirmActionModal" tabindex="-1" aria-labelledby="confirmActionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white" id="modalHeader">
+                <h5 class="modal-title" id="confirmActionModalLabel">Confirmação Necessária</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p id="modalMessage" class="lead text-center">Tem certeza que deseja realizar esta ação?</p>
+                @* Este alerta será ocultado para a ação Toggle Status *@
+                <div class="alert alert-warning mt-3" id="modalWarning" style="display:none;">
+                    <i class="fas fa-exclamation-triangle"></i> Esta ação é permanente e não pode ser desfeita!
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+                <button type="button" class="btn btn-danger" id="confirmActionButton">
+                    <i class="fas fa-check"></i> Confirmar
+                </button>
+                <form method="post" id="actionForm" style="display: none;"></form>
+            </div>
+        </div>
+    </div>
+</div>
+
+
 @section Scripts {
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
     <script>
         var criancaIndex = @Model.Criancas.Count;
         var opcoesParentesco = @Html.Raw(Json.Serialize(Model.OpcoesParentesco));
 
-        // Aplicar máscaras nos campos ao carregar a página
+        // --- LÓGICA DE MÁSCARAS ---
         document.addEventListener('DOMContentLoaded', function() {
             const cpfInput = document.getElementById('cpfInput');
             const telefoneInput = document.getElementById('telefoneInput');
 
-            // Aplicar máscara inicial se já houver valor
-            if (cpfInput.value) {
-                cpfInput.value = formatCPF(cpfInput.value);
+            if (cpfInput) {
+                if (cpfInput.value) {
+                    cpfInput.value = formatCPF(cpfInput.value);
+                }
+                cpfInput.addEventListener('input', function(e) {
+                    e.target.value = formatCPF(e.target.value);
+                });
             }
-            if (telefoneInput.value) {
-                telefoneInput.value = formatTelefone(telefoneInput.value);
+
+            if (telefoneInput) {
+                if (telefoneInput.value) {
+                    telefoneInput.value = formatTelefone(telefoneInput.value);
+                }
+                telefoneInput.addEventListener('input', function(e) {
+                    e.target.value = formatTelefone(e.target.value);
+                });
             }
-        });
-
-        // Máscara para CPF
-        document.getElementById('cpfInput').addEventListener('input', function(e) {
-            e.target.value = formatCPF(e.target.value);
-        });
-
-        // Máscara para telefone
-        document.getElementById('telefoneInput').addEventListener('input', function(e) {
-            e.target.value = formatTelefone(e.target.value);
         });
 
         function formatCPF(value) {
@@ -349,6 +378,7 @@
             return value;
         }
 
+        // --- LÓGICA DE CRIANÇAS DINÂMICAS ---
         function adicionarCrianca() {
             var container = document.getElementById('criancas-container');
 
@@ -403,7 +433,10 @@
                 var criancaForm = document.querySelector(`[data-index="${index}"]`);
                 if (criancaForm) {
                     criancaForm.remove();
-                    atualizarTitulosCriancas();
+                    // Necessário reindexar o próximo form se você precisar manter a ordem exata.
+                    // Para o binding do MVC, a ordem é importante, mas a reindexação completa pode ser complexa.
+                    // Vamos apenas atualizar os títulos.
+                    atualizarTitulosCriancas(); 
                 }
             } else {
                 alert('É obrigatório ter pelo menos uma criança cadastrada!');
@@ -414,11 +447,13 @@
             var criancaForms = document.querySelectorAll('.crianca-form');
             criancaForms.forEach(function(form, index) {
                 var titulo = form.querySelector('h6');
-                titulo.textContent = `Criança ${index + 1}`;
+                if (titulo) {
+                    titulo.textContent = `Criança ${index + 1}`;
+                }
             });
         }
 
-        // Validação de senhas
+        // --- VALIDAÇÃO DE SENHAS (Mantida) ---
         const senhaInput = document.querySelector('input[name="Responsavel.Senha"]');
         const confirmarSenhaInput = document.querySelector('input[name="ConfirmarSenha"]');
 
@@ -431,5 +466,48 @@
                 }
             });
         }
+
+        // --- LÓGICA DO MODAL DE CONFIRMAÇÃO (Toggle Status) ---
+        document.addEventListener('DOMContentLoaded', function() {
+            const confirmActionButton = document.getElementById('confirmActionButton');
+            const actionForm = document.getElementById('actionForm');
+
+            // Event listener para abrir o modal
+            document.querySelectorAll('.js-confirm-action').forEach(button => {
+                button.addEventListener('click', function (event) {
+                    
+                    const actionUrl = this.getAttribute('data-action-url');
+                    const message = this.getAttribute('data-message');
+                    const headerClass = this.getAttribute('data-header-class') || 'bg-danger';
+                    const confirmText = this.getAttribute('data-confirm-text') || 'Confirmar';
+                    const isDanger = this.getAttribute('data-is-danger') === 'true'; 
+
+                    const originalForm = this.closest('.js-action-form');
+                    
+                    document.getElementById('modalMessage').innerHTML = message;
+
+                    const modalHeader = document.getElementById('modalHeader');
+                    modalHeader.className = `modal-header text-white ${headerClass}`;
+
+                    confirmActionButton.className = `btn ${isDanger ? 'btn-danger' : 'btn-primary'}`;
+                    confirmActionButton.innerHTML = `<i class="fas fa-check"></i> ${confirmText}`;
+
+                    document.getElementById('modalWarning').style.display = isDanger ? 'block' : 'none';
+
+                    actionForm.action = actionUrl;
+                    actionForm.innerHTML = ''; 
+
+                    const antiForgeryToken = originalForm.querySelector('input[name="__RequestVerificationToken"]');
+                    if (antiForgeryToken) {
+                        actionForm.appendChild(antiForgeryToken.cloneNode(true));
+                    }
+                });
+            });
+
+            // Listener para o clique no botão de CONFIRMAR do modal
+            confirmActionButton.addEventListener('click', function() {
+                actionForm.submit();
+            });
+        });
     </script>
 }

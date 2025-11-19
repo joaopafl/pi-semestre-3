@@ -8,6 +8,7 @@ using Pi_Odonto.ViewModels;
 using System.Linq;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using System; 
 
 namespace Pi_Odonto.Controllers
 {
@@ -154,6 +155,7 @@ namespace Pi_Odonto.Controllers
         // POST: Editar Responsável (Admin)
         [HttpPost]
         [Route("Responsaveis/Editar/{id}")]
+        [ValidateAntiForgeryToken]
         public IActionResult EditarResponsavel(int id, ResponsavelCriancaViewModel viewModel)
         {
             if (!IsAdmin())
@@ -237,6 +239,7 @@ namespace Pi_Odonto.Controllers
         // POST: Desativar/Ativar Responsável
         [HttpPost]
         [Route("Responsaveis/ToggleStatus/{id}")]
+        [ValidateAntiForgeryToken]
         public IActionResult ToggleStatus(int id)
         {
             if (!IsAdmin())
@@ -247,7 +250,8 @@ namespace Pi_Odonto.Controllers
             var responsavel = _context.Responsaveis.Find(id);
             if (responsavel == null)
             {
-                return NotFound();
+                TempData["Erro"] = "Responsável não encontrado.";
+                return RedirectToAction("Responsaveis");
             }
 
             responsavel.Ativo = !responsavel.Ativo;
@@ -258,37 +262,7 @@ namespace Pi_Odonto.Controllers
             return RedirectToAction("Responsaveis");
         }
 
-        // POST: Excluir Responsável (Admin)
-        [HttpPost]
-        [Route("Responsaveis/Excluir/{id}")]
-        public IActionResult ExcluirResponsavel(int id)
-        {
-            if (!IsAdmin())
-            {
-                return RedirectToAction("AdminLogin", "Auth");
-            }
-
-            var responsavel = _context.Responsaveis
-                .Include(r => r.Criancas)
-                .FirstOrDefault(r => r.Id == id);
-
-            if (responsavel == null)
-            {
-                return NotFound();
-            }
-
-            // Remove as crianças primeiro (devido ao FK)
-            if (responsavel.Criancas.Any())
-            {
-                _context.Criancas.RemoveRange(responsavel.Criancas);
-            }
-
-            _context.Responsaveis.Remove(responsavel);
-            _context.SaveChanges();
-
-            TempData["Sucesso"] = "Responsável e suas crianças excluídos com sucesso!";
-            return RedirectToAction("Responsaveis");
-        }
+        
 
         // GET: Relatórios
         [Route("Relatorios")]
@@ -343,7 +317,6 @@ namespace Pi_Odonto.Controllers
 
             var dentistas = _context.Dentistas
                 .Include(d => d.EscalaTrabalho)
-                // REMOVIDO: .Include(d => d.Disponibilidades)
                 .OrderBy(d => d.Nome)
                 .ToList();
 
@@ -361,7 +334,6 @@ namespace Pi_Odonto.Controllers
 
             ViewBag.Escalas = _context.EscalaTrabalho.ToList();
 
-            // REMOVIDO: View Model de Disponibilidade não é mais necessária aqui.
             var viewModel = new DentistaViewModel();
 
             return View(viewModel);
@@ -381,7 +353,6 @@ namespace Pi_Odonto.Controllers
             if (!ModelState.IsValid)
             {
                 ViewBag.Escalas = _context.EscalaTrabalho.ToList();
-                // REMOVIDO: viewModel.Disponibilidades = ObterDisponibilidadesPadrao();
                 return View(viewModel);
             }
 
@@ -401,9 +372,6 @@ namespace Pi_Odonto.Controllers
             _context.Dentistas.Add(dentista);
             _context.SaveChanges();
 
-            // REMOVIDO: Lógica de vinculação de disponibilidades obsoletas.
-            // O dentista deve ter suas escalas cadastradas através do AdminEscalaController.
-
             TempData["Sucesso"] = $"Dentista cadastrado com sucesso! Senha inicial: {viewModel.Cro}123";
             return RedirectToAction("Dentistas");
         }
@@ -418,7 +386,6 @@ namespace Pi_Odonto.Controllers
             }
 
             var dentista = _context.Dentistas
-                // REMOVIDO: .Include(d => d.Disponibilidades)
                 .Include(d => d.EscalaTrabalho)
                 .FirstOrDefault(d => d.Id == id);
 
@@ -440,8 +407,6 @@ namespace Pi_Odonto.Controllers
                 Email = dentista.Email,
                 Telefone = dentista.Telefone,
                 IdEscala = dentista.IdEscala,
-                // REMOVIDO: Inicialização de Disponibilidades obsoletas.
-                // Disponibilidades agora é gerenciada separadamente.
             };
 
             return View(viewModel);
@@ -458,7 +423,6 @@ namespace Pi_Odonto.Controllers
                 return RedirectToAction("AdminLogin", "Auth");
             }
 
-            // O ModelState.IsValid deve ser reavaliado aqui, pois a ViewModel pode ter sido simplificada.
             if (!ModelState.IsValid)
             {
                 ViewBag.Escalas = _context.EscalaTrabalho.ToList();
@@ -466,7 +430,6 @@ namespace Pi_Odonto.Controllers
             }
 
             var dentista = _context.Dentistas
-                // REMOVIDO: .Include(d => d.Disponibilidades)
                 .FirstOrDefault(d => d.Id == viewModel.Id);
 
             if (dentista == null)
@@ -483,9 +446,6 @@ namespace Pi_Odonto.Controllers
             dentista.Email = viewModel.Email;
             dentista.Telefone = viewModel.Telefone;
             dentista.IdEscala = IdEscala;
-
-            // REMOVIDO: Toda a lógica de Atualizar/Remover disponibilidades.
-            // Isso era a causa dos erros de compilação CS1061.
 
             _context.SaveChanges();
 
@@ -530,7 +490,6 @@ namespace Pi_Odonto.Controllers
             }
 
             var dentista = _context.Dentistas
-                // REMOVIDO: .Include(d => d.Disponibilidades)
                 .Include(d => d.EscalaTrabalho)
                 .FirstOrDefault(d => d.Id == id);
 
@@ -542,14 +501,6 @@ namespace Pi_Odonto.Controllers
 
             return View(dentista);
         }
-
-        // ========================================
-        // MÉTODOS AUXILIARES - DENTISTAS (REMOVIDOS)
-        // ========================================
-
-        // REMOVIDO: private List<DisponibilidadeItem> ObterDisponibilidadesPadrao() { ... }
-        // REMOVIDO: private List<DisponibilidadeItem> ObterDisponibilidadesComSelecoes(ICollection<DisponibilidadeDentista> existentes) { ... }
-
 
         // ========================================
         // FUNCIONALIDADES - VOLUNTÁRIOS (MANTIDO)

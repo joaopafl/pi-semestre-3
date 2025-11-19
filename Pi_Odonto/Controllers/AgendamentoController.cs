@@ -20,8 +20,7 @@ namespace Pi_Odonto.Controllers
         public string DentistaName { get; set; } = string.Empty;
     }
 
-    // Auth Schemas corrigidos para incluir o ResponsavelAuth
-    [Authorize(AuthenticationSchemes = "AdminAuth,DentistaAuth,ResponsavelAuth")] 
+    [Authorize(AuthenticationSchemes = "AdminAuth,DentistaAuth,ResponsavelAuth")]
     public class AgendamentoController : Controller
     {
         private readonly AppDbContext _context;
@@ -33,13 +32,11 @@ namespace Pi_Odonto.Controllers
         }
 
         // ====================================================================
-        // MÉTODOS AUXILIARES
+        // MÉTODOS AUXILIARES (Auth e Queries Base)
         // ====================================================================
 
         private bool IsAdmin() => User.HasClaim("TipoUsuario", "Admin");
-
         private bool IsDentista() => User.HasClaim("TipoUsuario", "Dentista");
-
         private bool IsResponsavel() => User.HasClaim("TipoUsuario", "Responsavel");
 
         private int GetCurrentUserId()
@@ -63,15 +60,10 @@ namespace Pi_Odonto.Controllers
             IQueryable<Crianca> query = _context.Criancas.Where(c => c.Ativa);
 
             if (IsAdmin() || IsDentista())
-            {
                 return query;
-            }
 
             var responsavelId = GetCurrentUserId();
-            if (responsavelId == 0)
-            {
-                return query.Where(c => false);
-            }
+            if (responsavelId == 0) return query.Where(c => false);
 
             return query.Where(c => c.IdResponsavel == responsavelId);
         }
@@ -82,10 +74,7 @@ namespace Pi_Odonto.Controllers
               .Include(a => a.Crianca)
               .Include(a => a.Dentista);
 
-            if (IsAdmin())
-            {
-                return query;
-            }
+            if (IsAdmin()) return query;
 
             if (IsDentista())
             {
@@ -94,41 +83,99 @@ namespace Pi_Odonto.Controllers
             }
 
             var responsavelId = GetCurrentUserId();
-            if (responsavelId == 0)
-            {
-                return query.Where(a => false);
-            }
+            if (responsavelId == 0) return query.Where(a => false);
 
             return query.Where(a => a.Crianca!.IdResponsavel == responsavelId);
         }
 
-        private async Task<List<DateTime>> GetNextAvailableDates(int count)
+        // --- LÓGICA DO BOTÃO VOLTAR INTELIGENTE ---
+        private void SetReturnUrl()
         {
-            var datasComEscala = await _context.EscalasMensaisDentista
-                .Where(e => e.DataEscala.Date >= DateTime.Today.Date)
-                .Where(e => e.Ativo) 
-                .Select(e => e.DataEscala.Date)
-                .Distinct()
-                .OrderBy(d => d)
-                .Take(count)
+            // Tenta obter o 'Referer' (URL anterior)
+            var refererUrl = Request.Headers["Referer"].ToString();
+
+            // Se a URL anterior for esta mesma página ou for nula, define um fallback seguro
+            if (string.IsNullOrEmpty(refererUrl) || refererUrl.Contains(Url.Action("Index", "Agendamento")))
+            {
+                // Fallback baseado no perfil do usuário logado
+                if (IsAdmin()) ViewBag.ReturnUrl = Url.Action("Index", "Admin");
+                else if (IsDentista()) ViewBag.ReturnUrl = Url.Action("Dashboard", "Dentista");
+                // Assumindo que a página de perfil/agenda do Responsável seja MinhaAgenda
+                else if (IsResponsavel()) ViewBag.ReturnUrl = Url.Action("MinhaAgenda", "Agendamento");
+                else ViewBag.ReturnUrl = Url.Action("Index", "Home"); // Fallback final
+            }
+            else
+            {
+                ViewBag.ReturnUrl = refererUrl;
+            }
+        }
+        
+        // ====================================================================
+        // LÓGICA CORE: FILTRAR DIAS DISPONÍVEIS E NÃO LOTADOS
+        // ====================================================================
+
+        private async Task<List<DateTime>> GetNextAvailableDates()
+        {
+            // 1. Busca TODAS as escalas (slots de horário) futuros ativos
+            var escalasFuturas = await _context.EscalasMensaisDentista
+                .Where(e => e.DataEscala.Date >= DateTime.Today.Date && e.Ativo)
+                .Select(e => new
+                {
+                    e.DataEscala,
+                    e.HoraInicio,
+                    e.IdDentista
+                })
                 .ToListAsync();
 
-            return datasComEscala;
-        }
+            if (!escalasFuturas.Any()) return new List<DateTime>();
 
-        private string GetDayOfWeekString(DayOfWeek day)
-        {
-            return day switch
+            // 2. Busca TODOS os agendamentos futuros para saber o que está ocupado
+            var agendamentosFuturos = await _context.Agendamentos
+                .Where(a => a.DataAgendamento.Date >= DateTime.Today.Date)
+                .Select(a => new
+                {
+                    a.DataAgendamento,
+                    a.HoraAgendamento,
+                    a.IdDentista
+                })
+                .ToListAsync();
+
+            // 3. Cria um HashSet das chaves de agendamento para comparação ultra-rápida (O(1))
+            var agendamentosOcupados = new HashSet<string>(
+                agendamentosFuturos.Select(a =>
+                    $"{a.DataAgendamento:yyyyMMdd}-{a.HoraAgendamento}-{a.IdDentista}")
+            );
+
+            var diasComVagasLivres = new List<DateTime>();
+
+            // 4. Agrupa as escalas por dia para verificar se o dia tem pelo menos 1 vaga
+            var diasDeTrabalho = escalasFuturas
+                .GroupBy(e => e.DataEscala.Date)
+                .OrderBy(g => g.Key);
+
+            foreach (var diaGroup in diasDeTrabalho)
             {
-                DayOfWeek.Monday => "Segunda-feira",
-                DayOfWeek.Tuesday => "Terça-feira",
-                DayOfWeek.Wednesday => "Quarta-feira",
-                DayOfWeek.Thursday => "Quinta-feira",
-                DayOfWeek.Friday => "Sexta-feira",
-                DayOfWeek.Saturday => "Sábado",
-                DayOfWeek.Sunday => "Domingo",
-                _ => string.Empty,
-            };
+                var dataAtual = diaGroup.Key;
+                bool existePeloMenosUmaVaga = false;
+
+                foreach (var slot in diaGroup)
+                {
+                    string slotKey = $"{dataAtual:yyyyMMdd}-{slot.HoraInicio}-{slot.IdDentista}";
+
+                    if (!agendamentosOcupados.Contains(slotKey))
+                    {
+                        existePeloMenosUmaVaga = true;
+                        break;
+                    }
+                }
+
+                if (existePeloMenosUmaVaga)
+                {
+                    diasComVagasLivres.Add(dataAtual);
+                }
+            }
+
+            return diasComVagasLivres;
         }
 
         // ====================================================================
@@ -140,7 +187,10 @@ namespace Pi_Odonto.Controllers
         {
             try
             {
-                var availableDates = await GetNextAvailableDates(7);
+                // NOVIDADE: Define a URL para o botão Voltar
+                SetReturnUrl(); 
+                
+                var availableDates = await GetNextAvailableDates();
                 var children = await GetChildrenQueryBase().ToListAsync();
 
                 if (!children.Any())
@@ -149,10 +199,10 @@ namespace Pi_Odonto.Controllers
                     return RedirectToAction("MinhaAgenda");
                 }
 
+                // Regra: Se for Responsável, não deixar agendar criança que já tem consulta futura
                 if (IsResponsavel())
                 {
                     var agora = DateTime.Now;
-
                     var criancasComAgendamentoAtivo = await _context.Agendamentos
                         .Where(a => children.Select(c => c.Id).Contains(a.IdCrianca))
                         .Where(a => a.DataAgendamento.Date > agora.Date ||
@@ -182,7 +232,7 @@ namespace Pi_Odonto.Controllers
             }
             catch (Exception ex)
             {
-                TempData["ErrorMessage"] = "Erro ao carregar a tela de agendamento. " + ex.Message;
+                TempData["ErrorMessage"] = "Erro ao carregar a tela de agendamento: " + ex.Message;
                 return RedirectToAction("MinhaAgenda");
             }
         }
@@ -196,7 +246,7 @@ namespace Pi_Odonto.Controllers
             }
 
             var todasEscalasNaData = await _context.EscalasMensaisDentista
-                .Include(e => e.Dentista) 
+                .Include(e => e.Dentista)
                 .Where(e => e.DataEscala.Date == selectedDate.Date && e.Ativo)
                 .ToListAsync();
 
@@ -222,7 +272,7 @@ namespace Pi_Odonto.Controllers
                     {
                         Time = timeString,
                         DentistaId = escala.IdDentista,
-                        DentistaName = escala.Dentista?.Nome ?? "Dentista Não Encontrado"
+                        DentistaName = escala.Dentista?.Nome ?? "Dentista"
                     });
                 }
             }
@@ -266,9 +316,20 @@ namespace Pi_Odonto.Controllers
 
                 if (temAgendamentoAtivo)
                 {
-                    TempData["ErrorMessage"] = $"A criança {crianca.Nome} já possui um agendamento ativo. Você pode editá-lo ou cancelá-lo na tela 'Minha Agenda'.";
+                    TempData["ErrorMessage"] = $"A criança {crianca.Nome} já possui um agendamento ativo.";
                     return RedirectToAction("MinhaAgenda");
                 }
+            }
+
+            var jaOcupado = await _context.Agendamentos.AnyAsync(a => 
+                a.DataAgendamento == dataConsulta.Date && 
+                a.HoraAgendamento == horaConsulta && 
+                a.IdDentista == model.SelectedDentistaId);
+
+            if (jaOcupado)
+            {
+                TempData["ErrorMessage"] = "Desculpe, este horário acabou de ser reservado por outra pessoa.";
+                return RedirectToAction("Index");
             }
 
             try
@@ -291,7 +352,7 @@ namespace Pi_Odonto.Controllers
             }
             catch (Exception)
             {
-                TempData["ErrorMessage"] = "Erro: O horário selecionado não está mais disponível ou houve uma falha de conexão.";
+                TempData["ErrorMessage"] = "Erro ao salvar agendamento.";
                 return RedirectToAction("Index");
             }
         }
@@ -299,16 +360,20 @@ namespace Pi_Odonto.Controllers
         [HttpGet]
         public async Task<IActionResult> Editar(int id)
         {
+            // NOVIDADE: Define a URL para o botão Voltar
+            SetReturnUrl();
+
             var agendamento = await GetAgendamentosQueryBase()
               .FirstOrDefaultAsync(a => a.Id == id);
 
             if (agendamento == null)
             {
-                TempData["ErrorMessage"] = "Agendamento não encontrado ou você não tem permissão para editar.";
+                TempData["ErrorMessage"] = "Agendamento não encontrado ou acesso negado.";
                 return RedirectToAction("MinhaAgenda");
             }
 
-            var availableDates = await GetNextAvailableDates(7); 
+            var availableDates = await GetNextAvailableDates();
+            
             var children = await GetChildrenQueryBase().ToListAsync();
 
             var vm = new AppointmentViewModel
@@ -331,42 +396,46 @@ namespace Pi_Odonto.Controllers
         [HttpPost]
         public async Task<IActionResult> Atualizar(AppointmentViewModel model)
         {
-            if (model.AgendamentoId <= 0) return BadRequest("ID de agendamento inválido.");
+            if (model.AgendamentoId <= 0) return BadRequest("ID inválido.");
 
             var agendamentoToUpdate = await GetAgendamentosQueryBase()
               .FirstOrDefaultAsync(a => a.Id == model.AgendamentoId);
 
             if (agendamentoToUpdate == null)
             {
-                TempData["ErrorMessage"] = "Agendamento não encontrado ou você não tem permissão para atualizar.";
+                TempData["ErrorMessage"] = "Agendamento não encontrado.";
                 return RedirectToAction("MinhaAgenda");
-            }
-
-            var novaCrianca = await GetChildrenQueryBase()
-              .FirstOrDefaultAsync(c => c.Id == model.SelectedChildId);
-
-            if (novaCrianca == null)
-            {
-                TempData["ErrorMessage"] = "A criança selecionada para edição não é válida para este perfil.";
-                return RedirectToAction("Editar", new { id = model.AgendamentoId });
             }
 
             if (!DateTime.TryParse(model.SelectedDateString, out DateTime novaData) ||
               !TimeSpan.TryParse(model.SelectedTime, out TimeSpan novaHora))
             {
-                TempData["ErrorMessage"] = "Formato de data ou hora inválido.";
+                TempData["ErrorMessage"] = "Dados inválidos.";
                 return RedirectToAction("Editar", new { id = model.AgendamentoId });
             }
 
-            var agendamentoExistente = await _context.Agendamentos
+            var conflitoCrianca = await _context.Agendamentos
               .Where(a => a.Id != model.AgendamentoId)
               .Where(a => a.IdCrianca == model.SelectedChildId && a.DataAgendamento.Date == novaData.Date)
-              .FirstOrDefaultAsync();
+              .AnyAsync();
 
-            if (agendamentoExistente != null)
+            if (conflitoCrianca)
             {
                 TempData["ErrorMessage"] = $"A criança já possui outro agendamento para o dia {novaData:dd/MM/yyyy}.";
                 return RedirectToAction("Editar", new { id = model.AgendamentoId });
+            }
+
+            var conflitoHorario = await _context.Agendamentos
+                .Where(a => a.Id != model.AgendamentoId)
+                .Where(a => a.DataAgendamento == novaData.Date && 
+                            a.HoraAgendamento == novaHora && 
+                            a.IdDentista == model.SelectedDentistaId)
+                .AnyAsync();
+
+            if (conflitoHorario)
+            {
+                 TempData["ErrorMessage"] = "O horário selecionado não está mais disponível.";
+                 return RedirectToAction("Editar", new { id = model.AgendamentoId });
             }
 
             agendamentoToUpdate.IdCrianca = model.SelectedChildId;
@@ -380,85 +449,61 @@ namespace Pi_Odonto.Controllers
                 await _context.SaveChangesAsync();
 
                 TempData["SuccessMessageTitle"] = "Agendamento Atualizado!";
-                TempData["SuccessMessageBody"] = $"O agendamento foi alterado com sucesso para {novaData:dd/MM/yyyy} às {model.SelectedTime}.";
+                TempData["SuccessMessageBody"] = $"O agendamento foi alterado para {novaData:dd/MM/yyyy} às {model.SelectedTime}.";
             }
             catch (Exception)
             {
-                TempData["ErrorMessage"] = "Erro interno ao atualizar o agendamento. Tente novamente.";
+                TempData["ErrorMessage"] = "Erro ao atualizar agendamento.";
                 return RedirectToAction("Editar", new { id = model.AgendamentoId });
             }
 
             return RedirectToAction("MinhaAgenda");
         }
 
-        // MÉTODO MINHAAGENDA COM FILTROS - CORRIGIDO
         [HttpGet]
         public async Task<IActionResult> MinhaAgenda(
-            string? searchName, 
-            List<int>? dentists, 
+            string? searchName,
+            List<int>? dentists,
             string? selectedDate)
         {
             IQueryable<Agendamento> query = GetAgendamentosQueryBase();
 
-            // =======================================================
-            // 1. APLICAÇÃO DOS FILTROS
-            // =======================================================
-
-            // Filtro por Nome da Criança
             if (!string.IsNullOrEmpty(searchName))
             {
-                query = query.Where(a => 
+                query = query.Where(a =>
                     a.Crianca != null && a.Crianca.Nome.Contains(searchName));
                 ViewData["CurrentNameFilter"] = searchName;
             }
 
-            // Filtro por Dentista (Checkboxes)
             if (dentists != null && dentists.Any())
             {
                 query = query.Where(a => a.Dentista != null && dentists.Contains(a.IdDentista));
                 ViewData["SelectedDentists"] = dentists;
             }
 
-            // Filtro por Data Específica (Mini Calendário)
-            if (!string.IsNullOrEmpty(selectedDate) && 
+            if (!string.IsNullOrEmpty(selectedDate) &&
                 DateTime.TryParseExact(selectedDate, "dd/MM/yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime filterDate))
             {
                 query = query.Where(a => a.DataAgendamento.Date == filterDate.Date);
                 ViewData["CurrentDateFilter"] = selectedDate;
             }
 
-            // =======================================================
-            // 2. EXECUTAR A QUERY NO BANCO DE DADOS
-            // =======================================================
-            // IMPORTANTE: Trazer os dados para memória ANTES da ordenação complexa
             var agendamentos = await query.ToListAsync();
 
-            // =======================================================
-            // 3. ORDENAÇÃO EM MEMÓRIA
-            // =======================================================
-            // Ordenação: Agendamentos ativos (futuros) primeiro, mais recentes no topo
-            // Depois agendamentos finalizados (passados), mais recentes no topo
             var agendamentosOrdenados = agendamentos
-                .OrderByDescending(a => a.DataAgendamento.Date.Add(a.HoraAgendamento) >= DateTime.Now) // Ativos primeiro
-                .ThenByDescending(a => a.DataAgendamento) // Mais recentes primeiro
-                .ThenByDescending(a => a.HoraAgendamento) // Horário mais recente primeiro
+                .OrderByDescending(a => a.DataAgendamento.Date.Add(a.HoraAgendamento) >= DateTime.Now)
+                .ThenByDescending(a => a.DataAgendamento)
+                .ThenByDescending(a => a.HoraAgendamento)
                 .ToList();
 
-            // =======================================================
-            // 4. PREPARAÇÃO DOS DADOS AUXILIARES PARA A VIEW
-            // =======================================================
-
-            // A) Dentistas para Checkboxes
             ViewBag.Dentistas = await _context.Dentistas.Where(d => d.Ativo).ToListAsync();
 
-            // B) Datas com Agendamentos (para o calendário com bolinha)
             var allAgendamentos = await GetAgendamentosQueryBase().ToListAsync();
             var datasAgendadas = allAgendamentos
                 .Select(a => a.DataAgendamento.Date)
                 .Distinct()
                 .ToList();
-            
-            // Converte para o formato M/d/yyyy exigido pelo jQuery UI Datepicker
+
             ViewBag.DatasAgendadas = datasAgendadas.Select(d => d.ToString("M/d/yyyy")).ToList();
 
             return View(agendamentosOrdenados);
@@ -489,11 +534,11 @@ namespace Pi_Odonto.Controllers
                 await _context.SaveChangesAsync();
 
                 TempData["SuccessMessageTitle"] = "Agendamento Cancelado!";
-                TempData["SuccessMessageBody"] = $"A consulta da criança {agendamento.Crianca?.Nome} para {agendamento.DataAgendamento:dd/MM/yyyy} foi cancelada com sucesso.";
+                TempData["SuccessMessageBody"] = $"A consulta da criança {agendamento.Crianca?.Nome} foi cancelada.";
             }
             catch (Exception ex)
             {
-                TempData["ErrorMessage"] = $"Erro ao tentar cancelar o agendamento: {ex.Message}";
+                TempData["ErrorMessage"] = $"Erro ao cancelar: {ex.Message}";
             }
 
             return RedirectToAction("MinhaAgenda");
