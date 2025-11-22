@@ -125,9 +125,13 @@
                         <a href="@Url.Action("EditarDentista", new { id = Model.Id })" class="btn btn-warning btn-lg">
                             <i class="fas fa-edit"></i> Editar
                         </a>
-                        <a href="@Url.Action("Delete", new { id = Model.Id })" class="btn btn-danger btn-lg">
-                            <i class="fas fa-trash"></i> Excluir
-                        </a>
+                        <form asp-action="ToggleAtivoDentista" asp-route-id="@Model.Id" method="post" style="display: inline;">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-lg @(Model.Ativo ? "btn-danger" : "btn-success")" 
+                                    onclick="return confirm('Tem certeza que deseja @(Model.Ativo ? "desativar" : "ativar") este dentista?');">
+                                <i class="fas fa-@(Model.Ativo ? "ban" : "check")"></i> @(Model.Ativo ? "Desativar" : "Ativar")
+                            </button>
+                        </form>
                         <a href="/Admin/Dentistas" class="btn btn-secondary btn-lg">
                             <i class="fas fa-list"></i> Voltar para Lista
                         </a>

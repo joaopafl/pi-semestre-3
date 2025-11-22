@@ -14,8 +14,8 @@
                 </div>
 
                 <div class="card-body">
-                    <form asp-action="Edit" method="post">
-                        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+                    <form asp-action="EditarDentista" asp-route-id="@Model.Id" method="post">
+                        <div asp-validation-summary="All" class="alert alert-danger"></div>
                         
                         <input type="hidden" asp-for="Id" />
 
@@ -85,68 +85,67 @@
                             </div>
                         </div>
 
-                        <div class="row">
-                            <div class="col-md-12">
-                                <div class="mb-3">
-                                    <label for="IdEscala" class="form-label fw-bold">
-                                        <i class="fas fa-clock text-primary"></i> Escala de Trabalho
-                                    </label>
-                                    <select name="IdEscala" class="form-select" asp-for="IdEscala">
-                                        <option value="">Selecione uma escala de trabalho</option>
-                                        @foreach (var escala in ViewBag.Escalas as List<Pi_Odonto.Models.EscalaTrabalho>)
-                                        {
-                                            <option value="@escala.IdEscala">@escala.DtDisponivel - @escala.HrInicio:00 às @escala.HrFim:00</option>
-                                        }
-                                    </select>
-                                </div>
+                        <!-- Disponibilidade -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">
+                                <i class="fas fa-calendar-check text-primary"></i> Disponibilidade de Horários <span class="text-danger">*</span>
+                            </label>
+                            <div class="alert alert-info mb-3">
+                                <i class="fas fa-info-circle"></i> 
+                                Selecione os turnos em que o dentista está disponível para trabalhar. Você pode selecionar múltiplos horários.
                             </div>
-                        </div>
 
-                        <div class="row">
-                            <div class="col-md-12">
-                                <div class="mb-3">
-                                    <label class="form-label fw-bold">
-                                        <i class="fas fa-calendar-check text-primary"></i> Disponibilidades de Atendimento
-                                    </label>
-                                    <p class="text-muted small">Selecione os horários em que o dentista está disponível para atendimento:</p>
-                                    
-                                    <div class="row">
-                                        @{
-                                            var diasSemana = Model.Disponibilidades.GroupBy(d => d.DiaSemana).OrderBy(g => g.Key).ToList();
-                                        }
-                                        @foreach (var dia in diasSemana)
-                                        {
-                                            <div class="col-md-4 mb-3">
-                                                <div class="card border">
-                                                    <div class="card-header bg-light">
-                                                        <h6 class="mb-0 fw-bold text-center">@dia.Key</h6>
-                                                    </div>
-                                                    <div class="card-body p-2">
-                                                        @foreach (var disponibilidade in dia.OrderBy(d => d.HoraInicio))
-                                                        {
-                                                            var index = Model.Disponibilidades.IndexOf(disponibilidade);
-                                                            <div class="form-check">
-                                                                <input type="checkbox" 
-                                                                       class="form-check-input" 
-                                                                       name="Disponibilidades[@index].Selecionado" 
-                                                                       value="true" 
-                                                                       @(disponibilidade.Selecionado ? "checked" : "") />
-                                                                <input type="hidden" name="Disponibilidades[@index].Selecionado" value="false" />
-                                                                <input type="hidden" name="Disponibilidades[@index].DiaSemana" value="@disponibilidade.DiaSemana" />
-                                                                <input type="hidden" name="Disponibilidades[@index].HoraInicio" value="@disponibilidade.HoraInicio" />
-                                                                <input type="hidden" name="Disponibilidades[@index].HoraFim" value="@disponibilidade.HoraFim" />
-                                                                <label class="form-check-label">
-                                                                    @disponibilidade.HoraInicio.ToString(@"hh\:mm") - @disponibilidade.HoraFim.ToString(@"hh\:mm")
-                                                                </label>
-                                                            </div>
-                                                        }
-                                                    </div>
-                                                </div>
+                            <div class="row">
+                                @{
+                                    var diasSemana = new[] { "Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado", "Domingo" };
+                                }
+                                @foreach (var dia in diasSemana)
+                                {
+                                    <div class="col-md-6 col-lg-4 mb-4">
+                                        <div class="card" style="border: 2px solid #4a90e2; border-radius: 8px;">
+                                            <div class="card-header" style="background: linear-gradient(135deg, #2c5282, #4a90e2); color: white; text-align: center; font-weight: bold;">
+                                                @dia
                                             </div>
-                                        }
+                                            <div class="card-body">
+                                                @for (int i = 0; i < Model.Disponibilidades.Count; i++)
+                                                {
+                                                    if (Model.Disponibilidades[i].DiaSemana == dia)
+                                                    {
+                                                        var turnoNome = "";
+                                                        if (Model.Disponibilidades[i].HoraInicio.Hours == 8)
+                                                        {
+                                                            turnoNome = "Manhã";
+                                                        }
+                                                        else if (Model.Disponibilidades[i].HoraInicio.Hours == 13)
+                                                        {
+                                                            turnoNome = "Tarde";
+                                                        }
+                                                        else if (Model.Disponibilidades[i].HoraInicio.Hours == 18)
+                                                        {
+                                                            turnoNome = "Noite";
+                                                        }
+
+                                                        <div class="form-check mb-2">
+                                                            <input type="checkbox" 
+                                                                   asp-for="@Model.Disponibilidades[i].Selecionado" 
+                                                                   class="form-check-input disponibilidade-checkbox"
+                                                                   id="disponibilidade_@i" />
+                                                            <input type="hidden" asp-for="@Model.Disponibilidades[i].DiaSemana" />
+                                                            <input type="hidden" asp-for="@Model.Disponibilidades[i].HoraInicio" />
+                                                            <input type="hidden" asp-for="@Model.Disponibilidades[i].HoraFim" />
+                                                            <label class="form-check-label" for="disponibilidade_@i" style="cursor: pointer;">
+                                                                <strong>@turnoNome</strong><br>
+                                                                <small class="text-muted">@Model.Disponibilidades[i].HoraInicio.ToString(@"hh\:mm") - @Model.Disponibilidades[i].HoraFim.ToString(@"hh\:mm")</small>
+                                                            </label>
+                                                        </div>
+                                                    }
+                                                }
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
+                                }
                             </div>
+                            <span asp-validation-for="Disponibilidades" class="text-danger"></span>
                         </div>
 
                         <div class="d-flex justify-content-between">
@@ -183,6 +182,16 @@
             if (value.length <= 11) {
                 value = value.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
                 e.target.value = value;
+            }
+        });
+
+        // Validação de disponibilidades antes de enviar
+        document.querySelector('form')?.addEventListener('submit', function(e) {
+            const checkboxes = document.querySelectorAll('.disponibilidade-checkbox:checked');
+            if (checkboxes.length === 0) {
+                e.preventDefault();
+                alert('Por favor, selecione pelo menos um turno de disponibilidade.');
+                return false;
             }
         });
     </script>

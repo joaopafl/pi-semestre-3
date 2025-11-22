@@ -1,4 +1,4 @@
-﻿@model Pi_Odonto.Models.SolicitacaoVoluntario
+﻿@model Pi_Odonto.ViewModels.VoluntarioCadastroViewModel
 
 @{
     ViewData["Title"] = "Seja Voluntário - Dentista";
@@ -230,7 +230,7 @@
         </div>
 
         <form asp-action="Cadastro" method="post" id="formVoluntario">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div asp-validation-summary="All" class="text-danger"></div>
 
             <!-- Dados Pessoais -->
             <div class="section-title">
@@ -320,8 +320,72 @@
                 <span asp-validation-for="Mensagem" class="text-danger"></span>
             </div>
 
+            <!-- Disponibilidade -->
+            <div class="section-title">
+                <i class="fas fa-calendar-check"></i> Disponibilidade de Horários
+            </div>
+
+            <div class="info-box">
+                <h4><i class="fas fa-info-circle"></i> Selecione seus horários disponíveis</h4>
+                <p>Escolha os turnos em que você está disponível para trabalhar. Você pode selecionar múltiplos horários.</p>
+            </div>
+
+            <div class="form-group">
+                <div class="row">
+                    @{
+                        var diasSemana = new[] { "Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado", "Domingo" };
+                    }
+                    @foreach (var dia in diasSemana)
+                    {
+                        <div class="col-md-6 col-lg-4 mb-4">
+                            <div class="card" style="border: 2px solid var(--cor-secundaria); border-radius: 8px;">
+                                <div class="card-header" style="background: linear-gradient(135deg, var(--cor-primaria), var(--cor-secundaria)); color: white; text-align: center; font-weight: bold;">
+                                    @dia
+                                </div>
+                                <div class="card-body">
+                                    @for (int i = 0; i < Model.Disponibilidades.Count; i++)
+                                    {
+                                        if (Model.Disponibilidades[i].DiaSemana == dia)
+                                        {
+                                            var turnoNome = "";
+                                            if (Model.Disponibilidades[i].HoraInicio.Hours == 8)
+                                            {
+                                                turnoNome = "Manhã";
+                                            }
+                                            else if (Model.Disponibilidades[i].HoraInicio.Hours == 13)
+                                            {
+                                                turnoNome = "Tarde";
+                                            }
+                                            else if (Model.Disponibilidades[i].HoraInicio.Hours == 18)
+                                            {
+                                                turnoNome = "Noite";
+                                            }
+
+                                            <div class="form-check mb-2">
+                                                <input type="checkbox" 
+                                                       asp-for="@Model.Disponibilidades[i].Selecionado" 
+                                                       class="form-check-input disponibilidade-checkbox"
+                                                       id="disponibilidade_@i" />
+                                                <input type="hidden" asp-for="@Model.Disponibilidades[i].DiaSemana" />
+                                                <input type="hidden" asp-for="@Model.Disponibilidades[i].HoraInicio" />
+                                                <input type="hidden" asp-for="@Model.Disponibilidades[i].HoraFim" />
+                                                <label class="form-check-label" for="disponibilidade_@i" style="cursor: pointer;">
+                                                    <strong>@turnoNome</strong><br>
+                                                    <small class="text-muted">@Model.Disponibilidades[i].HoraInicio.ToString(@"hh\:mm") - @Model.Disponibilidades[i].HoraFim.ToString(@"hh\:mm")</small>
+                                                </label>
+                                            </div>
+                                        }
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+                <span asp-validation-for="Disponibilidades" class="text-danger"></span>
+            </div>
+
             <button type="submit" class="btn-enviar">
-                <i class="fas fa-paper-plane"></i> Enviar Solicitação
+                <i class="fas fa-paper-plane"></i> Enviar Cadastro
             </button>
 
             <div class="text-center">
@@ -368,7 +432,7 @@
                     });
                     const data = await response.json();
                     if (data.existe) {
-                        alert('Este CPF já possui uma solicitação cadastrada!');
+                        alert('Este CPF já está cadastrado no sistema!');
                         this.focus();
                     }
                 } catch (error) {
@@ -388,7 +452,7 @@
                     });
                     const data = await response.json();
                     if (data.existe) {
-                        alert('Este email já possui uma solicitação cadastrada!');
+                        alert('Este email já está cadastrado no sistema!');
                         this.focus();
                     }
                 } catch (error) {
@@ -408,12 +472,22 @@
                     });
                     const data = await response.json();
                     if (data.existe) {
-                        alert('Este CRO já possui uma solicitação cadastrada!');
+                        alert('Este CRO já está cadastrado no sistema!');
                         this.focus();
                     }
                 } catch (error) {
                     console.error('Erro ao validar CRO:', error);
                 }
+            }
+        });
+
+        // Validação de disponibilidades antes de enviar
+        document.getElementById('formVoluntario')?.addEventListener('submit', function(e) {
+            const checkboxes = document.querySelectorAll('.disponibilidade-checkbox:checked');
+            if (checkboxes.length === 0) {
+                e.preventDefault();
+                alert('Por favor, selecione pelo menos um turno de disponibilidade.');
+                return false;
             }
         });
     </script>

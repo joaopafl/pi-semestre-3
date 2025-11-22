@@ -316,8 +316,8 @@ namespace Pi_Odonto.Controllers
             }
 
             var dentistas = _context.Dentistas
-                .Include(d => d.EscalaTrabalho)
                 .OrderBy(d => d.Nome)
+                .ThenBy(d => d.Ativo ? 0 : 1) // Ativos primeiro
                 .ToList();
 
             return View(dentistas);
@@ -332,9 +332,7 @@ namespace Pi_Odonto.Controllers
                 return RedirectToAction("AdminLogin", "Auth");
             }
 
-            ViewBag.Escalas = _context.EscalaTrabalho.ToList();
-
-            var viewModel = new DentistaViewModel();
+            var viewModel = DentistaViewModel.CriarComDisponibilidades();
 
             return View(viewModel);
         }
@@ -343,16 +341,25 @@ namespace Pi_Odonto.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Route("CriarDentista")]
-        public IActionResult CriarDentista(DentistaViewModel viewModel, int? IdEscala)
+        public async Task<IActionResult> CriarDentista(DentistaViewModel viewModel)
         {
             if (!IsAdmin())
             {
                 return RedirectToAction("AdminLogin", "Auth");
             }
 
+            // Validar se pelo menos uma disponibilidade foi selecionada
+            if (viewModel.Disponibilidades == null || !viewModel.Disponibilidades.Any(d => d.Selecionado))
+            {
+                ModelState.AddModelError("", "Por favor, selecione pelo menos um turno de disponibilidade.");
+            }
+
             if (!ModelState.IsValid)
             {
-                ViewBag.Escalas = _context.EscalaTrabalho.ToList();
+                if (viewModel.Disponibilidades == null || viewModel.Disponibilidades.Count == 0)
+                {
+                    viewModel = DentistaViewModel.CriarComDisponibilidades();
+                }
                 return View(viewModel);
             }
 
@@ -364,13 +371,34 @@ namespace Pi_Odonto.Controllers
                 Endereco = viewModel.Endereco,
                 Email = viewModel.Email,
                 Telefone = viewModel.Telefone,
-                IdEscala = IdEscala,
                 Ativo = true,
                 Senha = PasswordHelper.HashPassword(viewModel.Cro + "123")
             };
 
             _context.Dentistas.Add(dentista);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
+
+            // Criar disponibilidades selecionadas
+            var disponibilidadesSelecionadas = viewModel.Disponibilidades
+                .Where(d => d.Selecionado)
+                .ToList();
+
+            foreach (var disponibilidade in disponibilidadesSelecionadas)
+            {
+                var disponibilidadeDentista = new DisponibilidadeDentista
+                {
+                    IdDentista = dentista.Id,
+                    DiaSemana = disponibilidade.DiaSemana,
+                    HoraInicio = disponibilidade.HoraInicio,
+                    HoraFim = disponibilidade.HoraFim,
+                    Ativo = true,
+                    DataCadastro = DateTime.Now
+                };
+
+                _context.DisponibilidadesDentista.Add(disponibilidadeDentista);
+            }
+
+            await _context.SaveChangesAsync();
 
             TempData["Sucesso"] = $"Dentista cadastrado com sucesso! Senha inicial: {viewModel.Cro}123";
             return RedirectToAction("Dentistas");
@@ -378,24 +406,22 @@ namespace Pi_Odonto.Controllers
 
         // GET: Editar Dentista (REFATORADO INCLUSÃO)
         [Route("EditarDentista/{id}")]
-        public IActionResult EditarDentista(int id)
+        public async Task<IActionResult> EditarDentista(int id)
         {
             if (!IsAdmin())
             {
                 return RedirectToAction("AdminLogin", "Auth");
             }
 
-            var dentista = _context.Dentistas
-                .Include(d => d.EscalaTrabalho)
-                .FirstOrDefault(d => d.Id == id);
+            var dentista = await _context.Dentistas
+                .Include(d => d.Disponibilidades)
+                .FirstOrDefaultAsync(d => d.Id == id);
 
             if (dentista == null)
             {
                 TempData["Erro"] = "Dentista não encontrado.";
                 return RedirectToAction("Dentistas");
             }
-
-            ViewBag.Escalas = _context.EscalaTrabalho.ToList();
 
             var viewModel = new DentistaViewModel
             {
@@ -406,8 +432,14 @@ namespace Pi_Odonto.Controllers
                 Endereco = dentista.Endereco,
                 Email = dentista.Email,
                 Telefone = dentista.Telefone,
-                IdEscala = dentista.IdEscala,
             };
+
+            // Carregar disponibilidades existentes
+            var disponibilidadesExistentes = dentista.Disponibilidades
+                .Where(d => d.Ativo)
+                .ToList();
+
+            viewModel = DentistaViewModel.CarregarComDisponibilidadesExistentes(viewModel, disponibilidadesExistentes);
 
             return View(viewModel);
         }
@@ -416,21 +448,41 @@ namespace Pi_Odonto.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Route("EditarDentista/{id}")]
-        public IActionResult EditarDentista(DentistaViewModel viewModel, int? IdEscala)
+        public async Task<IActionResult> EditarDentista(DentistaViewModel viewModel)
         {
             if (!IsAdmin())
             {
                 return RedirectToAction("AdminLogin", "Auth");
             }
 
+            // Validar se pelo menos uma disponibilidade foi selecionada
+            if (viewModel.Disponibilidades == null || !viewModel.Disponibilidades.Any(d => d.Selecionado))
+            {
+                ModelState.AddModelError("", "Por favor, selecione pelo menos um turno de disponibilidade.");
+            }
+
             if (!ModelState.IsValid)
             {
-                ViewBag.Escalas = _context.EscalaTrabalho.ToList();
+                if (viewModel.Disponibilidades == null || viewModel.Disponibilidades.Count == 0)
+                {
+                    var dentistaTemp = await _context.Dentistas
+                        .Include(d => d.Disponibilidades)
+                        .FirstOrDefaultAsync(d => d.Id == viewModel.Id);
+                    
+                    if (dentistaTemp != null)
+                    {
+                        var disponibilidadesExistentes = dentistaTemp.Disponibilidades
+                            .Where(d => d.Ativo)
+                            .ToList();
+                        viewModel = DentistaViewModel.CarregarComDisponibilidadesExistentes(viewModel, disponibilidadesExistentes);
+                    }
+                }
                 return View(viewModel);
             }
 
-            var dentista = _context.Dentistas
-                .FirstOrDefault(d => d.Id == viewModel.Id);
+            var dentista = await _context.Dentistas
+                .Include(d => d.Disponibilidades)
+                .FirstOrDefaultAsync(d => d.Id == viewModel.Id);
 
             if (dentista == null)
             {
@@ -438,33 +490,74 @@ namespace Pi_Odonto.Controllers
                 return RedirectToAction("Dentistas");
             }
 
-            // Atualizar dados
+            // Atualizar dados básicos
             dentista.Nome = viewModel.Nome;
             dentista.Cpf = viewModel.Cpf;
             dentista.Cro = viewModel.Cro;
             dentista.Endereco = viewModel.Endereco;
             dentista.Email = viewModel.Email;
             dentista.Telefone = viewModel.Telefone;
-            dentista.IdEscala = IdEscala;
 
-            _context.SaveChanges();
+            // Desativar todas as disponibilidades existentes
+            foreach (var disponibilidadeExistente in dentista.Disponibilidades)
+            {
+                disponibilidadeExistente.Ativo = false;
+            }
+
+            // Criar novas disponibilidades selecionadas
+            var disponibilidadesSelecionadas = viewModel.Disponibilidades
+                .Where(d => d.Selecionado)
+                .ToList();
+
+            foreach (var disponibilidade in disponibilidadesSelecionadas)
+            {
+                // Verificar se já existe (mas está desativada)
+                var existente = dentista.Disponibilidades.FirstOrDefault(d => 
+                    d.DiaSemana == disponibilidade.DiaSemana &&
+                    d.HoraInicio == disponibilidade.HoraInicio &&
+                    d.HoraFim == disponibilidade.HoraFim);
+
+                if (existente != null)
+                {
+                    // Reativar a existente
+                    existente.Ativo = true;
+                    existente.DataCadastro = DateTime.Now;
+                }
+                else
+                {
+                    // Criar nova disponibilidade
+                    var novaDisponibilidade = new DisponibilidadeDentista
+                    {
+                        IdDentista = dentista.Id,
+                        DiaSemana = disponibilidade.DiaSemana,
+                        HoraInicio = disponibilidade.HoraInicio,
+                        HoraFim = disponibilidade.HoraFim,
+                        Ativo = true,
+                        DataCadastro = DateTime.Now
+                    };
+
+                    _context.DisponibilidadesDentista.Add(novaDisponibilidade);
+                }
+            }
+
+            await _context.SaveChangesAsync();
 
             TempData["Sucesso"] = "Dentista atualizado com sucesso!";
             return RedirectToAction("Dentistas");
         }
 
-        // POST: Deletar Dentista (MANTIDO - Soft Delete)
+        // POST: Toggle Ativo/Desativar Dentista
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Route("DeletarDentista/{id}")]
-        public IActionResult DeletarDentista(int id)
+        [Route("ToggleAtivoDentista/{id}")]
+        public async Task<IActionResult> ToggleAtivoDentista(int id)
         {
             if (!IsAdmin())
             {
                 return RedirectToAction("AdminLogin", "Auth");
             }
 
-            var dentista = _context.Dentistas.Find(id);
+            var dentista = await _context.Dentistas.FindAsync(id);
 
             if (dentista == null)
             {
@@ -472,26 +565,30 @@ namespace Pi_Odonto.Controllers
                 return RedirectToAction("Dentistas");
             }
 
-            // Desativar em vez de deletar (soft delete)
-            dentista.Ativo = false;
-            _context.SaveChanges();
+            // Alternar status ativo/inativo
+            dentista.Ativo = !dentista.Ativo;
+            await _context.SaveChangesAsync();
 
-            TempData["Sucesso"] = "Dentista desativado com sucesso!";
+            var mensagem = dentista.Ativo 
+                ? "Dentista ativado com sucesso!" 
+                : "Dentista desativado com sucesso!";
+            
+            TempData["Sucesso"] = mensagem;
             return RedirectToAction("Dentistas");
         }
 
         // GET: Detalhes do Dentista (REFATORADO INCLUSÃO)
         [Route("DetalhesDentista/{id}")]
-        public IActionResult DetalhesDentista(int id)
+        public async Task<IActionResult> DetalhesDentista(int id)
         {
             if (!IsAdmin())
             {
                 return RedirectToAction("AdminLogin", "Auth");
             }
 
-            var dentista = _context.Dentistas
-                .Include(d => d.EscalaTrabalho)
-                .FirstOrDefault(d => d.Id == id);
+            var dentista = await _context.Dentistas
+                .Include(d => d.Disponibilidades)
+                .FirstOrDefaultAsync(d => d.Id == id);
 
             if (dentista == null)
             {

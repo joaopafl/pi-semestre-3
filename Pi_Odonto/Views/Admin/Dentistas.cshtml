@@ -39,7 +39,8 @@
                                 <th>CRO</th>
                                 <th>Telefone</th>
                                 <th>Email</th>
-                                <th width="200">Ações</th>
+                                <th>Status</th>
+                                <th width="250">Ações</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -83,18 +84,36 @@
                                         </a>
                                     </td>
                                     <td>
+                                        @if (dentista.Ativo)
+                                        {
+                                            <span class="badge bg-success">
+                                                <i class="fas fa-check-circle"></i> Ativo
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-danger">
+                                                <i class="fas fa-ban"></i> Inativo
+                                            </span>
+                                        }
+                                    </td>
+                                    <td>
                                         <div class="btn-group btn-group-sm" role="group">
-                                            @* Rota alterada para DetalhesDentista *@
                                             <a href="@Url.Action("DetalhesDentista", new { id = dentista.Id })" class="btn btn-outline-info" title="Ver detalhes">
                                                 <i class="fas fa-eye"></i> Detalhes
                                             </a>
-                                            @* Rota alterada para EditarDentista *@
                                             <a href="@Url.Action("EditarDentista", new { id = dentista.Id })" class="btn btn-outline-warning" title="Editar">
                                                 <i class="fas fa-edit"></i> Editar
                                             </a>
-                                            <a href="@Url.Action("Delete", new { id = dentista.Id })" class="btn btn-outline-danger" title="Excluir">
-                                                <i class="fas fa-trash"></i> Excluir
-                                            </a>
+                                            <form asp-action="ToggleAtivoDentista" asp-route-id="@dentista.Id" method="post" style="display: inline;">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" 
+                                                        class="btn btn-sm @(dentista.Ativo ? "btn-outline-danger" : "btn-outline-success")" 
+                                                        title="@(dentista.Ativo ? "Desativar" : "Ativar")"
+                                                        onclick="return confirm('Tem certeza que deseja @(dentista.Ativo ? "desativar" : "ativar") este dentista?');">
+                                                    <i class="fas fa-@(dentista.Ativo ? "ban" : "check")"></i> @(dentista.Ativo ? "Desativar" : "Ativar")
+                                                </button>
+                                            </form>
                                         </div>
                                     </td>
                                 </tr>
