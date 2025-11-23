@@ -13,7 +13,7 @@ namespace Pi_Odonto.ViewModels
 
         [Required(ErrorMessage = "A data de nascimento é obrigatória.")]
         [DataType(DataType.Date)]
-        public DateTime DataNascimento { get; set; }
+        public DateTime? DataNascimento { get; set; }  // <-- MUDANÇA AQUI: adicionei "?"
 
         [Required(ErrorMessage = "O gênero é obrigatório.")]
         [StringLength(20)]
@@ -28,7 +28,6 @@ namespace Pi_Odonto.ViewModels
         [StringLength(200, ErrorMessage = "O campo observações pode ter no máximo 200 caracteres.")]
         public string Observacoes { get; set; } = string.Empty;
 
-        // Propriedades adicionais baseadas na view
         [Required(ErrorMessage = "O parentesco é obrigatório.")]
         [StringLength(50)]
         public string Parentesco { get; set; } = string.Empty;
@@ -37,12 +36,26 @@ namespace Pi_Odonto.ViewModels
         [StringLength(14, ErrorMessage = "CPF deve ter formato válido.")]
         public string Cpf { get; set; } = string.Empty;
 
-        // Propriedade calculada para idade
-        public int Idade
+        // Propriedade calculada para idade (com verificação de null)
+        public int? Idade
         {
             get
             {
-                return DateTime.Now.Year - DataNascimento.Year;
+                if (DataNascimento.HasValue)
+                {
+                    var hoje = DateTime.Now;
+                    int idade = hoje.Year - DataNascimento.Value.Year;
+
+                    // Ajusta se ainda não fez aniversário este ano
+                    if (hoje.Month < DataNascimento.Value.Month ||
+                        (hoje.Month == DataNascimento.Value.Month && hoje.Day < DataNascimento.Value.Day))
+                    {
+                        idade--;
+                    }
+
+                    return idade;
+                }
+                return null;
             }
         }
     }

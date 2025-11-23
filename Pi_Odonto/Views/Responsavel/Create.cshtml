@@ -46,13 +46,13 @@
         font-weight: 500;
     }
 
-        .step.active {
-            color: var(--cor-primaria);
-        }
+    .step.active {
+        color: var(--cor-primaria);
+    }
 
-        .step.completed {
-            color: var(--cor-secundaria);
-        }
+    .step.completed {
+        color: var(--cor-secundaria);
+    }
 
     .step-number {
         width: 30px;
@@ -167,17 +167,16 @@
         display: none;
     }
 
-        .step-content.active {
-            display: block;
-            animation: fadeIn 0.3s ease-in;
-        }
+    .step-content.active {
+        display: block;
+        animation: fadeIn 0.3s ease-in;
+    }
 
     @@keyframes fadeIn {
         from {
             opacity: 0;
             transform: translateY(10px);
         }
-
         to {
             opacity: 1;
             transform: translateY(0);
@@ -215,6 +214,33 @@
         0% { transform: rotate(0deg); }
         100% { transform: rotate(360deg); }
     }
+
+    /* Adicione no bloco <style> do início do arquivo */
+    .form-control.is-invalid {
+        border-color: #dc3545 !important;
+        padding-right: calc(1.5em + 0.75rem);
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23dc3545'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23dc3545' stroke='none'/%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right calc(0.375em + 0.1875rem) center;
+        background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+    }
+
+        .form-control.is-invalid:focus {
+            border-color: #dc3545;
+            box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+        }
+
+    .crianca-error-message {
+        color: #dc3545;
+        font-size: 0.75rem;
+        margin-top: 0.25rem;
+        display: none;
+    }
+
+        .crianca-error-message.show {
+            display: block;
+        }
+
 </style>
 
 <div class="container-compact">
@@ -419,13 +445,9 @@
                         <button type="button" class="btn btn-outline-secondary btn-compact" onclick="etapaAnterior()">
                             <i class="fas fa-arrow-left"></i> Etapa Anterior
                         </button>
-                        <div class="row mt-4">
-                            <div class="col text-right">
-                                <button type="submit" id="btnFinalizarCadastro" class="btn btn-success">
-                                    Finalizar Cadastro
-                                </button>
-                            </div>
-                        </div>
+                        <button type="submit" id="btnFinalizarCadastro" class="btn btn-success btn-compact">
+                            <i class="fas fa-check"></i> Finalizar Cadastro
+                        </button>
                     </div>
                 </div>
             </form>
@@ -438,7 +460,10 @@
     var opcoesParentesco = @Html.Raw(Json.Serialize(Model.OpcoesParentesco));
     var etapaAtual = 1;
     var validacoesPendentes = new Set();
-    // Validação de duplicação
+
+    // ====================================================================================
+    // VALIDAÇÃO DE CPF
+    // ====================================================================================
     function validarCPF(cpf) {
         cpf = cpf.replace(/\D/g, '');
         if (cpf.length !== 11) return false;
@@ -463,11 +488,21 @@
         return true;
     }
 
+    // ====================================================================================
+    // VALIDAÇÕES ASSÍNCRONAS (CPF, EMAIL, TELEFONE)
+    // ====================================================================================
     async function verificarCpfExistente(cpf, inputElement, errorElement, spinnerId) {
+        const cpfLimpo = cpf.replace(/\D/g, '');
+
+        if (cpfLimpo.length !== 11) {
+            return true; // Deixa a validação padrão tratar
+        }
+
         if (!validarCPF(cpf)) {
             errorElement.textContent = 'CPF inválido';
             errorElement.style.display = 'block';
             inputElement.classList.add('is-invalid');
+            inputElement.classList.remove('is-valid'); // ADICIONE ESTA LINHA
             return false;
         }
 
@@ -479,24 +514,27 @@
             const response = await fetch('/Responsavel/ValidarCpf', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ cpf: cpf.replace(/\D/g, '') })
+                body: JSON.stringify({ cpf: cpfLimpo })
             });
 
             const data = await response.json();
-            
+
             if (data.existe) {
                 errorElement.textContent = 'Este CPF já está cadastrado no sistema';
                 errorElement.style.display = 'block';
                 inputElement.classList.add('is-invalid');
+                inputElement.classList.remove('is-valid'); // ADICIONE ESTA LINHA
                 return false;
             } else {
                 errorElement.style.display = 'none';
+                errorElement.textContent = ''; // ADICIONE ESTA LINHA
                 inputElement.classList.remove('is-invalid');
+                inputElement.classList.add('is-valid'); // ADICIONE ESTA LINHA
                 return true;
             }
         } catch (error) {
             console.error('Erro ao validar CPF:', error);
-            return true; // Em caso de erro, permite continuar
+            return true;
         } finally {
             spinner.style.display = 'none';
             validacoesPendentes.delete(spinnerId);
@@ -506,7 +544,7 @@
     async function verificarEmailExistente(email, inputElement, errorElement, spinnerId) {
         const emailRegex = /^[^\s@@]+@@[^\s@@]+\.[^\s@@]+$/;
         if (!emailRegex.test(email)) {
-            return true; // Deixa validação HTML padrão tratar
+            return true;
         }
 
         const spinner = document.getElementById(spinnerId);
@@ -544,7 +582,7 @@
     async function verificarTelefoneExistente(telefone, inputElement, errorElement, spinnerId) {
         const telefoneLimpo = telefone.replace(/\D/g, '');
         if (telefoneLimpo.length < 10) {
-            return true; // Deixa validação padrão tratar
+            return true;
         }
 
         const spinner = document.getElementById(spinnerId);
@@ -592,7 +630,47 @@
         };
     }
 
-    // Funções de navegação entre etapas
+    //Função para checar se o cpf já se encontra cadastrado no sistema
+        async function verificarCpfCriancaExistente(cpf, inputElement, index) {
+        const cpfLimpo = cpf.replace(/\D/g, '');
+
+        if (cpfLimpo.length !== 11 || !validarCPF(cpf)) {
+            return true; // Deixa a validação local tratar
+        }
+
+        try {
+            const response = await fetch('/Responsavel/ValidarCpf', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ cpf: cpfLimpo })
+            });
+
+            const data = await response.json();
+
+            if (data.existe) {
+                inputElement.classList.add('is-invalid');
+                mostrarErroCrianca(inputElement, 'Este CPF já está cadastrado no sistema');
+                return false;
+            } else {
+                // Remove erro se estava marcado como duplicado
+                const errorMsg = inputElement.parentElement.querySelector('.crianca-error-message');
+                if (errorMsg && errorMsg.textContent.includes('já está cadastrado')) {
+                    errorMsg.remove();
+                    inputElement.classList.remove('is-invalid');
+                }
+                return true;
+            }
+        } catch (error) {
+            console.error('Erro ao validar CPF da criança:', error);
+            return true;
+        }
+    }
+
+
+
+    // ====================================================================================
+    // NAVEGAÇÃO ENTRE ETAPAS
+    // ====================================================================================
     async function proximaEtapa() {
         if (validacoesPendentes.size > 0) {
             alert('Aguarde a validação dos dados...');
@@ -626,6 +704,7 @@
 
         step1.classList.remove('active', 'completed');
         step2.classList.remove('active', 'completed');
+        connector.style.background = '#dee2e6';
 
         if (etapaAtual === 1) {
             step1.classList.add('active');
@@ -636,45 +715,253 @@
         }
     }
 
-    async function validarEtapa1() {
+    // ====================================================================================
+    // VALIDAÇÃO ETAPA 1
+    // ====================================================================================
+        async function validarEtapa1() {
         let isValid = true;
-        const requiredFields = document.querySelectorAll('#step1-content input[required], #step1-content textarea[required]');
 
+        // Limpa todos os erros visuais primeiro
+        document.querySelectorAll('#step1-content .is-invalid').forEach(el => {
+            el.classList.remove('is-invalid');
+        });
+
+        // Validação de campos obrigatórios
+        const requiredFields = document.querySelectorAll('#step1-content input[required], #step1-content textarea[required]');
         requiredFields.forEach(field => {
             if (!field.value.trim()) {
                 field.classList.add('is-invalid');
                 isValid = false;
-            } else {
-                field.classList.remove('is-invalid');
-                field.classList.add('is-valid');
             }
         });
 
-        const senha = document.querySelector('input[name="Responsavel.Senha"]').value;
-        const confirmarSenha = document.querySelector('input[name="ConfirmarSenha"]').value;
+        // Validação de Senha
+        const senhaInput = document.querySelector('input[name="Responsavel.Senha"]');
+        const confirmarSenhaInput = document.querySelector('input[name="ConfirmarSenha"]');
+        const senha = senhaInput.value;
+        const confirmarSenha = confirmarSenhaInput.value;
 
-        if (senha !== confirmarSenha) {
-            document.querySelector('input[name="ConfirmarSenha"]').classList.add('is-invalid');
-            alert('As senhas não coincidem!');
+        if (senha !== confirmarSenha || senha.length < 6) {
+            confirmarSenhaInput.classList.add('is-invalid');
+            if (senha !== confirmarSenha) {
+                alert('As senhas não coincidem!');
+            } else {
+                alert('A senha deve ter no mínimo 6 caracteres!');
+            }
             isValid = false;
-        } else {
-            document.querySelector('input[name="ConfirmarSenha"]').classList.remove('is-invalid');
         }
 
-        // Verificar se há campos com erro de duplicação
-        const camposComErro = document.querySelectorAll('#step1-content .is-invalid');
-        if (camposComErro.length > 0) {
+        // Validação específica do CPF DO RESPONSÁVEL (AGUARDA VALIDAÇÃO ASSÍNCRONA)
+        const cpfInput = document.getElementById('cpfInput');
+        const cpfError = document.getElementById('cpf-error');
+        const cpfValue = cpfInput.value;
+
+        if (cpfValue.length !== 14) {
+            cpfError.textContent = 'CPF incompleto (formato: 000.000.000-00)';
+            cpfError.style.display = 'block';
+            cpfInput.classList.add('is-invalid');
+            isValid = false;
+        } else {
+            const cpfValido = validarCPF(cpfValue);
+
+            if (!cpfValido) {
+                cpfError.textContent = 'CPF inválido';
+                cpfError.style.display = 'block';
+                cpfInput.classList.add('is-invalid');
+                isValid = false;
+            } else {
+                // CPF tem formato válido, agora FAZ A VALIDAÇÃO ASSÍNCRONA
+                const cpfExisteNoBanco = await verificarCpfExistente(
+                    cpfValue,
+                    cpfInput,
+                    cpfError,
+                    'cpf-spinner'
+                );
+
+                if (!cpfExisteNoBanco) {
+                    // CPF já existe no banco (responsável ou criança)
+                    cpfInput.classList.add('is-invalid');
+                    isValid = false;
+                } else {
+                    // Tudo OK com o CPF
+                    cpfError.style.display = 'none';
+                    cpfError.textContent = '';
+                    cpfInput.classList.remove('is-invalid');
+                }
+            }
+        }
+
+        // Verifica validações assíncronas de Email e Telefone
+        const emailError = document.getElementById('email-error');
+        const telefoneError = document.getElementById('telefone-error');
+
+        if (emailError.style.display === 'block') {
+            document.getElementById('emailInput').classList.add('is-invalid');
+            isValid = false;
+        }
+
+        if (telefoneError.style.display === 'block') {
+            document.getElementById('telefoneInput').classList.add('is-invalid');
             isValid = false;
         }
 
         if (!isValid) {
+            const firstInvalid = document.querySelector('#step1-content .is-invalid');
+            if (firstInvalid) {
+                firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
             alert('Por favor, corrija os erros antes de prosseguir.');
         }
 
         return isValid;
     }
 
-    // Máscara para CPF
+    // ====================================================================================
+    // VALIDAÇÃO ETAPA 2 (CRIANÇAS)
+    // ====================================================================================
+        async function validarEtapa2() {
+        let isValid = true;
+        const criancaForms = document.querySelectorAll('.crianca-form');
+        const cpfsCriancas = [];
+        const cpfResponsavel = document.getElementById('cpfInput').value.replace(/\D/g, '');
+        const validacoesAssincronas = [];
+
+        criancaForms.forEach((form, index) => {
+            // Limpa erros anteriores
+            form.querySelectorAll('.is-invalid').forEach(el => {
+                el.classList.remove('is-invalid');
+            });
+            form.querySelectorAll('.crianca-error-message').forEach(el => {
+                el.remove();
+            });
+
+            // Validar campos obrigatórios
+            const nomeInput = form.querySelector('input[name*=".Nome"]');
+            const cpfInput = form.querySelector('.cpf-crianca');
+            const dataNascInput = form.querySelector('input[type="date"]');
+            const parentescoSelect = form.querySelector('select[name*=".Parentesco"]');
+
+            // Validação de Nome
+            if (!nomeInput.value.trim()) {
+                nomeInput.classList.add('is-invalid');
+                mostrarErroCrianca(nomeInput, 'Nome é obrigatório');
+                isValid = false;
+            }
+
+            // Validação de Parentesco
+            if (!parentescoSelect.value) {
+                parentescoSelect.classList.add('is-invalid');
+                mostrarErroCrianca(parentescoSelect, 'Selecione o parentesco');
+                isValid = false;
+            }
+
+            // Validação de Data de Nascimento
+            if (!dataNascInput.value) {
+                dataNascInput.classList.add('is-invalid');
+                mostrarErroCrianca(dataNascInput, 'Data de nascimento é obrigatória');
+                isValid = false;
+            } else {
+                const dataNasc = new Date(dataNascInput.value);
+                const hoje = new Date();
+                let idade = hoje.getFullYear() - dataNasc.getFullYear();
+                const m = hoje.getMonth() - dataNasc.getMonth();
+
+                if (m < 0 || (m === 0 && hoje.getDate() < dataNasc.getDate())) {
+                    idade--;
+                }
+
+                if (dataNasc > hoje) {
+                    dataNascInput.classList.add('is-invalid');
+                    mostrarErroCrianca(dataNascInput, 'Data não pode ser futura');
+                    isValid = false;
+                } else if (idade >= 18) {
+                    dataNascInput.classList.add('is-invalid');
+                    mostrarErroCrianca(dataNascInput, 'A criança deve ter menos de 18 anos');
+                    isValid = false;
+                }
+            }
+
+            // Validação de CPF da criança
+            if (!cpfInput.value.trim()) {
+                cpfInput.classList.add('is-invalid');
+                mostrarErroCrianca(cpfInput, 'CPF é obrigatório');
+                isValid = false;
+            } else {
+                const cpfPuro = cpfInput.value.replace(/\D/g, '');
+
+                if (cpfPuro.length !== 11) {
+                    cpfInput.classList.add('is-invalid');
+                    mostrarErroCrianca(cpfInput, 'CPF incompleto (11 dígitos)');
+                    isValid = false;
+                } else if (!validarCPF(cpfInput.value)) {
+                    cpfInput.classList.add('is-invalid');
+                    mostrarErroCrianca(cpfInput, 'CPF inválido');
+                    isValid = false;
+                } else if (cpfPuro === cpfResponsavel) {
+                    cpfInput.classList.add('is-invalid');
+                    mostrarErroCrianca(cpfInput, 'CPF da criança não pode ser igual ao do responsável');
+                    isValid = false;
+                } else {
+                    cpfsCriancas.push({ cpf: cpfPuro, input: cpfInput, index: index });
+                    // Adiciona validação assíncrona na fila
+                    validacoesAssincronas.push(verificarCpfCriancaExistente(cpfInput.value, cpfInput, index));
+                }
+            }
+        });
+
+        // Verificar CPFs duplicados entre crianças
+        const cpfsUnicos = {};
+        cpfsCriancas.forEach(item => {
+            if (cpfsUnicos[item.cpf]) {
+                item.input.classList.add('is-invalid');
+                cpfsUnicos[item.cpf].input.classList.add('is-invalid');
+                mostrarErroCrianca(item.input, 'CPF duplicado com outra criança');
+                mostrarErroCrianca(cpfsUnicos[item.cpf].input, 'CPF duplicado com outra criança');
+                isValid = false;
+            } else {
+                cpfsUnicos[item.cpf] = item;
+            }
+        });
+
+        // Aguarda todas as validações assíncronas
+        if (validacoesAssincronas.length > 0) {
+            const resultados = await Promise.all(validacoesAssincronas);
+            if (resultados.some(r => r === false)) {
+                isValid = false;
+            }
+        }
+
+        if (!isValid) {
+            const firstInvalid = document.querySelector('#step2-content .is-invalid');
+            if (firstInvalid) {
+                firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            alert('Por favor, corrija os erros nos dados das crianças.');
+        }
+
+        return isValid;
+    }
+
+    // Função auxiliar para mostrar mensagens de erro
+    function mostrarErroCrianca(inputElement, mensagem) {
+        // Remove mensagem anterior se existir
+        const errorAnterior = inputElement.parentElement.querySelector('.crianca-error-message');
+        if (errorAnterior) {
+            errorAnterior.remove();
+        }
+
+        // Cria nova mensagem
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'crianca-error-message show';
+        errorDiv.textContent = mensagem;
+
+        // Insere após o input
+        inputElement.parentElement.appendChild(errorDiv);
+    }
+
+    // ====================================================================================
+    // MÁSCARAS
+    // ====================================================================================
     function aplicarMascaraCPF(input) {
         input.addEventListener('input', function(e) {
             let value = e.target.value.replace(/\D/g, '');
@@ -685,7 +972,6 @@
         });
     }
 
-    // Máscara para telefone
     function aplicarMascaraTelefone(input) {
         input.addEventListener('input', function(e) {
             let value = e.target.value.replace(/\D/g, '');
@@ -696,41 +982,9 @@
         });
     }
 
-    // Aplicar máscaras e validações ao carregar
-    document.addEventListener('DOMContentLoaded', function() {
-        const cpfInput = document.getElementById('cpfInput');
-        const emailInput = document.getElementById('emailInput');
-        const telefoneInput = document.getElementById('telefoneInput');
-
-        aplicarMascaraCPF(cpfInput);
-        aplicarMascaraTelefone(telefoneInput);
-        document.querySelectorAll('.cpf-crianca').forEach(aplicarMascaraCPF);
-
-        // Validação de CPF
-        cpfInput.addEventListener('input', debounce(function() {
-            const cpf = this.value;
-            if (cpf.length === 14) { // CPF completo com máscara
-                verificarCpfExistente(cpf, this, document.getElementById('cpf-error'), 'cpf-spinner');
-            }
-        }, 500));
-
-        // Validação de Email
-        emailInput.addEventListener('input', debounce(function() {
-            const email = this.value;
-            if (email.length > 5 && email.includes('@@')) {
-                verificarEmailExistente(email, this, document.getElementById('email-error'), 'email-spinner');
-            }
-        }, 500));
-
-        // Validação de Telefone
-        telefoneInput.addEventListener('input', debounce(function() {
-            const telefone = this.value;
-            if (telefone.replace(/\D/g, '').length >= 10) {
-                verificarTelefoneExistente(telefone, this, document.getElementById('telefone-error'), 'telefone-spinner');
-            }
-        }, 500));
-    });
-
+    // ====================================================================================
+    // GERENCIAMENTO DE CRIANÇAS
+    // ====================================================================================
     function adicionarCrianca() {
         var container = document.getElementById('criancas-container');
 
@@ -762,6 +1016,7 @@
 
         container.insertAdjacentHTML('beforeend', novaCriancaHtml);
 
+        // Aplica máscara no CPF da nova criança
         var novoCampoCpf = container.querySelector('input[name="Criancas[' + criancaIndex + '].Cpf"]');
         aplicarMascaraCPF(novoCampoCpf);
 
@@ -783,29 +1038,127 @@
     }
 
     function atualizarTitulosCriancas() {
-        var criancaForms = document.querySelectorAll('.crianca-form');
-        criancaForms.forEach(function(form, index) {
-            var titulo = form.querySelector('.crianca-header span');
-            titulo.innerHTML = '<i class="fas fa-child"></i> Criança ' + (index + 1);
+        var criancaForms = document.querySelectorAll('#criancas-container .crianca-form');
+        criancaIndex = criancaForms.length;
+
+        criancaForms.forEach((form, index) => {
+            var headerSpan = form.querySelector('.crianca-header span');
+            if (headerSpan) {
+                headerSpan.innerHTML = '<i class="fas fa-child"></i> Criança ' + (index + 1);
+            }
+
+            form.setAttribute('data-index', index);
+            form.querySelectorAll('[name^="Criancas["]').forEach(input => {
+                var oldName = input.getAttribute('name');
+                var newName = oldName.replace(/\[\d+\]/g, '[' + index + ']');
+                input.setAttribute('name', newName);
+
+                var validationSpan = document.querySelector(`span[data-valmsg-for="${oldName}"]`);
+                if (validationSpan) {
+                    validationSpan.setAttribute('data-valmsg-for', newName);
+                }
+            });
+
+            var removeBtn = form.querySelector('.remove-btn');
+            if (removeBtn) {
+                removeBtn.setAttribute('onclick', 'removerCrianca(' + index + ')');
+                if (criancaForms.length === 1) {
+                    removeBtn.style.display = 'none';
+                } else {
+                    removeBtn.style.display = 'block';
+                }
+            }
         });
     }
 
-    // Validação do formulário
-    document.getElementById('cadastroForm').addEventListener('submit', async function(e) {
+    // ====================================================================================
+    // INICIALIZAÇÃO E SUBMIT DO FORMULÁRIO
+    // ====================================================================================
+    document.addEventListener('DOMContentLoaded', function() {
+        const cpfInput = document.getElementById('cpfInput');
+        const emailInput = document.getElementById('emailInput');
+        const telefoneInput = document.getElementById('telefoneInput');
+
+        aplicarMascaraCPF(cpfInput);
+        aplicarMascaraTelefone(telefoneInput);
+        document.querySelectorAll('.cpf-crianca').forEach(aplicarMascaraCPF);
+
+        // Validação de CPF
+        cpfInput.addEventListener('input', debounce(function() {
+            const cpf = this.value;
+            if (cpf.length === 14) {
+                verificarCpfExistente(cpf, this, document.getElementById('cpf-error'), 'cpf-spinner');
+            }
+        }, 500));
+
+        // Validação de Email
+        emailInput.addEventListener('input', debounce(function() {
+            const email = this.value;
+            if (email.length > 5 && email.includes('@@')) {
+                verificarEmailExistente(email, this, document.getElementById('email-error'), 'email-spinner');
+            }
+        }, 500));
+
+        // Validação de Telefone
+        telefoneInput.addEventListener('input', debounce(function() {
+            const telefone = this.value;
+            if (telefone.replace(/\D/g, '').length >= 10) {
+                verificarTelefoneExistente(telefone, this, document.getElementById('telefone-error'), 'telefone-spinner');
+            }
+        }, 500));
+    });
+        // CONFIGURAR CAMPOS DE DATA - facilita seleção
+    document.querySelectorAll('input[type="date"]').forEach(input => {
+        // Define data máxima como hoje (não pode selecionar futuro)
+        const hoje = new Date();
+        const dataMaxima = hoje.toISOString().split('T')[0];
+        input.setAttribute('max', dataMaxima);
+
+        // Define data mínima (18 anos atrás - idade máxima da criança)
+        const dataMinima = new Date();
+        dataMinima.setFullYear(dataMinima.getFullYear() - 18);
+        input.setAttribute('min', dataMinima.toISOString().split('T')[0]);
+
+        // Define valor padrão sugerido (10 anos atrás - idade média)
+        if (!input.value || input.value === '0001-01-01') {
+            const dataSugerida = new Date();
+            dataSugerida.setFullYear(dataSugerida.getFullYear() - 10);
+            input.value = dataSugerida.toISOString().split('T')[0];
+        }
+    });
+        // Submit do formulário
+        document.getElementById('cadastroForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        // PROTEÇÃO CONTRA DUPLO CLIQUE
+        const btnFinalizar = document.getElementById('btnFinalizarCadastro');
+        if (btnFinalizar.disabled) {
+            return false; // Já está processando
+        }
+
         if (validacoesPendentes.size > 0) {
-            e.preventDefault();
             alert('Aguarde a validação dos dados...');
-            return;
+            return false;
         }
 
-        // Verificar se há campos com erro
-        const camposComErro = document.querySelectorAll('.is-invalid');
-        if (camposComErro.length > 0) {
-            e.preventDefault();
-            alert('Por favor, corrija os erros antes de finalizar o cadastro.');
-            return;
+        // Se está na etapa 1, avisa para ir para etapa 2
+        if (etapaAtual === 1) {
+            alert('Por favor, preencha os dados das crianças na próxima etapa.');
+            return false;
         }
 
+        // Valida etapa 2 antes de submeter
+        const etapa2Valida = await validarEtapa2();
+
+        if (!etapa2Valida) {
+            return false;
+        }
+
+        // DESABILITA O BOTÃO E MOSTRA LOADING
+        btnFinalizar.disabled = true;
+        btnFinalizar.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Processando cadastro...';
+
+        // Remove máscaras antes de enviar
         const cpfResponsavel = document.getElementById('cpfInput');
         if (cpfResponsavel) {
             cpfResponsavel.value = cpfResponsavel.value.replace(/\D/g, '');
@@ -821,34 +1174,8 @@
             telefoneInput.value = telefoneInput.value.replace(/\D/g, '');
         }
 
-        let isValid = true;
-        const inputs = this.querySelectorAll('input[required], textarea[required], select[required]');
-
-        inputs.forEach(function(input) {
-            if (!input.value.trim()) {
-                input.classList.add('is-invalid');
-                isValid = false;
-            } else {
-                input.classList.remove('is-invalid');
-                input.classList.add('is-valid');
-            }
-        });
-
-        const cpfInputs = this.querySelectorAll('#cpfInput, .cpf-crianca');
-        cpfInputs.forEach(function(input) {
-            const cpf = input.value;
-            if (cpf.length !== 11) {
-                input.classList.add('is-invalid');
-                isValid = false;
-            }
-        });
-
-        if (!isValid) {
-            e.preventDefault();
-            document.querySelector('.alert-danger').classList.remove('d-none');
-            document.querySelector('.alert-danger').innerHTML = 'Por favor, preencha todos os campos obrigatórios corretamente.';
-            window.scrollTo(0, 0);
-        }
+        // Submete o formulário
+        this.submit();
     });
 
     // Validação em tempo real
@@ -858,563 +1185,11 @@
                 e.target.classList.add('is-invalid');
             } else {
                 e.target.classList.remove('is-invalid');
-                e.target.classList.add('is-valid');
             }
         }
     }, true);
 </script>
-<script>
-    var criancaIndex = @Model.Criancas.Count;
-    var opcoesParentesco = @Html.Raw(Json.Serialize(Model.OpcoesParentesco));
-    var etapaAtual = 1;
-    var validacoesPendentes = new Set();
 
-    // ----------------------------------------------------------------------
-    // NOVO: Função para atualizar nomes e índices dos campos e títulos
-    // ----------------------------------------------------------------------
-    function atualizarTitulosCriancas() {
-        var criancaForms = document.querySelectorAll('#criancas-container .crianca-form');
-        criancaIndex = criancaForms.length; // Atualiza o índice global de rastreamento
-
-        criancaForms.forEach((form, index) => {
-            // 1. Atualiza o título
-            var headerSpan = form.querySelector('.crianca-header span');
-            if (headerSpan) {
-                headerSpan.innerHTML = '<i class="fas fa-child"></i> Criança ' + (index + 1);
-            }
-
-            // 2. Atualiza os atributos name e data-index
-            form.setAttribute('data-index', index);
-            form.querySelectorAll('[name^="Criancas["]').forEach(input => {
-                var oldName = input.getAttribute('name');
-                var newName = oldName.replace(/\[\d+\]/g, '[' + index + ']');
-                input.setAttribute('name', newName);
-
-                // 3. Atualiza os validation messages (se existirem)
-                var validationSpan = document.querySelector(`span[data-valmsg-for="${oldName}"]`);
-                if (validationSpan) {
-                    validationSpan.setAttribute('data-valmsg-for', newName);
-                }
-            });
-
-            // 4. Lógica do botão de remoção
-            var removeBtn = form.querySelector('.remove-btn');
-            if (removeBtn) {
-                removeBtn.setAttribute('onclick', 'removerCrianca(' + index + ')');
-                if (criancaForms.length === 1) {
-                    removeBtn.style.display = 'none'; // Desabilita se for a única
-                } else {
-                    removeBtn.style.display = 'block';
-                }
-            }
-        });
-    }
-
-
-    // Validação de duplicação
-    function validarCPF(cpf) {
-        cpf = cpf.replace(/\D/g, '');
-        if (cpf.length !== 11) return false;
-        if (/^(\d)\1{10}$/.test(cpf)) return false;
-
-        let soma = 0;
-        for (let i = 0; i < 9; i++) {
-            soma += parseInt(cpf.charAt(i)) * (10 - i);
-        }
-        let resto = 11 - (soma % 11);
-        if (resto === 10 || resto === 11) resto = 0;
-        if (resto !== parseInt(cpf.charAt(9))) return false;
-
-        soma = 0;
-        for (let i = 0; i < 10; i++) {
-            soma += parseInt(cpf.charAt(i)) * (11 - i);
-        }
-        resto = 11 - (soma % 11);
-        if (resto === 10 || resto === 11) resto = 0;
-        if (resto !== parseInt(cpf.charAt(10))) return false;
-
-        return true;
-    }
-
-    async function verificarCpfExistente(cpf, inputElement, errorElement, spinnerId) {
-        if (!validarCPF(cpf)) {
-            errorElement.textContent = 'CPF inválido';
-            errorElement.style.display = 'block';
-            inputElement.classList.add('is-invalid');
-            return false;
-        }
-
-        const spinner = document.getElementById(spinnerId);
-        spinner.style.display = 'inline-block';
-        validacoesPendentes.add(spinnerId);
-
-        try {
-            const response = await fetch('/Responsavel/ValidarCpf', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ cpf: cpf.replace(/\D/g, '') })
-            });
-
-            const data = await response.json();
-
-            if (data.existe) {
-                errorElement.textContent = 'Este CPF já está cadastrado no sistema';
-                errorElement.style.display = 'block';
-                inputElement.classList.add('is-invalid');
-                return false;
-            } else {
-                errorElement.style.display = 'none';
-                inputElement.classList.remove('is-invalid');
-                return true;
-            }
-        } catch (error) {
-            console.error('Erro ao validar CPF:', error);
-            return true; // Em caso de erro, permite continuar
-        } finally {
-            spinner.style.display = 'none';
-            validacoesPendentes.delete(spinnerId);
-        }
-    }
-
-    async function verificarEmailExistente(email, inputElement, errorElement, spinnerId) {
-        const emailRegex = /^[^\s@@]+@@[^\s@@]+\.[^\s@@]+$/;
-        if (!emailRegex.test(email)) {
-            return true; // Deixa validação HTML padrão tratar
-        }
-
-        const spinner = document.getElementById(spinnerId);
-        spinner.style.display = 'inline-block';
-        validacoesPendentes.add(spinnerId);
-
-        try {
-            const response = await fetch('/Responsavel/ValidarEmail', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: email })
-            });
-
-            const data = await response.json();
-
-            if (data.existe) {
-                errorElement.textContent = 'Este email já está cadastrado no sistema';
-                errorElement.style.display = 'block';
-                inputElement.classList.add('is-invalid');
-                return false;
-            } else {
-                errorElement.style.display = 'none';
-                inputElement.classList.remove('is-invalid');
-                return true;
-            }
-        } catch (error) {
-            console.error('Erro ao validar email:', error);
-            return true;
-        } finally {
-            spinner.style.display = 'none';
-            validacoesPendentes.delete(spinnerId);
-        }
-    }
-
-    async function verificarTelefoneExistente(telefone, inputElement, errorElement, spinnerId) {
-        const telefoneLimpo = telefone.replace(/\D/g, '');
-        if (telefoneLimpo.length < 10) {
-            return true; // Deixa validação padrão tratar
-        }
-
-        const spinner = document.getElementById(spinnerId);
-        spinner.style.display = 'inline-block';
-        validacoesPendentes.add(spinnerId);
-
-        try {
-            const response = await fetch('/Responsavel/ValidarTelefone', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ telefone: telefoneLimpo })
-            });
-
-            const data = await response.json();
-
-            if (data.existe) {
-                errorElement.textContent = 'Este telefone já está cadastrado no sistema';
-                errorElement.style.display = 'block';
-                inputElement.classList.add('is-invalid');
-                return false;
-            } else {
-                errorElement.style.display = 'none';
-                inputElement.classList.remove('is-invalid');
-                return true;
-            }
-        } catch (error) {
-            console.error('Erro ao validar telefone:', error);
-            return true;
-        } finally {
-            spinner.style.display = 'none';
-            validacoesPendentes.delete(spinnerId);
-        }
-    }
-
-    function debounce(func, wait) {
-        let timeout;
-        return function executedFunction() {
-            const args = arguments;
-            const later = function() {
-                clearTimeout(timeout);
-                func.apply(this, args);
-            };
-            clearTimeout(timeout);
-            timeout = setTimeout(later, wait);
-        };
-    }
-
-    // Funções de navegação entre etapas
-    async function proximaEtapa() {
-        if (validacoesPendentes.size > 0) {
-            alert('Aguarde a validação dos dados...');
-            return;
-        }
-
-        if (await validarEtapa1()) {
-            etapaAtual = 2;
-            mostrarEtapa(2);
-            atualizarIndicadores();
-        }
-    }
-
-    function etapaAnterior() {
-        etapaAtual = 1;
-        mostrarEtapa(1);
-        atualizarIndicadores();
-    }
-
-    function mostrarEtapa(numeroEtapa) {
-        document.querySelectorAll('.step-content').forEach(content => {
-            content.classList.remove('active');
-        });
-        document.getElementById('step' + numeroEtapa + '-content').classList.add('active');
-    }
-
-    function atualizarIndicadores() {
-        const step1 = document.getElementById('step1-indicator');
-        const step2 = document.getElementById('step2-indicator');
-        const connector = document.getElementById('connector1');
-
-        step1.classList.remove('active', 'completed');
-        step2.classList.remove('active', 'completed');
-        connector.style.background = '#dee2e6'; // Cor padrão
-
-        if (etapaAtual === 1) {
-            step1.classList.add('active');
-        } else if (etapaAtual === 2) {
-            step1.classList.add('completed');
-            step2.classList.add('active');
-            connector.style.background = 'var(--cor-secundaria)';
-        }
-    }
-
-    async function validarEtapa1() {
-        let isValid = true;
-        const requiredFields = document.querySelectorAll('#step1-content input[required], #step1-content textarea[required]');
-
-        requiredFields.forEach(field => {
-            if (!field.value.trim()) {
-                field.classList.add('is-invalid');
-                isValid = false;
-            } else {
-                field.classList.remove('is-invalid');
-                // Adiciona 'is-valid' apenas para feedback visual
-            }
-        });
-
-        // Verifica validação customizada (erros de duplicação assíncrona)
-        const customErrors = document.querySelectorAll('#step1-content .validation-error-custom');
-        customErrors.forEach(errorDiv => {
-            if (errorDiv.style.display === 'block') {
-                isValid = false;
-            }
-        });
-
-        const senhaInput = document.querySelector('input[name="Responsavel.Senha"]');
-        const confirmarSenhaInput = document.querySelector('input[name="ConfirmarSenha"]');
-        const senha = senhaInput.value;
-        const confirmarSenha = confirmarSenhaInput.value;
-
-        if (senha !== confirmarSenha || senha.length < 6) {
-             confirmarSenhaInput.classList.add('is-invalid');
-             if (senha !== confirmarSenha) {
-                 alert('As senhas não coincidem!');
-             }
-             isValid = false;
-        } else {
-             confirmarSenhaInput.classList.remove('is-invalid');
-        }
-
-        // Garante que o CPF do responsável é válido
-        if (cpfInput.value.length === 14 && !validarCPF(cpfInput.value)) {
-            document.getElementById('cpf-error').textContent = 'CPF inválido';
-            document.getElementById('cpf-error').style.display = 'block';
-            cpfInput.classList.add('is-invalid');
-            isValid = false;
-        }
-
-        if (!isValid) {
-            // Se falhar, forçamos o scroll para o primeiro erro visível.
-            const firstInvalid = document.querySelector('.is-invalid:not(.cpf-crianca)');
-            if (firstInvalid) {
-                 firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-            alert('Por favor, corrija os erros nos Dados do Responsável antes de prosseguir.');
-        }
-
-        return isValid;
-    }
-
-    // ----------------------------------------------------------------------
-    // NOVO: Função para validar a Etapa 2 (Crianças)
-    // ----------------------------------------------------------------------
-    // Função que valida todos os campos da Etapa 2 (Crianças)
-    async function validarEtapa2() {
-        let isValid = true;
-        const criancaForms = document.querySelectorAll('.crianca-form');
-        const cpfsCriancas = new Set(); // Para checagem de duplicidade INTRA-FORMULÁRIO
-        let errosDeIdade = 0;
-
-        criancaForms.forEach((form, index) => {
-            const requiredFields = form.querySelectorAll('input[required], select[required]');
-            let formIsValid = true;
-
-            // 1. Validação de Campos Obrigatórios (Nome e Parentesco)
-            requiredFields.forEach(field => {
-                if (!field.value.trim()) {
-                    field.classList.add('is-invalid');
-                    formIsValid = false;
-                    isValid = false;
-                } else {
-                    field.classList.remove('is-invalid');
-                }
-            });
-
-            // Pega os campos de CPF e Data de Nascimento desta criança
-            const cpfInput = form.querySelector('input[name$="\\.CPF"]');
-            const dataNascimentoInput = form.querySelector('input[name$="\\.DataNascimento"]');
-
-            // 2. Validação de CPF (Formato e Duplicidade Intra-formulário)
-            if (cpfInput && cpfInput.value.trim()) {
-                const cpfLimpo = cpfInput.value.replace(/[^\d]/g, '');
-
-                // Checa formato
-                if (cpfLimpo.length !== 11) {
-                     cpfInput.classList.add('is-invalid');
-                     // Adiciona a mensagem de erro específica, se necessário
-                     formIsValid = false;
-                     isValid = false;
-                }
-
-                // Checa Duplicidade INTRA-FORMULÁRIO (o novo requisito)
-                else if (cpfsCriancas.has(cpfLimpo)) {
-                    cpfInput.classList.add('is-invalid');
-                    // Alerta as DUAS ocorrências do CPF duplicado
-                    document.querySelectorAll(`input[value="${cpfInput.value}"]`).forEach(dupField => {
-                        dupField.classList.add('is-invalid');
-                        const errorElement = dupField.closest('.form-group, .row').querySelector('.invalid-feedback') || document.createElement('div');
-                        errorElement.classList.add('invalid-feedback');
-                        errorElement.style.display = 'block';
-                        errorElement.innerHTML = 'CPF duplicado no formulário.';
-                        if (!dupField.closest('.form-group, .row').querySelector('.invalid-feedback')) {
-                            dupField.closest('.form-group, .row').appendChild(errorElement);
-                        }
-                    });
-                    formIsValid = false;
-                    isValid = false;
-                }
-                else {
-                    cpfsCriancas.add(cpfLimpo);
-                    cpfInput.classList.remove('is-invalid');
-                }
-            }
-
-            // 3. Validação de Idade (Data de Nascimento)
-            if (dataNascimentoInput && dataNascimentoInput.value.trim()) {
-                const dataNasc = new Date(dataNascimentoInput.value.split('/').reverse().join('-'));
-                const hoje = new Date();
-                const idade = hoje.getFullYear() - dataNasc.getFullYear();
-                const m = hoje.getMonth() - dataNasc.getMonth();
-
-                // Ajuste para garantir 18 anos completos (se ainda não fez aniversário)
-                if (m < 0 || (m === 0 && hoje.getDate() < dataNasc.getDate())) {
-                    idade--;
-                }
-
-                // Critério de falha: Se a idade for 18 anos ou mais
-                if (idade >= 18 || dataNasc > hoje) {
-                    dataNascimentoInput.classList.add('is-invalid');
-                    errosDeIdade++;
-                    formIsValid = false;
-                    isValid = false;
-
-                    // Exibe a mensagem de erro de idade
-                    const errorElement = dataNascimentoInput.closest('.form-group, .row').querySelector('.invalid-feedback') || document.createElement('div');
-                    errorElement.classList.add('invalid-feedback');
-                    errorElement.style.display = 'block';
-                    errorElement.innerHTML = 'Data inválida. A criança deve ter no máximo 18 anos.';
-                    if (!dataNascimentoInput.closest('.form-group, .row').querySelector('.invalid-feedback')) {
-                        dataNascimentoInput.closest('.form-group, .row').appendChild(errorElement);
-                    }
-                } else {
-                    dataNascimentoInput.classList.remove('is-invalid');
-                }
-            }
-
-            // Se o form individual não for válido, marca o global como inválido
-            if (!formIsValid) {
-                isValid = false;
-            }
-        });
-
-        // ==========================================================
-        // PARTE CRUCIAL: Retorno final da função
-        // ==========================================================
-        if (!isValid) {
-            // Se houver erros, alerta o usuário, rola a tela e RETORNA FALSE.
-            alert('Por favor, corrija os erros na Etapa 2 para continuar.');
-
-            // Força a rolagem para o topo da Etapa 2 (Garante a visualização)
-            document.getElementById('etapa2').scrollIntoView({ behavior: 'smooth' });
-
-            return false;
-        }
-
-        // Se chegou até aqui, todas as crianças são válidas
-        return true;
-    }
-
-            // 1. Validação de CPF de Criança
-            const cpfInput = form.querySelector('.cpf-crianca');
-            const cpfPuro = cpfInput.value.replace(/\D/g, '');
-            const validationSpan = form.querySelector(`span[data-valmsg-for="Criancas[${index}].Cpf"]`);
-
-            if (cpfPuro.length === 11) {
-                if (!validarCPF(cpfPuro)) {
-                    validationSpan.textContent = 'CPF inválido.';
-                    validationSpan.style.display = 'block';
-                    cpfInput.classList.add('is-invalid');
-                    formIsValid = false;
-                } else {
-                    validationSpan.textContent = '';
-                    validationSpan.style.display = 'none';
-                    cpfInput.classList.remove('is-invalid');
-                }
-
-                // Adiciona para checagem de duplicidade Intra-Formulário
-                cpfsCriancas.push({ cpf: cpfPuro, index: index, input: cpfInput, validationSpan: validationSpan });
-
-            } else if (cpfPuro.length > 0) {
-                 // Campo preenchido, mas incompleto
-                 validationSpan.textContent = 'CPF incompleto (11 dígitos).';
-                 validationSpan.style.display = 'block';
-                 cpfInput.classList.add('is-invalid');
-                 formIsValid = false;
-            }
-
-            // 2. Validação de Data de Nascimento (Idade)
-            const dataNascimentoInput = form.querySelector('input[type="date"]');
-            const dataNascimento = dataNascimentoInput.value;
-            const dataValidationSpan = form.querySelector(`span[data-valmsg-for="Criancas[${index}].DataNascimento"]`);
-            const maxAge = 18; // Definido no seu [CustomMaxAge]
-
-            if (dataNascimento) {
-                 const dataNasc = new Date(dataNascimento);
-                 const hoje = new Date();
-                 const idade = hoje.getFullYear() - dataNasc.getFullYear();
-                 const m = hoje.getMonth() - dataNasc.getMonth();
-
-                 let idadeFinal = idade;
-                 if (m < 0 || (m === 0 && hoje.getDate() < dataNasc.getDate())) {
-                    idadeFinal--;
-                 }
-
-                 if (idadeFinal < 0) { // Data futura
-                     dataValidationSpan.textContent = 'Data de nascimento inválida (futura).';
-                     dataValidationSpan.style.display = 'block';
-                     dataNascimentoInput.classList.add('is-invalid');
-                     formIsValid = false;
-                 } else if (idadeFinal >= maxAge) {
-                     dataValidationSpan.textContent = `A criança deve ter menos de ${maxAge} anos.`;
-                     dataValidationSpan.style.display = 'block';
-                     dataNascimentoInput.classList.add('is-invalid');
-                     formIsValid = false;
-                 } else {
-                     dataValidationSpan.textContent = '';
-                     dataValidationSpan.style.display = 'none';
-                     dataNascimentoInput.classList.remove('is-invalid');
-                 }
-            }
-
-
-            if (!formIsValid) {
-                isValid = false;
-            }
-        });
-
-        // 3. Validação de Duplicidade Intra-Formulário (CPF entre crianças)
-        const cpfsEncontrados = {};
-        let duplicidadeIntraFormulario = false;
-
-        cpfsCriancas.forEach(item => {
-             if (cpfsEncontrados[item.cpf]) {
-                 duplicidadeIntraFormulario = true;
-                 // Marca o CPF atual como inválido
-                 item.validationSpan.textContent = 'CPF duplicado no formulário.';
-                 item.validationSpan.style.display = 'block';
-                 item.input.classList.add('is-invalid');
-                 // Marca o CPF anterior como inválido
-                 const primeiroDuplicado = cpfsEncontrados[item.cpf];
-                 primeiroDuplicado.validationSpan.textContent = 'CPF duplicado no formulário.';
-                 primeiroDuplicado.validationSpan.style.display = 'block';
-                 primeiroDuplicado.input.classList.add('is-invalid');
-             } else {
-                 cpfsEncontrados[item.cpf] = item;
-             }
-        });
-
-        if (duplicidadeIntraFormulario) {
-            isValid = false;
-        }
-
-        if (!isValid) {
-             // Se falhar, forçamos o scroll para o primeiro erro visível.
-            const firstInvalid = document.querySelector('#step2-content .is-invalid');
-            if (firstInvalid) {
-                 firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-            alert('Por favor, corrija os erros nos Dados das Crianças antes de finalizar.');
-        }
-
-        return isValid;
-    }
-            // Seu listener de submit corrigido:
-    document.getElementById('cadastroForm').addEventListener('submit', async function(e) {
-        // ... (código para e.preventDefault() e etapa 1) ...
-
-        const etapa2Valida = await validarEtapa2();
-
-        if (etapa2Valida) {
-             this.submit();
-        } else {
-             // Se for inválido, o preventDefault já está aplicado.
-             // Precisamos garantir que a visualização da Etapa 2 seja mantida.
-
-             // ADICIONE ESTA LINHA:
-             document.getElementById('etapa1').style.display = 'none';
-             document.getElementById('etapa2').style.display = 'block';
-
-             // E garanta que a classe 'active' está na bolha 2
-             document.getElementById('passo1').classList.remove('active');
-             document.getElementById('passo2').classList.add('active');
-        }
-    });
-    // Máscara para CPF
-    function aplicarMascaraCPF(input) {
-        input.addEventListener('input', function(e) {
-            let value = e.target.value.replace(/\D/g, '');
-            if (value.length <= 11) {
-                value = value.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
-                e
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
