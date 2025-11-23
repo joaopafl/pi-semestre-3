@@ -133,10 +133,21 @@
                     <div class="card-body">
                         <div class="row">
                             @{
+                                var ordemDias = new Dictionary<string, int>
+                                {
+                                    { "Segunda-feira", 1 },
+                                    { "Terça-feira", 2 },
+                                    { "Quarta-feira", 3 },
+                                    { "Quinta-feira", 4 },
+                                    { "Sexta-feira", 5 },
+                                    { "Sábado", 6 },
+                                    { "Domingo", 7 }
+                                };
+                                
                                 var disponibilidadesAgrupadas = Model.Disponibilidades
                                     .Where(d => d.Ativo)
                                     .GroupBy(d => d.DiaSemana)
-                                    .OrderBy(g => g.Key);
+                                    .OrderBy(g => ordemDias.ContainsKey(g.Key) ? ordemDias[g.Key] : 99);
                             }
                             @foreach (var grupo in disponibilidadesAgrupadas)
                             {

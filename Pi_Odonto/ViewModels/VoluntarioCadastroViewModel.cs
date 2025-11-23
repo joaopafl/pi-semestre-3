@@ -13,7 +13,7 @@ namespace Pi_Odonto.ViewModels
         public string Nome { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "O CPF é obrigatório")]
-        [StringLength(11)]
+        [StringLength(14, ErrorMessage = "O CPF deve ter no máximo 14 caracteres (com máscara)")]
         [Display(Name = "CPF")]
         public string Cpf { get; set; } = string.Empty;
 

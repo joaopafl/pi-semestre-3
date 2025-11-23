@@ -41,8 +41,9 @@ namespace Pi_Odonto.Controllers
             if (ModelState.IsValid)
             {
                 // Verificar se já existe CPF, Email ou CRO em Dentistas
+                var cpfLimpo = viewModel.Cpf.Replace(".", "").Replace("-", "").Trim();
                 bool cpfExiste = await _context.Dentistas
-                    .AnyAsync(v => v.Cpf == viewModel.Cpf);
+                    .AnyAsync(v => v.Cpf == cpfLimpo);
 
                 bool emailExiste = await _context.Dentistas
                     .AnyAsync(v => v.Email == viewModel.Email);
@@ -85,7 +86,7 @@ namespace Pi_Odonto.Controllers
                 var dentista = new Dentista
                 {
                     Nome = viewModel.Nome,
-                    Cpf = viewModel.Cpf,
+                    Cpf = viewModel.Cpf.Replace(".", "").Replace("-", "").Trim(),
                     Cro = viewModel.Cro,
                     Email = viewModel.Email,
                     Telefone = viewModel.Telefone,
@@ -140,7 +141,8 @@ namespace Pi_Odonto.Controllers
         public async Task<JsonResult> ValidarCpfVoluntario([FromBody] dynamic data)
         {
             string cpf = data.cpf;
-            bool existe = await _context.Dentistas.AnyAsync(v => v.Cpf == cpf);
+            var cpfLimpo = cpf.Replace(".", "").Replace("-", "").Trim();
+            bool existe = await _context.Dentistas.AnyAsync(v => v.Cpf == cpfLimpo);
             return Json(new { existe });
         }
 

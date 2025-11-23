@@ -252,7 +252,7 @@
                             CPF <span class="required-mark">*</span>
                         </label>
                         <input asp-for="Cpf" class="form-control" placeholder="000.000.000-00" 
-                               id="cpfInput" required />
+                               id="cpfInput" maxlength="14" required />
                         <span asp-validation-for="Cpf" class="text-danger"></span>
                     </div>
                 </div>
@@ -403,12 +403,17 @@
         // Máscaras para CPF e Telefone
         document.querySelector('input[name="Cpf"]').addEventListener('input', function(e) {
             let value = e.target.value.replace(/\D/g, '');
-            if (value.length <= 11) {
+            // Limitar a 11 dígitos numéricos
+            if (value.length > 11) {
+                value = value.substring(0, 11);
+            }
+            // Aplicar máscara
+            if (value.length > 0) {
                 value = value.replace(/(\d{3})(\d)/, '$1.$2');
                 value = value.replace(/(\d{3})(\d)/, '$1.$2');
                 value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
-                e.target.value = value;
             }
+            e.target.value = value;
         });
 
         document.querySelector('input[name="Telefone"]').addEventListener('input', function(e) {
@@ -483,6 +488,12 @@
 
         // Validação de disponibilidades antes de enviar
         document.getElementById('formVoluntario')?.addEventListener('submit', function(e) {
+            // Remover máscara do CPF antes de enviar
+            const cpfInput = document.getElementById('cpfInput');
+            if (cpfInput && cpfInput.value) {
+                cpfInput.value = cpfInput.value.replace(/\D/g, '');
+            }
+            
             const checkboxes = document.querySelectorAll('.disponibilidade-checkbox:checked');
             if (checkboxes.length === 0) {
                 e.preventDefault();
