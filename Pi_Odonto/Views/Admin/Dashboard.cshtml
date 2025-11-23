@@ -5,30 +5,74 @@
 
 <div class="container-fluid mt-4">
     <style>
-        /* REMOVIDO: Estilos específicos de cores (como btn-agendar-consulta-default) para usar .btn-primary e .btn-success */
-        
         /* Classe para forçar largura e altura uniforme nos botões de Ações Rápidas */
         .btn-fixed-size {
-            width: 150px; /* Largura fixa */
-            height: 100px; /* Altura fixa para acomodar duas linhas de texto e o ícone */
-            display: flex; /* Para centralizar o conteúdo verticalmente */
+            width: 150px;
+            height: 100px;
+            display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            padding: 5px; /* Ajusta o padding para que o conteúdo caiba melhor */
-            white-space: normal; /* Permite que o texto quebre linha */
-            line-height: 1.2; /* Ajusta a altura da linha */
+            padding: 5px;
+            white-space: normal;
+            line-height: 1.2;
         }
-        
-        /* NOVO: Garante que todos os botões com cores sólidas tenham texto branco para contraste */
+
+        /* Garante que todos os botões com cores sólidas tenham texto branco para contraste */
         .btn-primary.text-white, .btn-success.text-white, .btn-info.text-white,
         .btn-warning.text-white,
         .btn-primary.text-white:hover, .btn-success.text-white:hover,
         .btn-warning.text-white:hover {
-             color: white !important;
+            color: white !important;
+        }
+
+        /* Estilo para o sininho de notificação */
+        .notification-bell {
+            position: relative;
+            display: inline-block;
+            cursor: pointer;
+            margin-left: 15px;
+            margin-right: 8%;
+        }
+
+            .notification-bell .fa-heart {
+                font-size: 24px;
+                color: #dc3545;
+                transition: all 0.3s ease;
+            }
+
+            .notification-bell:hover .fa-heart {
+                transform: scale(1.1);
+                color: #bb2d3b;
+            }
+
+        .notification-badge {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background-color: #dc3545;
+            color: white;
+            border-radius: 50%;
+            padding: 3px 7px;
+            font-size: 11px;
+            font-weight: bold;
+            min-width: 20px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            animation: pulse 2s infinite;
+        }
+
+        @@keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.1);
+            }
         }
     </style>
-    
+
     <div class="row mb-4">
         <div class="col-md-8">
             <h1 class="text-primary">
@@ -37,22 +81,43 @@
             <p class="text-muted">Painel de controle do sistema</p>
         </div>
         <div class="col-md-4 text-end">
-            <div class="dropdown">
-                <button class="btn btn-outline-primary dropdown-toggle" type="button" id="dropdownMenuButtonAdmin" data-bs-toggle="dropdown" aria-expanded="false">
-                    <i class="fas fa-user-shield"></i> @User.Identity.Name
-                </button>
-                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButtonAdmin">
-                    <li><a class="dropdown-item" href="/Admin/Responsaveis"><i class="fas fa-users"></i> Gerenciar Responsáveis</a></li>
-                    <li><a class="dropdown-item" href="/Admin/Relatorios"><i class="fas fa-chart-bar"></i> Relatórios</a></li>
-                    <li><hr class="dropdown-divider"></li>
-                    <li>
-                        <form asp-action="Logout" asp-controller="Auth" method="post" class="d-inline w-100">
-                            <button type="submit" class="dropdown-item text-danger">
-                                <i class="fas fa-sign-out-alt"></i> Sair
-                            </button>
-                        </form>
-                    </li>
-                </ul>
+            <div class="d-inline-flex align-items-center">
+                @* SININHO DE NOTIFICAÇÃO DE CANDIDATOS - SEMPRE VISÍVEL *@
+                <a href="/Admin/CandidatosVoluntarios" class="notification-bell" title="@(ViewBag.CandidatosVoluntarios ?? 0) candidato(s) aguardando análise">
+                    <i class="fas fa-hand-holding-heart"></i>
+                    @if (ViewBag.CandidatosVoluntarios != null && ViewBag.CandidatosVoluntarios > 0)
+                    {
+                        <span class="notification-badge">@ViewBag.CandidatosVoluntarios</span>
+                    }
+                </a>
+
+                <div class="dropdown ms-2">
+                    <button class="btn btn-outline-primary dropdown-toggle" type="button" id="dropdownMenuButtonAdmin" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-user-shield"></i> @User.Identity.Name
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButtonAdmin">
+                        <li><a class="dropdown-item" href="/Admin/Responsaveis"><i class="fas fa-users"></i> Gerenciar Responsáveis</a></li>
+                        <li><a class="dropdown-item" href="/Admin/Relatorios"><i class="fas fa-chart-bar"></i> Relatórios</a></li>
+                        @if (ViewBag.CandidatosVoluntarios != null && ViewBag.CandidatosVoluntarios > 0)
+                        {
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item text-danger" href="/Admin/CandidatosVoluntarios">
+                                    <i class="fas fa-hand-holding-heart"></i> Candidatos Voluntários
+                                    <span class="badge bg-danger">@ViewBag.CandidatosVoluntarios</span>
+                                </a>
+                            </li>
+                        }
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <form asp-action="Logout" asp-controller="Auth" method="post" class="d-inline w-100">
+                                <button type="submit" class="dropdown-item text-danger">
+                                    <i class="fas fa-sign-out-alt"></i> Sair
+                                </button>
+                            </form>
+                        </li>
+                    </ul>
+                </div>
             </div>
         </div>
     </div>
@@ -99,7 +164,7 @@
         </div>
 
         <div class="col-md-3">
-            <div class="card bg-primary text-white"> @* COR ALTERADA: De bg-info para bg-primary (Azul) *@
+            <div class="card bg-primary text-white">
                 <div class="card-body">
                     <div class="d-flex justify-content-between">
                         <div>
@@ -148,7 +213,6 @@
                     <h5 class="mb-0"><i class="fas fa-bolt"></i> Ações Rápidas</h5>
                 </div>
                 <div class="card-body">
-                    @* Agora todos os botões são preenchidos com suas cores e texto branco *@
                     <div class="row justify-content-center">
                         <div class="col-md-2 text-center mb-3">
                             <a href="/Admin/Responsaveis" class="btn btn-primary btn-lg btn-fixed-size text-white">
@@ -163,19 +227,19 @@
                             </a>
                         </div>
                         <div class="col-md-2 text-center mb-3">
-                            <a href="/Admin/Dentistas" class="btn btn-primary btn-lg btn-fixed-size text-white"> @* COR ALTERADA: De btn-info para btn-primary (Azul) *@
+                            <a href="/Admin/Dentistas" class="btn btn-primary btn-lg btn-fixed-size text-white">
                                 <i class="fas fa-user-plus fa-2x d-block mb-2"></i>
                                 Gerenciar Dentistas
                             </a>
                         </div>
                         <div class="col-md-2 text-center mb-3">
-                            <a href="/Agendamento/MinhaAgenda" class="btn btn-success btn-lg btn-fixed-size text-white"> @* COR ALTERADA: De custom para btn-success (Verde Escuro) *@
+                            <a href="/Agendamento/MinhaAgenda" class="btn btn-success btn-lg btn-fixed-size text-white">
                                 <i class="fas fa-calendar-alt fa-2x d-block mb-2"></i>
                                 Agenda Completa
                             </a>
                         </div>
                         <div class="col-md-2 text-center mb-3">
-                            <a href="/Agendamento/Index" class="btn btn-primary btn-lg btn-fixed-size text-white"> @* COR ALTERADA: De custom para btn-primary (Azul) *@
+                            <a href="/Agendamento/Index" class="btn btn-primary btn-lg btn-fixed-size text-white">
                                 <i class="fas fa-calendar-plus fa-2x d-block mb-2"></i>
                                 Agendar Consulta
                             </a>
@@ -291,47 +355,39 @@
 
 @section Scripts {
     <script>
-        // Script específico para o dropdown do Dashboard Admin
-        // Executa DEPOIS do script global do layout
         window.addEventListener('load', function() {
-            // Aguardar 300ms para garantir que o script do layout já executou
             setTimeout(function() {
                 const dropdownButton = document.getElementById('dropdownMenuButtonAdmin');
-                
+
                 if (!dropdownButton) {
                     console.error('[Dashboard Admin] Botão do dropdown não encontrado');
                     return;
                 }
-                
-                // Verificar se Bootstrap está disponível
+
                 if (typeof bootstrap === 'undefined') {
                     console.error('[Dashboard Admin] Bootstrap não está carregado');
                     return;
                 }
-                
+
                 console.log('[Dashboard Admin] Inicializando dropdown...');
-                
-                // Remover qualquer instância anterior
+
                 const existingInstance = bootstrap.Dropdown.getInstance(dropdownButton);
                 if (existingInstance) {
                     console.log('[Dashboard Admin] Removendo instância anterior');
                     existingInstance.dispose();
                 }
-                
-                // Criar nova instância do dropdown
+
                 const dropdownInstance = new bootstrap.Dropdown(dropdownButton, {
                     autoClose: true,
                     boundary: 'viewport'
                 });
-                
+
                 console.log('[Dashboard Admin] Dropdown inicializado com sucesso!');
-                
-                // Garantir que o click funciona
+
                 dropdownButton.addEventListener('click', function(e) {
                     console.log('[Dashboard Admin] Click detectado no dropdown');
-                    // Não prevenir default, deixar o Bootstrap trabalhar naturalmente
                 });
-                
+
             }, 300);
         });
     </script>

@@ -5,10 +5,12 @@ using Pi_Odonto.Data;
 using Pi_Odonto.Models;
 using Pi_Odonto.Helpers;
 using Pi_Odonto.ViewModels;
+using Pi_Odonto.Services;
 using System.Linq;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using System; 
+using System;
+using IEmailService = Pi_Odonto.Services.IEmailService;
 
 namespace Pi_Odonto.Controllers
 {
@@ -48,6 +50,9 @@ namespace Pi_Odonto.Controllers
             ViewBag.ResponsaveisAtivos = responsaveisAtivos;
             ViewBag.CadastrosHoje = cadastrosHoje;
             ViewBag.CadastrosEsteMes = cadastrosEsteMes;
+            //Consulta Numero de Candidatos a voluntariados
+            var candidatosVoluntarios = _context.Dentistas.Count(d => d.Situacao == "candidato");
+            ViewBag.CandidatosVoluntarios = candidatosVoluntarios;
 
             // Últimos cadastros
             var ultimosCadastros = _context.Responsaveis
@@ -747,6 +752,89 @@ namespace Pi_Odonto.Controllers
             await _context.SaveChangesAsync();
 
             return Json(new { success = true, message = "Solicitação rejeitada." });
+        }
+
+        // GET: Candidatos Voluntários
+        [Route("CandidatosVoluntarios")]
+        public IActionResult CandidatosVoluntarios()
+        {
+            if (!IsAdmin())
+            {
+                return RedirectToAction("AdminLogin", "Auth");
+            }
+
+            // Buscar todos os dentistas com situacao = "candidato"
+            var candidatos = _context.Dentistas
+                .Where(d => d.Situacao == "candidato")
+                .OrderByDescending(d => d.Id)
+                .ToList();
+
+            return View(candidatos);
+        }
+
+        // POST: Aprovar Candidato
+        [HttpPost]
+        [Route("AprovarCandidato/{id}")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AprovarCandidato(int id, [FromServices] IEmailService emailService)
+        {
+            if (!IsAdmin())
+            {
+                return RedirectToAction("AdminLogin", "Auth");
+            }
+
+            var dentista = await _context.Dentistas.FindAsync(id);
+            if (dentista == null)
+            {
+                TempData["Erro"] = "Candidato não encontrado.";
+                return RedirectToAction("CandidatosVoluntarios");
+            }
+
+            try
+            {
+                // Alterar situação para "contratado" e ativar
+                dentista.Situacao = "contratado";
+                dentista.Ativo = true;
+                await _context.SaveChangesAsync();
+
+                // Enviar e-mail de boas-vindas
+                await emailService.EnviarEmailBoasVindasDentistaAsync(dentista.Email, dentista.Nome);
+
+                TempData["Sucesso"] = $"Candidato {dentista.Nome} aprovado com sucesso! E-mail de boas-vindas enviado.";
+            }
+            catch (Exception ex)
+            {
+                TempData["Erro"] = $"Candidato aprovado, mas houve erro ao enviar e-mail: {ex.Message}";
+            }
+
+            return RedirectToAction("CandidatosVoluntarios");
+        }
+
+        // POST: Rejeitar Candidato
+        [HttpPost]
+        [Route("RejeitarCandidato/{id}")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RejeitarCandidato(int id)
+        {
+            if (!IsAdmin())
+            {
+                return RedirectToAction("AdminLogin", "Auth");
+            }
+
+            var dentista = await _context.Dentistas.FindAsync(id);
+            if (dentista == null)
+            {
+                TempData["Erro"] = "Candidato não encontrado.";
+                return RedirectToAction("CandidatosVoluntarios");
+            }
+
+            // Alterar situação para "banco de espera"
+            dentista.Situacao = "banco de espera";
+            dentista.Ativo = false;
+            await _context.SaveChangesAsync();
+
+            TempData["Sucesso"] = $"Candidato {dentista.Nome} movido para banco de espera.";
+            return RedirectToAction("CandidatosVoluntarios");
         }
 
         // POST: Excluir solicitação

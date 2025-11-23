@@ -27,6 +27,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // === Email ===
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
 builder.Services.AddScoped<IEmailCadastroService, EmailCadastroService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<EmailService>();
 
 // === Autenticação com múltiplos cookies (CORRIGIDO: ResponsavelAuth ADICIONADO) ===

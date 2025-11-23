@@ -8,5 +8,7 @@ namespace Pi_Odonto.Services
         Task EnviarEmailBoasVindasAsync(string email, string nome);
 
         Task EnviarEmailRecuperacaoSenhaAsync(string email, string nome, string tokenRecuperacao);
+        Task EnviarEmailBoasVindasDentistaAsync(string email, string nome);
+       
     }
 }

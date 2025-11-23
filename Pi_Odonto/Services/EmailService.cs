@@ -1,21 +1,11 @@
-﻿// Services/IEmailService.cs
+﻿// Services/EmailService.cs
 using Microsoft.Extensions.Options;
 using Pi_Odonto.Models;
+using System.IO.Pipelines;
 using System.Net;
 using System.Net.Mail;
+using System.Runtime.ConstrainedExecution;
 using System.Threading.Tasks;
-
-namespace Pi_Odonto.Services
-{
-    public interface IEmailVerificacaoService
-    {
-        Task EnviarEmailVerificacaoAsync(string email, string nome, string tokenVerificacao);
-        Task EnviarEmailBoasVindasAsync(string email, string nome);
-        Task EnviarEmailRecuperacaoSenhaAsync(string email, string nome, string tokenRecuperacao);
-    }
-}
-
-
 
 namespace Pi_Odonto.Services
 {
@@ -81,6 +71,23 @@ namespace Pi_Odonto.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Erro ao enviar email de recuperação de senha para: {email}");
+                throw;
+            }
+        }
+
+        public async Task EnviarEmailBoasVindasDentistaAsync(string email, string nome)
+        {
+            try
+            {
+                var assunto = "🎉 Bem-vindo à Casa Espírita Trabalhadores de Jesus!";
+                var corpo = GerarCorpoEmailBoasVindasDentista(nome);
+
+                await EnviarEmailAsync(email, assunto, corpo);
+                _logger.LogInformation($"Email de boas-vindas (dentista) enviado para: {email}");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Erro ao enviar email de boas-vindas (dentista) para: {email}");
                 throw;
             }
         }
@@ -264,7 +271,7 @@ namespace Pi_Odonto.Services
                 </div>
                 
                 <div class='footer'>
-                    <p><em>""Resgatamos vidas e fazemos acreditar que existe sempre um caminho melhor""</em></p>
+                    <p><em>&quot;Resgatamos vidas e fazemos acreditar que existe sempre um caminho melhor&quot;</em></p>
                     <p>Se você não solicitou esta recuperação, pode ignorar este email com tranquilidade.</p>
                     <p>© Casa Espírita Trabalhadores de Jesus</p>
                 </div>
@@ -273,5 +280,106 @@ namespace Pi_Odonto.Services
         </html>";
         }
 
-    }
+        private string GerarCorpoEmailBoasVindasDentista(string nome)
+        {
+            return $@"
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset='utf-8'>
+            <style>
+                body {{ font-family: 'Poppins', Arial, sans-serif; margin: 0; padding: 20px; background: linear-gradient(135deg, #E3F2FD, #E8F5E8); }}
+                .container {{ max-width: 600px; margin: 0 auto; background-color: white; border-radius: 25px; box-shadow: 0 20px 60px rgba(0,0,0,0.15); overflow: hidden; }}
+                .header {{ background: linear-gradient(135deg, #4A90E2, #66BB6A); color: white; text-align: center; padding: 40px 30px 30px; }}
+                .header h1 {{ margin: 0; font-size: 2rem; }}
+                .header .icon {{ font-size: 3rem; margin-bottom: 1rem; }}
+                .content {{ padding: 40px 30px; }}
+                .welcome-box {{ background: linear-gradient(135deg, #E3F2FD, #E8F5E8); padding: 25px; border-radius: 15px; margin: 25px 0; border-left: 5px solid #FFD700; }}
+                .steps {{ background-color: #f8f9fa; padding: 20px; border-radius: 15px; margin: 20px 0; }}
+                .step {{ padding: 10px 0; border-bottom: 1px solid #dee2e6; }}
+                .step:last-child {{ border-bottom: none; }}
+                .mission-box {{ background: linear-gradient(135deg, #fff5f5, #fffacd); padding: 20px; border-radius: 15px; border-left: 5px solid #FFD700; margin: 25px 0; font-style: italic; }}
+                .contact-info {{ background-color: #E3F2FD; padding: 20px; border-radius: 15px; margin: 20px 0; }}
+                .footer {{ padding: 30px; background: linear-gradient(135deg, #4A90E2, #66BB6A); text-align: center; font-size: 12px; color: white; }}
+            </style>
+        </head>
+        <body>
+            <div class='container'>
+                <div class='header'>
+                    <div class='icon'>❤️</div>
+                    <h1>Parabéns, {nome}!</h1>
+                    <p>Você faz parte da nossa família agora</p>
+                </div>
+                
+                <div class='content'>
+                    <p style='font-size: 16px;'>Olá, <strong>{nome}</strong>!</p>
+                    
+                    <div class='welcome-box'>
+                        <p style='margin: 0; font-size: 18px;'>
+                            🎊 É com <strong>imensa alegria</strong> que damos as boas-vindas à <strong>Casa Espírita Trabalhadores de Jesus</strong>!
+                        </p>
+                    </div>
+                    
+                    <p>Sua candidatura foi <strong style='color: #66BB6A;'>aprovada com sucesso</strong> e agora você faz parte da nossa equipe de voluntários! 🎉</p>
+                    
+                    <div class='steps'>
+                        <h3 style='color: #4A90E2; margin-top: 0;'>🔑 Próximos Passos:</h3>
+                        <div class='step'>
+                            <strong>1.</strong> Sua conta já está <strong style='color: #66BB6A;'>ativa</strong> no sistema
+                        </div>
+                        <div class='step'>
+                            <strong>2.</strong> Acesse o portal com seu <strong>Email</strong> e senha <strong>CRO + 123</strong>
+                        </div>
+                         <div class='step'>
+                            <strong>3.</strong> Acesse o seu perfil, altere sua senha. Use uma senha forte, combinando letras, números e símbolos, evitando informações pessoais e sequências fáceis. </strong>
+                        </div>
+                        <div class='step'>
+                            <strong>4.</strong> Configure sua <strong>disponibilidade de horários</strong>
+                        </div>
+                        <div class='step'>
+                            <strong>5.</strong> Comece a fazer a diferença na vida de nossas crianças! 💙
+                        </div>
+                    </div>
+                    
+                    <p style='text-align: center; margin: 30px 0;'>
+                        <a href='https://localhost:7162/Auth/DentistaLogin?ReturnUrl=%2FDentista%2FDashboard' style='display: inline-block; padding: 15px 35px; background-color: #4A90E2; color: #FFFFFF; text-decoration: none; border-radius: 15px; font-weight: bold; font-size: 16px; box-shadow: 0 8px 25px rgba(74, 144, 226, 0.3);'>
+                            🔐 Acessar Área do Dentista
+                        </a>
+                    </p>
+                    
+                    
+                    <div class='mission-box'>
+                        <p style='margin: 0; color: #495057;'>
+                            <strong>💛 Nossa Missão:</strong><br>
+                            ""Resgatamos vidas e fazemos acreditar que existe sempre um caminho melhor a ser seguido""
+                        </ p >
+                    </ div >
+
+
+                    < p > Estamos < strong > muito felizes </ strong > em tê - lo(a) conosco nessa jornada de amor e solidariedade! ❤️</ p >
+
+
+                    < div class='contact-info'>
+                        <p style = 'margin: 0;' >< strong > Em caso de dúvidas, entre em contato:</strong></p>
+                        <p style = 'margin: 10px 0 0 0;' >
+                            📞 <strong>(11) 94155-6472</strong><br>
+                            📍 Av.Professor Flávio Pires de Camargo, 56 - Caetetuba, Atibaia/SP
+                        </p>
+                    </div>
+                    
+                    <p style = 'text-align: center; margin-top: 30px;' >
+                        Com gratidão,<br>
+                        <strong style = 'color: #4A90E2;' > Equipe Casa Espírita Trabalhadores de Jesus</strong> 🙏
+                    </p>
+                </div>
+                
+                <div class='footer'>
+                    <p style = 'margin: 0;' >© 2024 Casa Espírita Trabalhadores de Jesus</p>
+                    <p style = 'margin: 5px 0 0 0;' > Todos os direitos reservados</p>
+                </div>
+            </div>
+        </body>
+        </html>";
+        }
+}
 }

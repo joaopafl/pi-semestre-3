@@ -1,0 +1,375 @@
+﻿@model List<Pi_Odonto.Models.Dentista>
+@{
+    ViewData["Title"] = "Candidatos Voluntários";
+}
+
+<div class="container-fluid mt-4">
+    <style>
+        .candidate-card {
+            transition: all 0.3s ease;
+            border-left: 4px solid #dc3545;
+        }
+        
+        .candidate-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .info-label {
+            font-weight: 600;
+            color: #6c757d;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .info-value {
+            font-size: 1rem;
+            color: #212529;
+            margin-bottom: 0.5rem;
+        }
+        
+        .motivacao-box {
+            background-color: #f8f9fa;
+            border-left: 3px solid #0d6efd;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+        
+        .btn-aprovar {
+            background-color: #198754;
+            border-color: #198754;
+            color: white;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-aprovar:hover {
+            background-color: #157347;
+            border-color: #146c43;
+            color: white;
+            transform: scale(1.05);
+        }
+        
+        .btn-rejeitar {
+            background-color: #ffc107;
+            border-color: #ffc107;
+            color: #000;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-rejeitar:hover {
+            background-color: #ffca2c;
+            border-color: #ffc720;
+            color: #000;
+            transform: scale(1.05);
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+        }
+        
+        .empty-state i {
+            font-size: 80px;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+    </style>
+
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="text-danger">
+                <i class="fas fa-hand-holding-heart"></i> Candidatos Voluntários
+            </h1>
+            <p class="text-muted">Dentistas aguardando análise e aprovação</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="/Admin/Dashboard" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Voltar ao Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Mensagens de Sucesso/Erro -->
+    @if (TempData["Sucesso"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle"></i> @TempData["Sucesso"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (TempData["Erro"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-circle"></i> @TempData["Erro"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- Card de Estatísticas -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card bg-danger text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h3 class="mb-0">
+                                <i class="fas fa-users"></i> @Model.Count
+                            </h3>
+                            <p class="mb-0">Candidato(s) aguardando análise</p>
+                        </div>
+                        <div>
+                            <i class="fas fa-clipboard-list fa-3x opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de Candidatos -->
+    @if (Model != null && Model.Any())
+    {
+        <div class="row">
+            @foreach (var candidato in Model)
+            {
+                <div class="col-md-6 mb-4">
+                    <div class="card candidate-card h-100">
+                        <div class="card-header bg-light">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-user-md text-danger"></i> 
+                                    @candidato.Nome
+                                </h5>
+                                <span class="badge bg-danger">Novo Candidato</span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <div class="info-label">
+                                        <i class="fas fa-id-card"></i> CRO
+                                    </div>
+                                    <div class="info-value">@candidato.Cro</div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <div class="info-label">
+                                        <i class="fas fa-id-badge"></i> CPF
+                                    </div>
+                                    <div class="info-value">
+                                        @if (candidato.Cpf.Length == 11)
+                                        {
+                                            @($"{candidato.Cpf.Substring(0, 3)}.{candidato.Cpf.Substring(3, 3)}.{candidato.Cpf.Substring(6, 3)}-{candidato.Cpf.Substring(9, 2)}")
+                                        }
+                                        else
+                                        {
+                                            @candidato.Cpf
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-12 mb-3">
+                                    <div class="info-label">
+                                        <i class="fas fa-envelope"></i> E-mail
+                                    </div>
+                                    <div class="info-value">@candidato.Email</div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <div class="info-label">
+                                        <i class="fas fa-phone"></i> Telefone
+                                    </div>
+                                    <div class="info-value">
+                                        @if (candidato.Telefone.Length == 11)
+                                        {
+                                            @($"({candidato.Telefone.Substring(0, 2)}) {candidato.Telefone.Substring(2, 5)}-{candidato.Telefone.Substring(7, 4)}")
+                                        }
+                                        else if (candidato.Telefone.Length == 10)
+                                        {
+                                            @($"({candidato.Telefone.Substring(0, 2)}) {candidato.Telefone.Substring(2, 4)}-{candidato.Telefone.Substring(6, 4)}")
+                                        }
+                                        else
+                                        {
+                                            @candidato.Telefone
+                                        }
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <div class="info-label">
+                                        <i class="fas fa-map-marker-alt"></i> Endereço
+                                    </div>
+                                    <div class="info-value">@candidato.Endereco</div>
+                                </div>
+                            </div>
+
+                            @if (!string.IsNullOrEmpty(candidato.Motivacao))
+                            {
+                                <div class="motivacao-box">
+                                    <div class="info-label mb-2">
+                                        <i class="fas fa-heart"></i> Motivação
+                                    </div>
+                                    <p class="mb-0 text-muted" style="font-style: italic;">
+                                        "@candidato.Motivacao"
+                                    </p>
+                                </div>
+                            }
+                        </div>
+                        <div class="card-footer bg-white">
+                            <div class="d-grid gap-2">
+                                <div class="row g-2">
+                                    <div class="col-md-4">
+                                        <a href="/Admin/DetalhesDentista/@candidato.Id" class="btn btn-outline-info w-100">
+                                            <i class="fas fa-eye"></i> Ver Detalhes
+                                        </a>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <button type="button" class="btn btn-aprovar w-100" data-bs-toggle="modal" data-bs-target="#modalAprovar@(candidato.Id)">
+                                            <i class="fas fa-check"></i> Aprovar
+                                        </button>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <button type="button" class="btn btn-rejeitar w-100" data-bs-toggle="modal" data-bs-target="#modalRejeitar@(candidato.Id)">
+                                            <i class="fas fa-clock"></i> BancoTalentos
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                @* Modal de Confirmação - Aprovar *@
+                <div class="modal fade" id="modalAprovar@(candidato.Id)" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header bg-success text-white">
+                                <h5 class="modal-title">
+                                    <i class="fas fa-check-circle"></i> Confirmar Aprovação
+                                </h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <p class="mb-0">
+                                    Deseja realmente aprovar <strong>@candidato.Nome</strong> como dentista voluntário?
+                                </p>
+                                <p class="text-muted small mt-2 mb-0">
+                                    <i class="fas fa-info-circle"></i> O dentista será ativado no sistema e poderá realizar atendimentos.
+                                </p>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                    <i class="fas fa-times"></i> Cancelar
+                                </button>
+                                <form asp-action="AprovarCandidato" asp-route-id="@candidato.Id" method="post" class="d-inline" onsubmit="return bloquearBotaoAprovar(this, @candidato.Id)">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-success" id="btnAprovar_@candidato.Id">
+                                        <i class="fas fa-check"></i> Sim, Aprovar
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                @* Modal de Confirmação - Banco de Talentos *@
+                <div class="modal fade" id="modalRejeitar@(candidato.Id)" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header bg-info text-white">
+                                <h5 class="modal-title">
+                                    <i class="fas fa-clock"></i> Mover para Banco de Talentos
+                                </h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <p class="mb-0">
+                                    Deseja mover <strong>@candidato.Nome</strong> para o banco de talentos?
+                                </p>
+                                <p class="text-muted small mt-2 mb-0">
+                                    <i class="fas fa-info-circle"></i> O candidato ficará aguardando uma nova oportunidade.
+                                </p>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                    <i class="fas fa-times"></i> Cancelar
+                                </button>
+                                <form asp-action="RejeitarCandidato" asp-route-id="@candidato.Id" method="post" class="d-inline" onsubmit="return bloquearBotaoRejeitar(this, @candidato.Id)">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-info" id="btnRejeitar_@candidato.Id">
+                                        <i class="fas fa-clock"></i> Sim, Mover
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="card">
+            <div class="card-body">
+                <div class="empty-state">
+                    <i class="fas fa-hand-holding-heart"></i>
+                    <h3>Nenhum candidato aguardando análise</h3>
+                    <p class="text-muted">Quando novos dentistas se candidatarem como voluntários, eles aparecerão aqui.</p>
+                    <a href="/Admin/Dashboard" class="btn btn-primary mt-3">
+                        <i class="fas fa-arrow-left"></i> Voltar ao Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        // Auto-hide alerts após 5 segundos
+        setTimeout(function() {
+            var alerts = document.querySelectorAll('.alert');
+            alerts.forEach(function(alert) {
+                var bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
+            });
+        }, 5000);
+
+        // Função para bloquear botão de aprovar
+        function bloquearBotaoAprovar(form, candidatoId) {
+            const botao = document.getElementById('btnAprovar_' + candidatoId);
+            
+            if (botao.disabled) {
+                return false; // Já está processando
+            }
+            
+            // Desabilita o botão
+            botao.disabled = true;
+            botao.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processando...';
+            
+            return true; // Permite o submit
+        }
+
+        // Função para bloquear botão de rejeitar
+        function bloquearBotaoRejeitar(form, candidatoId) {
+            const botao = document.getElementById('btnRejeitar_' + candidatoId);
+            
+            if (botao.disabled) {
+                return false; // Já está processando
+            }
+            
+            // Desabilita o botão
+            botao.disabled = true;
+            botao.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processando...';
+            
+            return true; // Permite o submit
+        }
+    </script>
+}
