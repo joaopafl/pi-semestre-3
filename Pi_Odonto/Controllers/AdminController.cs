@@ -262,8 +262,6 @@ namespace Pi_Odonto.Controllers
             return RedirectToAction("Responsaveis");
         }
 
-        
-
         // GET: Relatórios
         [Route("Relatorios")]
         public IActionResult Relatorios()
@@ -287,10 +285,14 @@ namespace Pi_Odonto.Controllers
                     r.DataCadastro.Month == data.Month &&
                     r.DataCadastro.Year == data.Year);
 
+                // Formatar mês em português
+                var mesNome = data.ToString("MMM/yyyy", new System.Globalization.CultureInfo("pt-BR"));
+                mesNome = char.ToUpper(mesNome[0]) + mesNome.Substring(1); // Primeira letra maiúscula
+
                 cadastrosPorMes.Add(new
                 {
-                    Mes = data.ToString("MMM/yyyy"),
-                    Count = count
+                    mes = mesNome,  // MINÚSCULO - JavaScript espera assim
+                    count = count   // MINÚSCULO - JavaScript espera assim
                 });
             }
 
@@ -301,7 +303,6 @@ namespace Pi_Odonto.Controllers
 
             return View();
         }
-
         // ========================================
         // GERENCIAMENTO DE DENTISTAS (REFATORADO)
         // ========================================

@@ -89,9 +89,8 @@
                                     {
                                         taxa = Math.Round((double)ViewBag.ResponsaveisAtivos / ViewBag.TotalResponsaveis * 100, 1);
                                     }
-                                    string taxaTexto = taxa + "%";
                                 }
-                                @taxaTexto
+                                @taxa%
                             </div>
                         </div>
                         <div class="col-auto">
@@ -107,14 +106,14 @@
     <div class="row">
         <div class="col-xl-8 col-lg-7">
             <div class="card shadow mb-4">
-                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <div class="card-header py-3">
                     <h6 class="m-0 font-weight-bold text-primary">
                         <i class="fas fa-chart-area"></i> Evolução de Cadastros (Últimos 6 Meses)
                     </h6>
                 </div>
                 <div class="card-body">
-                    <div class="chart-area">
-                        <canvas id="graficoMeses" width="400" height="200"></canvas>
+                    <div style="position: relative; height: 300px;">
+                        <canvas id="graficoMeses"></canvas>
                     </div>
                 </div>
             </div>
@@ -123,20 +122,20 @@
         <!-- Gráfico de Pizza -->
         <div class="col-xl-4 col-lg-5">
             <div class="card shadow mb-4">
-                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <div class="card-header py-3">
                     <h6 class="m-0 font-weight-bold text-primary">
                         <i class="fas fa-chart-pie"></i> Status dos Responsáveis
                     </h6>
                 </div>
                 <div class="card-body">
-                    <div class="chart-pie pt-4 pb-2">
-                        <canvas id="graficoPizza" width="300" height="300"></canvas>
+                    <div style="position: relative; height: 250px;">
+                        <canvas id="graficoPizza"></canvas>
                     </div>
                     <div class="mt-4 text-center small">
-                        <span class="mr-2">
+                        <span class="me-3">
                             <i class="fas fa-circle text-success"></i> Ativos
                         </span>
-                        <span class="mr-2">
+                        <span>
                             <i class="fas fa-circle text-danger"></i> Inativos
                         </span>
                     </div>
@@ -156,8 +155,8 @@
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
-                        <table class="table table-bordered" width="100%" cellspacing="0">
-                            <thead>
+                        <table class="table table-bordered table-hover" width="100%" cellspacing="0">
+                            <thead class="table-light">
                                 <tr>
                                     <th>Mês/Ano</th>
                                     <th>Cadastros</th>
@@ -165,61 +164,8 @@
                                     <th>Crescimento</th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                @{
-                                    var dadosMeses = ViewBag.CadastrosPorMes as List<object>;
-                                    int totalGeral = ViewBag.TotalResponsaveis;
-                                    int mesAnterior = 0;
-                                }
-                                @if (dadosMeses != null)
-                                {
-                                    @foreach (dynamic mes in dadosMeses)
-                                    {
-                                        var percentual = totalGeral > 0 ? Math.Round((double)mes.Count / totalGeral * 100, 1) : 0;
-                                        var crescimento = mesAnterior > 0 ? Math.Round((double)(mes.Count - mesAnterior) / mesAnterior * 100, 1) : 0;
-                                        var corCrescimento = crescimento > 0 ? "text-success" : crescimento < 0 ? "text-danger" : "text-muted";
-
-                                        string percentualTexto = percentual + "%";
-                                        string crescimentoTexto = "";
-
-                                        if (crescimento > 0)
-                                        {
-                                            crescimentoTexto = crescimento + "%";
-                                        }
-                                        else if (crescimento < 0)
-                                        {
-                                            crescimentoTexto = Math.Abs(crescimento) + "%";
-                                        }
-                                        else
-                                        {
-                                            crescimentoTexto = "0%";
-                                        }
-
-                                        <tr>
-                                            <td><strong>@mes.Mes</strong></td>
-                                            <td>@mes.Count cadastros</td>
-                                            <td>@percentualTexto</td>
-                                            <td class="@corCrescimento">
-                                                @if (crescimento > 0)
-                                                {
-                                                    <i class="fas fa-arrow-up"></i> 
-                                                    @crescimentoTexto
-                                                }
-                                                else if (crescimento < 0)
-                                                {
-                                                    <i class="fas fa-arrow-down"></i> 
-                                                    @crescimentoTexto
-                                                }
-                                                else
-                                                {
-                                                    <i class="fas fa-minus"></i> 
-                                                    @crescimentoTexto
-                                                }
-                                            </td>
-                                        </tr>
-                                        mesAnterior = mes.Count;
-                                    }
-                                }
+                            <tbody id="tabelaMeses">
+                                <!-- Preenchido via JavaScript -->
                             </tbody>
                         </table>
                     </div>
@@ -229,7 +175,7 @@
     </div>
 
     <!-- Botões de Ação -->
-    <div class="row">
+    <div class="row mb-4">
         <div class="col-12 text-center">
             <button class="btn btn-primary me-2" onclick="window.print()">
                 <i class="fas fa-print"></i> Imprimir Relatório
@@ -242,69 +188,183 @@
 </div>
 
 @section Scripts {
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         // Dados do backend
-        var dadosMeses = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.CadastrosPorMes));
-        var responsaveisAtivos = @ViewBag.ResponsaveisAtivos;
-        var responsaveisInativos = @ViewBag.ResponsaveisInativos;
+        var dadosMeses = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.CadastrosPorMes ?? new List<object>()));
+        var responsaveisAtivos = @ViewBag.ResponsaveisAtivos || 0;
+        var responsaveisInativos = @ViewBag.ResponsaveisInativos || 0;
+        var totalResponsaveis = @ViewBag.TotalResponsaveis || 0;
+
+        console.log('Dados Meses:', dadosMeses);
+        console.log('Ativos:', responsaveisAtivos, 'Inativos:', responsaveisInativos);
+
+        // Prepara dados para o gráfico (aceita maiúsculo ou minúsculo)
+        const labels = dadosMeses.map(d => d.mes || d.Mes || 'N/A');
+        const dados = dadosMeses.map(d => d.count || d.Count || 0);
 
         // Gráfico de linha - Cadastros por mês
-        var ctx1 = document.getElementById('graficoMeses').getContext('2d');
-        var graficoMeses = new Chart(ctx1, {
+        const ctx1 = document.getElementById('graficoMeses').getContext('2d');
+        const graficoMeses = new Chart(ctx1, {
             type: 'line',
             data: {
-                labels: dadosMeses.map(d => d.mes),
+                labels: labels,
                 datasets: [{
                     label: 'Cadastros',
-                    data: dadosMeses.map(d => d.count),
-                    borderColor: 'rgb(75, 192, 192)',
-                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                    tension: 0.1,
-                    fill: true
+                    data: dados,
+                    borderColor: 'rgb(78, 115, 223)',
+                    backgroundColor: 'rgba(78, 115, 223, 0.1)',
+                    borderWidth: 3,
+                    tension: 0.4,
+                    fill: true,
+                    pointRadius: 5,
+                    pointBackgroundColor: 'rgb(78, 115, 223)',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                    pointHoverRadius: 7
                 }]
             },
             options: {
+                animation: false,
                 responsive: true,
+                maintainAspectRatio: false,
                 plugins: {
-                    title: {
+                    legend: {
                         display: true,
-                        text: 'Evolução dos Cadastros'
+                        position: 'top'
+                    },
+                    title: {
+                        display: false
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        callbacks: {
+                            label: function(context) {
+                                return 'Cadastros: ' + context.parsed.y;
+                            }
+                        }
                     }
                 },
                 scales: {
                     y: {
-                        beginAtZero: true
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1,
+                            callback: function(value) {
+                                return Number.isInteger(value) ? value : '';
+                            }
+                        },
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        }
                     }
+                },
+                interaction: {
+                    mode: 'nearest',
+                    axis: 'x',
+                    intersect: false
                 }
             }
         });
 
         // Gráfico de pizza - Status
-        var ctx2 = document.getElementById('graficoPizza').getContext('2d');
-        var graficoPizza = new Chart(ctx2, {
-            type: 'doughnut',
-            data: {
-                labels: ['Ativos', 'Inativos'],
-                datasets: [{
-                    data: [responsaveisAtivos, responsaveisInativos],
-                    backgroundColor: [
-                        '#28a745',
-                        '#dc3545'
-                    ],
-                    borderWidth: 2
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        position: 'bottom'
+        const ctx2 = document.getElementById('graficoPizza');
+        if (!ctx2) {
+            console.error('Canvas graficoPizza não encontrado!');
+        } else {
+            const graficoPizza = new Chart(ctx2.getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Ativos', 'Inativos'],
+                    datasets: [{
+                        data: [responsaveisAtivos, responsaveisInativos],
+                        backgroundColor: [
+                            '#28a745',
+                            '#dc3545'
+                        ],
+                        borderColor: '#fff',
+                        borderWidth: 3
+                    }]
+                },
+                options: {
+                    animation: false,
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 15,
+                                font: {
+                                    size: 13
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.parsed || 0;
+                                    const total = responsaveisAtivos + responsaveisInativos;
+                                    const percent = total > 0 ? Math.round((value / total) * 100) : 0;
+                                    return label + ': ' + value + ' (' + percent + '%)';
+                                }
+                            }
+                        }
                     }
                 }
-            }
-        });
+            });
+        }
+
+        // Preencher tabela
+        function preencherTabela() {
+            const tbody = document.getElementById('tabelaMeses');
+            tbody.innerHTML = '';
+
+            let mesAnterior = 0;
+
+            dadosMeses.forEach((item, index) => {
+                const count = item.count || item.Count || 0;
+                const mes = item.mes || item.Mes || 'N/A';
+
+                const percentual = totalResponsaveis > 0 ? ((count / totalResponsaveis) * 100).toFixed(1) : 0;
+                const crescimento = mesAnterior > 0 ? (((count - mesAnterior) / mesAnterior) * 100).toFixed(1) : 0;
+
+                let corCrescimento = 'text-muted';
+                let iconeCrescimento = 'fa-minus';
+
+                if (crescimento > 0) {
+                    corCrescimento = 'text-success';
+                    iconeCrescimento = 'fa-arrow-up';
+                } else if (crescimento < 0) {
+                    corCrescimento = 'text-danger';
+                    iconeCrescimento = 'fa-arrow-down';
+                }
+
+                const row = `
+                    <tr>
+                        <td><strong>${mes}</strong></td>
+                        <td>${count} cadastro${count !== 1 ? 's' : ''}</td>
+                        <td>${percentual}%</td>
+                        <td class="${corCrescimento}">
+                            <i class="fas ${iconeCrescimento}"></i>
+                            ${Math.abs(crescimento)}%
+                        </td>
+                    </tr>
+                `;
+
+                tbody.innerHTML += row;
+                mesAnterior = count;
+            });
+        }
+
+        preencherTabela();
     </script>
 
     <style>
@@ -330,6 +390,19 @@
 
         .text-gray-300 {
             color: #dddfeb !important;
+        }
+
+        @@media print {
+            .btn
+
+        {
+            display: none !important;
+        }
+
+        .card {
+            break-inside: avoid;
+        }
+
         }
     </style>
 }
