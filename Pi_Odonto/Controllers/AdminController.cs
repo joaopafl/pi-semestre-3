@@ -308,17 +308,46 @@ namespace Pi_Odonto.Controllers
 
         // GET: Lista de Dentistas (REFATORADO INCLUSÃO)
         [Route("Dentistas")]
-        public IActionResult Dentistas()
+        public IActionResult Dentistas(string busca = "", bool? ativo = null, string situacao = "")
         {
             if (!IsAdmin())
             {
                 return RedirectToAction("AdminLogin", "Auth");
             }
 
-            var dentistas = _context.Dentistas
+            var query = _context.Dentistas.AsQueryable();
+
+            // Filtro de busca
+            if (!string.IsNullOrEmpty(busca))
+            {
+                query = query.Where(d =>
+                    d.Nome.Contains(busca) ||
+                    d.Email.Contains(busca) ||
+                    d.Cpf.Contains(busca) ||
+                    d.Telefone.Contains(busca) ||
+                    d.Cro.Contains(busca));
+            }
+
+            // Filtro de status
+            if (ativo.HasValue)
+            {
+                query = query.Where(d => d.Ativo == ativo.Value);
+            }
+
+            // Filtro de situação
+            if (!string.IsNullOrEmpty(situacao))
+            {
+                query = query.Where(d => d.Situacao != null && d.Situacao == situacao);
+            }
+
+            var dentistas = query
                 .OrderBy(d => d.Nome)
                 .ThenBy(d => d.Ativo ? 0 : 1) // Ativos primeiro
                 .ToList();
+
+            ViewBag.Busca = busca;
+            ViewBag.Ativo = ativo;
+            ViewBag.Situacao = situacao;
 
             return View(dentistas);
         }
@@ -371,7 +400,8 @@ namespace Pi_Odonto.Controllers
                 Endereco = viewModel.Endereco,
                 Email = viewModel.Email,
                 Telefone = viewModel.Telefone,
-                Ativo = true,
+                Ativo = false,
+                Situacao = "candidato",
                 Senha = PasswordHelper.HashPassword(viewModel.Cro + "123")
             };
 
@@ -432,6 +462,7 @@ namespace Pi_Odonto.Controllers
                 Endereco = dentista.Endereco,
                 Email = dentista.Email,
                 Telefone = dentista.Telefone,
+                Situacao = dentista.Situacao
             };
 
             // Carregar disponibilidades existentes
@@ -497,6 +528,7 @@ namespace Pi_Odonto.Controllers
             dentista.Endereco = viewModel.Endereco;
             dentista.Email = viewModel.Email;
             dentista.Telefone = viewModel.Telefone;
+            dentista.Situacao = viewModel.Situacao;
 
             // Desativar todas as disponibilidades existentes
             foreach (var disponibilidadeExistente in dentista.Disponibilidades)

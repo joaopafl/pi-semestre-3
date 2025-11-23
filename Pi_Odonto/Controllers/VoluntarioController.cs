@@ -90,7 +90,9 @@ namespace Pi_Odonto.Controllers
                     Email = viewModel.Email,
                     Telefone = viewModel.Telefone,
                     Endereco = viewModel.Endereco ?? string.Empty,
-                    Ativo = true,
+                    Motivacao = viewModel.Mensagem,
+                    Ativo = false,
+                    Situacao = "candidato",
                     // Senha temporária baseada no CRO (o admin pode alterar depois)
                     Senha = PasswordHelper.HashPassword(viewModel.Cro + "123")
                 };

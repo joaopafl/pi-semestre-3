@@ -35,6 +35,10 @@ namespace Pi_Odonto.ViewModels
 
         public int? IdEscala { get; set; }
 
+        [StringLength(50)]
+        [Display(Name = "Situação")]
+        public string Situacao { get; set; } = "candidato";
+
         public List<DisponibilidadeItem> Disponibilidades { get; set; } = new List<DisponibilidadeItem>();
 
         // Método para inicializar as disponibilidades com todos os dias e turnos

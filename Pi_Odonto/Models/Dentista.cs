@@ -63,6 +63,17 @@ namespace Pi_Odonto.Models
         [Display(Name = "Ativo")]
         public bool Ativo { get; set; } = true;
 
+        [StringLength(1000)]
+        [Column("motivacao")]
+        [Display(Name = "Motivação")]
+        public string? Motivacao { get; set; }
+
+        [Required]
+        [StringLength(50)]
+        [Column("situacao")]
+        [Display(Name = "Situação")]
+        public string Situacao { get; set; } = "candidato";
+
         // Navigation property
         [ForeignKey("IdEscala")]
         public virtual EscalaTrabalho? EscalaTrabalho { get; set; }

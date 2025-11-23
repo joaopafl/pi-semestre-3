@@ -85,6 +85,23 @@
                             </div>
                         </div>
 
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="mb-3">
+                                    <label asp-for="Situacao" class="form-label fw-bold">
+                                        <i class="fas fa-info-circle text-primary"></i> Situação <span class="text-danger">*</span>
+                                    </label>
+                                    <select asp-for="Situacao" class="form-select">
+                                        <option value="candidato">Candidato</option>
+                                        <option value="contratado">Contratado</option>
+                                        <option value="banco de talento">Banco de Talento</option>
+                                        <option value="desvinculado">Desvinculado</option>
+                                    </select>
+                                    <span asp-validation-for="Situacao" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Disponibilidade -->
                         <div class="mb-4">
                             <label class="form-label fw-bold">
