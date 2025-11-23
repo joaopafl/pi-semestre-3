@@ -673,7 +673,7 @@
     // ====================================================================================
     async function proximaEtapa() {
         if (validacoesPendentes.size > 0) {
-            alert('Aguarde a validação dos dados...');
+            ///alert('Aguarde a validação dos dados...');
             return;
         }
 
@@ -744,9 +744,9 @@
         if (senha !== confirmarSenha || senha.length < 6) {
             confirmarSenhaInput.classList.add('is-invalid');
             if (senha !== confirmarSenha) {
-                alert('As senhas não coincidem!');
+                //alert('As senhas não coincidem!');
             } else {
-                alert('A senha deve ter no mínimo 6 caracteres!');
+                //alert('A senha deve ter no mínimo 6 caracteres!');
             }
             isValid = false;
         }
@@ -810,7 +810,7 @@
             if (firstInvalid) {
                 firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
-            alert('Por favor, corrija os erros antes de prosseguir.');
+            //alert('Por favor, corrija os erros antes de prosseguir.');
         }
 
         return isValid;
@@ -936,7 +936,7 @@
             if (firstInvalid) {
                 firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
-            alert('Por favor, corrija os erros nos dados das crianças.');
+            //alert('Por favor, corrija os erros nos dados das crianças.');
         }
 
         return isValid;
@@ -1033,7 +1033,7 @@
                 atualizarTitulosCriancas();
             }
         } else {
-            alert('É obrigatório ter pelo menos uma criança cadastrada!');
+            //alert('É obrigatório ter pelo menos uma criança cadastrada!');
         }
     }
 
@@ -1137,13 +1137,13 @@
         }
 
         if (validacoesPendentes.size > 0) {
-            alert('Aguarde a validação dos dados...');
+            //alert('Aguarde a validação dos dados...');
             return false;
         }
 
         // Se está na etapa 1, avisa para ir para etapa 2
         if (etapaAtual === 1) {
-            alert('Por favor, preencha os dados das crianças na próxima etapa.');
+            //alert('Por favor, preencha os dados das crianças na próxima etapa.');
             return false;
         }
 
