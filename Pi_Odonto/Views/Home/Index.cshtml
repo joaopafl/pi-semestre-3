@@ -25,12 +25,15 @@
             color: var(--cor-texto);
         }
 
-        .hero-section {
-            background: linear-gradient(135deg, var(--cor-primaria) 0%, var(--cor-secundaria) 50%, var(--cor-amor) 100%);
+         .hero-section {
+            background: linear-gradient(135deg, var(--cor-primaria) 0%, var(--cor-secundaria) 100%), #3E7CC4 50%;
             color: white;
-            padding: 120px 0 80px;
+            padding: 180px 0 80px;
             position: relative;
             overflow: hidden;
+            border-radius: 10px;
+            margin-right: 0px;
+            margin-left: 0px;
         }
 
             .hero-section::before {
@@ -64,7 +67,7 @@
 
         /* Card Voluntário Minimalista */
         .voluntario-card {
-            background: rgba(255, 255, 255, 0.15);
+            background: rgba(255, 255, 255, 0.466);
             backdrop-filter: blur(10px);
             border-radius: 15px;
             padding: 10px;
@@ -75,7 +78,7 @@
         }
 
             .voluntario-card:hover {
-                background: rgba(255, 255, 255, 0.25);
+                background: rgba(255, 255, 255, 0.515);
                 transform: translateY(-5px);
             }
 
@@ -182,7 +185,7 @@
             }
 
         .btn-custom {
-            background: linear-gradient(135deg, var(--cor-secundaria), var(--cor-amor));
+            background: linear-gradient(135deg, var(--cor-secundaria));
             color: white;
             border: none;
             padding: 15px 35px;
