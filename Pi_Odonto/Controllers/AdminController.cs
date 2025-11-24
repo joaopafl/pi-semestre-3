@@ -383,6 +383,16 @@ namespace Pi_Odonto.Controllers
                 return RedirectToAction("AdminLogin", "Auth");
             }
 
+            // Remover formatação do CPF e Telefone antes de validar
+            if (!string.IsNullOrEmpty(viewModel.Cpf))
+            {
+                viewModel.Cpf = viewModel.Cpf.Replace(".", "").Replace("-", "");
+            }
+            if (!string.IsNullOrEmpty(viewModel.Telefone))
+            {
+                viewModel.Telefone = viewModel.Telefone.Replace("(", "").Replace(")", "").Replace(" ", "").Replace("-", "");
+            }
+
             // Validar se pelo menos uma disponibilidade foi selecionada
             if (viewModel.Disponibilidades == null || !viewModel.Disponibilidades.Any(d => d.Selecionado))
             {
@@ -485,11 +495,21 @@ namespace Pi_Odonto.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Route("EditarDentista/{id}")]
-        public async Task<IActionResult> EditarDentista(DentistaViewModel viewModel)
+        public async Task<IActionResult> EditarDentista(DentistaViewModel viewModel, [FromServices] IEmailService emailService)
         {
             if (!IsAdmin())
             {
                 return RedirectToAction("AdminLogin", "Auth");
+            }
+
+            // Remover formatação do CPF e Telefone antes de validar
+            if (!string.IsNullOrEmpty(viewModel.Cpf))
+            {
+                viewModel.Cpf = viewModel.Cpf.Replace(".", "").Replace("-", "");
+            }
+            if (!string.IsNullOrEmpty(viewModel.Telefone))
+            {
+                viewModel.Telefone = viewModel.Telefone.Replace("(", "").Replace(")", "").Replace(" ", "").Replace("-", "");
             }
 
             // Validar se pelo menos uma disponibilidade foi selecionada
@@ -527,6 +547,9 @@ namespace Pi_Odonto.Controllers
                 return RedirectToAction("Dentistas");
             }
 
+            // Verificar se a situação mudou de "candidato" para "contratado"
+            bool mudouParaContratado = dentista.Situacao == "candidato" && viewModel.Situacao == "contratado";
+
             // Atualizar dados básicos
             dentista.Nome = viewModel.Nome;
             dentista.Cpf = viewModel.Cpf;
@@ -535,6 +558,12 @@ namespace Pi_Odonto.Controllers
             dentista.Email = viewModel.Email;
             dentista.Telefone = viewModel.Telefone;
             dentista.Situacao = viewModel.Situacao;
+            
+            // Se mudou para contratado, ativar o dentista
+            if (mudouParaContratado)
+            {
+                dentista.Ativo = true;
+            }
 
             // Desativar todas as disponibilidades existentes
             foreach (var disponibilidadeExistente in dentista.Disponibilidades)
@@ -580,7 +609,25 @@ namespace Pi_Odonto.Controllers
 
             await _context.SaveChangesAsync();
 
-            TempData["Sucesso"] = "Dentista atualizado com sucesso!";
+            // Se mudou de candidato para contratado, enviar email de boas-vindas
+            if (mudouParaContratado)
+            {
+                try
+                {
+                    await emailService.EnviarEmailBoasVindasDentistaAsync(dentista.Email, dentista.Nome);
+                    TempData["Sucesso"] = "Dentista atualizado com sucesso! E-mail de boas-vindas enviado.";
+                }
+                catch (Exception ex)
+                {
+                    TempData["Sucesso"] = "Dentista atualizado com sucesso!";
+                    TempData["Erro"] = $"Houve erro ao enviar e-mail: {ex.Message}";
+                }
+            }
+            else
+            {
+                TempData["Sucesso"] = "Dentista atualizado com sucesso!";
+            }
+            
             return RedirectToAction("Dentistas");
         }
 

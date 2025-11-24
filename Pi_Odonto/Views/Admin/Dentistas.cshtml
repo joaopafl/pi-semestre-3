@@ -231,12 +231,18 @@
                                             <a href="@Url.Action("EditarDentista", new { id = dentista.Id })" class="btn btn-outline-warning" title="Editar">
                                                 <i class="fas fa-edit"></i> Editar
                                             </a>
-                                            <form asp-action="ToggleAtivoDentista" asp-route-id="@dentista.Id" method="post" style="display: inline;">
+                                            <form method="post" asp-action="ToggleAtivoDentista" asp-route-id="@dentista.Id" class="d-inline js-action-form">
                                                 @Html.AntiForgeryToken()
-                                                <button type="submit" 
-                                                        class="btn btn-sm @(dentista.Ativo ? "btn-outline-danger" : "btn-outline-success")" 
-                                                        title="@(dentista.Ativo ? "Desativar" : "Ativar")"
-                                                        onclick="return confirm('Tem certeza que deseja @(dentista.Ativo ? "desativar" : "ativar") este dentista?');">
+                                                <button type="button" 
+                                                        class="btn btn-sm @(dentista.Ativo ? "btn-outline-danger" : "btn-outline-success") js-confirm-action"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#confirmActionModal"
+                                                        data-action-url="/Admin/ToggleAtivoDentista/@dentista.Id" 
+                                                        data-message="Tem certeza que deseja @(dentista.Ativo ? "DESATIVAR" : "ATIVAR") o dentista @dentista.Nome?"
+                                                        data-header-class="@(dentista.Ativo ? "bg-warning" : "bg-success")"
+                                                        data-confirm-text="@(dentista.Ativo ? "Sim, Desativar" : "Sim, Ativar")"
+                                                        data-is-danger="false"
+                                                        title="@(dentista.Ativo ? "Desativar" : "Ativar")">
                                                     <i class="fas fa-@(dentista.Ativo ? "ban" : "check")"></i> @(dentista.Ativo ? "Desativar" : "Ativar")
                                                 </button>
                                             </form>
@@ -302,6 +308,32 @@
     }
 </div>
 
+<div class="modal fade" id="confirmActionModal" tabindex="-1" aria-labelledby="confirmActionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white" id="modalHeader">
+                <h5 class="modal-title" id="confirmActionModalLabel">Confirmação Necessária</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p id="modalMessage" class="lead text-center">Tem certeza que deseja realizar esta ação?</p>
+                <div class="alert alert-warning mt-3" id="modalWarning" style="display:none;">
+                    <i class="fas fa-exclamation-triangle"></i> Esta ação é permanente e não pode ser desfeita!
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+                <button type="button" class="btn btn-danger" id="confirmActionButton">
+                    <i class="fas fa-check"></i> Confirmar
+                </button>
+                <form method="post" id="actionForm" style="display: none;"></form>
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
     <script>
@@ -316,5 +348,63 @@
                 }, 500);
             });
         }
+
+        // Lógica para Modais de Confirmação Amigáveis
+        document.addEventListener('DOMContentLoaded', function() {
+            // Inicializa o modal do Bootstrap
+            const confirmActionModalElement = document.getElementById('confirmActionModal');
+            
+            const confirmActionButton = document.getElementById('confirmActionButton');
+            const actionForm = document.getElementById('actionForm');
+
+            // Event listener para abrir o modal
+            document.querySelectorAll('.js-confirm-action').forEach(button => {
+                button.addEventListener('click', function (event) {
+                    
+                    // Captura os dados customizados dos atributos data-
+                    const actionUrl = this.getAttribute('data-action-url');
+                    const message = this.getAttribute('data-message');
+                    const headerClass = this.getAttribute('data-header-class') || 'bg-danger';
+                    const confirmText = this.getAttribute('data-confirm-text') || 'Confirmar';
+                    // IMPORTANTE: Mantenha o data-is-danger como 'false' para desativação/ativação
+                    const isDanger = this.getAttribute('data-is-danger') === 'true'; 
+
+                    // Pega o form original para copiar tokens de anti-forgery
+                    const originalForm = this.closest('.js-action-form');
+                    
+                    // 1. Atualiza o conteúdo do modal
+                    document.getElementById('modalMessage').innerHTML = message;
+
+                    // 2. Atualiza o cabeçalho e cor do botão
+                    const modalHeader = document.getElementById('modalHeader');
+                    modalHeader.className = `modal-header text-white ${headerClass}`;
+
+                    // Ajusta a cor do botão de ação
+                    confirmActionButton.className = `btn ${isDanger ? 'btn-danger' : 'btn-primary'}`;
+                    confirmActionButton.innerHTML = `<i class="fas fa-check"></i> ${confirmText}`;
+
+                    // 3. Exibe/Oculta o alerta de perigo (NUNCA deve aparecer para Toggle Status, por isso mantive `isDanger` no modal, mas garantimos que o data-is-danger seja false acima)
+                    document.getElementById('modalWarning').style.display = isDanger ? 'block' : 'none';
+
+                    // 4. Configura o formulário oculto
+                    actionForm.action = actionUrl;
+                    actionForm.innerHTML = ''; // Limpa o form
+
+                    // 5. Copia o token de anti-forgery (muito importante para POST)
+                    const antiForgeryToken = originalForm.querySelector('input[name="__RequestVerificationToken"]');
+                    if (antiForgeryToken) {
+                        actionForm.appendChild(antiForgeryToken.cloneNode(true));
+                    }
+                });
+            });
+
+
+            // Listener para o clique no botão de CONFIRMAR do modal
+            confirmActionButton.addEventListener('click', function() {
+                // Envia o formulário oculto com a URL e token corretos
+                actionForm.submit();
+                // Não é necessário esconder o modal, o submit fará o refresh
+            });
+        });
     </script>
 }

@@ -100,9 +100,9 @@ namespace Pi_Odonto.Controllers
 
             var dataSelecionada = data ?? DateTime.Today;
 
-            // Popula a lista de dentistas para o dropdown
+            // Popula a lista de dentistas para o dropdown - apenas ativos e contratados
             ViewBag.Dentistas = await _context.Dentistas
-                                         .Where(d => d.Ativo)
+                                         .Where(d => d.Ativo && d.Situacao == "contratado")
                                          .OrderBy(d => d.Nome)
                                          .ToListAsync();
 
@@ -236,7 +236,7 @@ namespace Pi_Odonto.Controllers
             }
 
             ViewBag.Dentistas = await _context.Dentistas
-                .Where(d => d.Ativo || d.Id == escala.IdDentista)
+                .Where(d => (d.Ativo && d.Situacao == "contratado") || d.Id == escala.IdDentista)
                 .OrderBy(d => d.Nome)
                 .ToListAsync();
 
@@ -281,7 +281,7 @@ namespace Pi_Odonto.Controllers
                 {
                     TempData["Erro"] = "Esta escala possui agendamentos futuros vinculados. Não é permitido salvar alterações.";
                     // Se houver erro, precisamos recarregar as ViewBags para retornar a View
-                    ViewBag.Dentistas = await _context.Dentistas.Where(d => d.Ativo || d.Id == model.IdDentista).OrderBy(d => d.Nome).ToListAsync();
+                    ViewBag.Dentistas = await _context.Dentistas.Where(d => (d.Ativo && d.Situacao == "contratado") || d.Id == model.IdDentista).OrderBy(d => d.Nome).ToListAsync();
                     return View(model);
                 }
 
@@ -296,7 +296,7 @@ namespace Pi_Odonto.Controllers
                     TempData["Erro"] = $"O horário de {model.HoraInicio.ToString(@"hh\:mm")} já está ocupado por outro dentista ou bloco de escala nesta data. Por favor, escolha um horário diferente.";
 
                     // Popula a ViewBag de dentistas (necessário para retornar a View)
-                    ViewBag.Dentistas = await _context.Dentistas.Where(d => d.Ativo || d.Id == model.IdDentista).OrderBy(d => d.Nome).ToListAsync();
+                    ViewBag.Dentistas = await _context.Dentistas.Where(d => (d.Ativo && d.Situacao == "contratado") || d.Id == model.IdDentista).OrderBy(d => d.Nome).ToListAsync();
 
                     // Recarrega os horários ocupados (para a View)
                     var horariosOcupados = await _context.EscalasMensaisDentista
@@ -342,7 +342,7 @@ namespace Pi_Odonto.Controllers
             }
 
             // Popula a ViewBag de dentistas (necessário para retornar a View)
-            ViewBag.Dentistas = await _context.Dentistas.Where(d => d.Ativo || d.Id == model.IdDentista).OrderBy(d => d.Nome).ToListAsync();
+            ViewBag.Dentistas = await _context.Dentistas.Where(d => (d.Ativo && d.Situacao == "contratado") || d.Id == model.IdDentista).OrderBy(d => d.Nome).ToListAsync();
             return View(model);
         }
 
