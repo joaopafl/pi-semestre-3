@@ -26,6 +26,28 @@
         --cor-finalizada-end: #D0D0D0; 
     }
 
+    /* NOVO: ESTILO DO BOTÃO VOLTAR */
+    .btn-voltar {
+        position: absolute; /* Permite posicionamento exato */
+        top: 100px; /* Ajuste a distância do topo */
+        left: 50px; /* Ajuste a distância da esquerda (dentro do container px-4) */
+        background-color: transparent; /* Fundo transparente */
+        border: 1px solid #ced4da; /* Borda sutil */
+        color: #495057; /* Cor do texto/ícone */
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        font-weight: 500;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+        z-index: 1000; /* Garante que fique acima de outros elementos se necessário */
+    }
+
+    .btn-voltar:hover {
+        background-color: #e9ecef; /* Um leve fundo cinza ao passar o mouse */
+        color: #2c3e50;
+        transform: translateY(-1px);
+    }
+
     /* CABEÇALHO */
     .page-title {
         text-align: center;
@@ -444,6 +466,11 @@
 
 <div class="container-fluid px-4">
     
+    @* NOVO: BOTÃO VOLTAR *@
+    <button onclick="history.back()" class="btn btn-voltar">
+        <i class="fas fa-arrow-left me-2"></i> Voltar
+    </button>
+    
     @* CABEÇALHO CENTRALIZADO *@
     <div class="page-title">
         <h2><i class="fas fa-calendar-alt"></i> Minha Agenda</h2>
@@ -703,13 +730,10 @@
 </div>
 
 @section Scripts {
-    <!-- jQuery UI CSS -->
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
     
-    <!-- jQuery (se ainda não estiver carregado) -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     
-    <!-- jQuery UI JS -->
     <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
     
     <script>

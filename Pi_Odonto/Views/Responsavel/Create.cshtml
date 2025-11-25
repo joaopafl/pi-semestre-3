@@ -299,20 +299,20 @@
                                         <input asp-for="Responsavel.Cpf" class="form-control form-control-compact" placeholder="000.000.000-00" id="cpfInput" maxlength="14" required />
                                         <div class="loading-spinner" id="cpf-spinner"></div>
                                     </div>
-                                    <span asp-validation-for="Responsavel.Cpf" class="text-danger small"></span>
+                                    @* <span asp-validation-for="Responsavel.Cpf" class="text-danger small"></span> *@
                                     <div class="validation-error-custom" id="cpf-error"></div>
                                 </div>
                             </div>
                             <div class="col-md-4">
                                 <div class="mb-compact">
                                     <label asp-for="Responsavel.Telefone" class="form-label-compact">
-                                        Telefone <span class="text-danger">*</span>
+                                        @* Telefone <span class="text-danger">*</span> *@
                                     </label>
                                     <div style="position: relative;">
                                         <input asp-for="Responsavel.Telefone" class="form-control form-control-compact" placeholder="(11) 99999-9999" id="telefoneInput" maxlength="15" required />
                                         <div class="loading-spinner" id="telefone-spinner"></div>
                                     </div>
-                                    <span asp-validation-for="Responsavel.Telefone" class="text-danger small"></span>
+                                    @* <span asp-validation-for="Responsavel.Telefone" class="text-danger small"></span> *@
                                     <div class="validation-error-custom" id="telefone-error"></div>
                                 </div>
                             </div>
@@ -335,17 +335,17 @@
                             <div class="col-md-6">
                                 <div class="mb-compact">
                                     <label asp-for="Responsavel.Senha" class="form-label-compact">
-                                        Senha <span class="text-danger">*</span>
+                                        @* Senha <span class="text-danger">*</span> *@
                                     </label>
                                     <input asp-for="Responsavel.Senha" type="password" class="form-control form-control-compact" placeholder="Digite sua senha" minlength="6" required />
                                     <small class="form-text text-muted" style="font-size: 0.75rem;">Mínimo de 6 caracteres</small>
-                                    <span asp-validation-for="Responsavel.Senha" class="text-danger small"></span>
+                                    @* <span asp-validation-for="Responsavel.Senha" class="text-danger small"></span> *@
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="mb-compact">
                                     <label class="form-label-compact">
-                                        Confirmar Senha <span class="text-danger">*</span>
+                                        @* Confirmar Senha <span class="text-danger">*</span> *@
                                     </label>
                                     <input name="ConfirmarSenha" type="password" class="form-control form-control-compact" placeholder="Confirme sua senha" minlength="6" required />
                                     <span class="text-danger small"></span>
@@ -358,7 +358,7 @@
                                 Endereço <span class="text-danger">*</span>
                             </label>
                             <textarea asp-for="Responsavel.Endereco" class="form-control form-control-compact" rows="2" placeholder="Rua, número, bairro, cidade, CEP" maxlength="60" required></textarea>
-                            <span asp-validation-for="Responsavel.Endereco" class="text-danger small"></span>
+                            @* <span asp-validation-for="Responsavel.Endereco" class="text-danger small"></span> *@
                         </div>
                     </div>
 
