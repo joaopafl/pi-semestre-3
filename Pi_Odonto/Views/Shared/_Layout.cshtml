@@ -356,21 +356,13 @@
                                         <i class="fas fa-users"></i> Famílias
                                     </a>
                                 </li>
-                                <li class="nav-item">
-                                    <a class="nav-link nav-link-custom" href="/Admin/Dentistas">
-                                        <i class="fas fa-user-md"></i> Dentistas
-                                    </a>
-                                </li>
+                                
                                 <li class="nav-item">
                                     <a class="nav-link nav-link-custom" href="/Atendimento">
                                         <i class="fas fa-calendar-check"></i> Atendimentos
                                     </a>
                                 </li>
-                                <li class="nav-item">
-                                    <a class="nav-link nav-link-custom" href="/Admin/Relatorios">
-                                        <i class="fas fa-chart-bar"></i> Relatórios
-                                    </a>
-                                </li>
+                            
                             }
 
                             @if (User.HasClaim("TipoUsuario", "Dentista"))
@@ -396,7 +388,7 @@
                             {
                                 <li class="nav-item">
                                     <a class="nav-link nav-link-custom" href="/Perfil">
-                                        <i class="fas fa-heart"></i> Minha Família
+                                        <i class="fas fa-heart"></i> Meu Perfil
                                     </a>
                                 </li>
                             }
@@ -439,7 +431,7 @@
                                     {
                                         <li>
                                             <a class="dropdown-item dropdown-item-custom" href="/Perfil">
-                                                <i class="fas fa-heart"></i> Minha Família
+                                                <i class="fas fa-heart"></i> Meu Perfil
                                             </a>
                                         </li>
                                         <li>

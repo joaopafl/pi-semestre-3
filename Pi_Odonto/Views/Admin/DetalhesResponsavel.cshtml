@@ -160,30 +160,6 @@
                         <h6 class="text-success">ID: #@Model.Id</h6>
                         <small class="text-muted">Identificador no Sistema</small>
                     </div>
-
-                    <hr>
-
-                    <div class="d-grid gap-2">
-                        <form method="post" action="/Admin/Responsaveis/ToggleStatus/@Model.Id" class="d-inline js-action-form">
-                            @* Botão ATIVAR/DESATIVAR agora aciona o modal *@
-                            <button type="button" 
-                                    class="btn @(Model.Ativo ? "btn-outline-warning" : "btn-outline-success") btn-sm w-100 js-confirm-action"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#confirmActionModal"
-                                    data-action-url="/Admin/Responsaveis/ToggleStatus/@Model.Id" 
-                                    data-message="Tem certeza que deseja @(Model.Ativo ? "DESATIVAR" : "ATIVAR") o responsável @Model.Nome?"
-                                    data-header-class="@(Model.Ativo ? "bg-warning" : "bg-success")"
-                                    data-confirm-text="@(Model.Ativo ? "Sim, Desativar" : "Sim, Ativar")"
-                                    data-is-danger="false">
-                                <i class="fas @(Model.Ativo ? "fa-ban" : "fa-check")"></i>
-                                @(Model.Ativo ? "Desativar" : "Ativar")
-                            </button>
-                            @* O campo de token anti-forgery precisa estar aqui, caso o formulário original use. Se não usar, remova o input abaixo. *@
-                            @* <input type="hidden" name="__RequestVerificationToken" value="@Html.AntiForgeryToken()" /> *@
-                        </form>
-
-                        @* O formulário de EXCLUIR foi REMOVIDO aqui. *@
-                    </div>
                 </div>
             </div>
         </div>

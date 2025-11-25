@@ -33,17 +33,23 @@
             cursor: pointer;
             margin-left: 15px;
             margin-right: 8%;
+            /* >>> NOVOS ESTILOS PARA A BORDA AZUL ARREDONDADA <<<
+            */
+            border: 1px solid #0d6efd; /* Cor Primária do Bootstrap */
+            border-radius: 5px;
+            padding: 5px 8px; /* Espaçamento interno */
+            transition: all 0.3s ease;
         }
-
-            .notification-bell .fa-heart {
-                font-size: 24px;
-                color: #dc3545;
-                transition: all 0.3s ease;
+            
+            .notification-bell:hover {
+                background-color: #eaf3ff; /* Leve destaque ao passar o mouse */
+                transform: scale(1.05);
             }
 
-            .notification-bell:hover .fa-heart {
-                transform: scale(1.1);
-                color: #bb2d3b;
+            .notification-bell .fa-hand-holding-heart {
+                font-size: 24px;
+                color: #0d6efd; /* Cor azul Primária */
+                transition: all 0.3s ease;
             }
 
         .notification-badge {
@@ -121,7 +127,7 @@
             </div>
         </div>
     </div>
-
+    
     <div class="row mb-4">
         <div class="col-md-3">
             <div class="card bg-primary text-white">

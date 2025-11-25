@@ -284,7 +284,7 @@
                                         Nome Completo <span class="text-danger">*</span>
                                     </label>
                                     <input asp-for="Responsavel.Nome" class="form-control form-control-compact" placeholder="Digite seu nome completo" maxlength="50" required />
-                                    <span asp-validation-for="Responsavel.Nome" class="text-danger small"></span>
+                                    @* <span asp-validation-for="Responsavel.Nome" class="text-danger small"></span> *@
                                 </div>
                             </div>
                         </div>
@@ -325,7 +325,7 @@
                                         <input asp-for="Responsavel.Email" type="email" class="form-control form-control-compact" placeholder="seu@email.com" maxlength="50" id="emailInput" required />
                                         <div class="loading-spinner" id="email-spinner"></div>
                                     </div>
-                                    <span asp-validation-for="Responsavel.Email" class="text-danger small"></span>
+                                    @* <span asp-validation-for="Responsavel.Email" class="text-danger small"></span> *@
                                     <div class="validation-error-custom" id="email-error"></div>
                                 </div>
                             </div>
@@ -398,14 +398,14 @@
                                             <div class="mb-compact">
                                                 <label asp-for="Criancas[@i].Nome" class="form-label-compact">Nome da Criança <span class="text-danger">*</span></label>
                                                 <input asp-for="Criancas[@i].Nome" class="form-control form-control-compact" placeholder="Nome completo da criança" required />
-                                                <span asp-validation-for="Criancas[@i].Nome" class="text-danger small"></span>
+                                                @* <span asp-validation-for="Criancas[@i].Nome" class="text-danger small"></span> *@
                                             </div>
                                         </div>
                                         <div class="col-md-6">
                                             <div class="mb-compact">
                                                 <label asp-for="Criancas[@i].Cpf" class="form-label-compact">CPF <span class="text-danger">*</span></label>
                                                 <input asp-for="Criancas[@i].Cpf" class="form-control form-control-compact cpf-crianca" placeholder="000.000.000-00" required />
-                                                <span asp-validation-for="Criancas[@i].Cpf" class="text-danger small"></span>
+                                                @* <span asp-validation-for="Criancas[@i].Cpf" class="text-danger small"></span> *@
                                             </div>
                                         </div>
                                     </div>
@@ -415,7 +415,7 @@
                                             <div class="mb-0">
                                                 <label asp-for="Criancas[@i].DataNascimento" class="form-label-compact">Data de Nascimento <span class="text-danger">*</span></label>
                                                 <input asp-for="Criancas[@i].DataNascimento" type="date" class="form-control form-control-compact" required />
-                                                <span asp-validation-for="Criancas[@i].DataNascimento" class="text-danger small"></span>
+                                                @* <span asp-validation-for="Criancas[@i].DataNascimento" class="text-danger small"></span> *@
                                             </div>
                                         </div>
                                         <div class="col-md-6">
@@ -428,7 +428,7 @@
                                                         <option value="@parentesco">@parentesco</option>
                                                     }
                                                 </select>
-                                                <span asp-validation-for="Criancas[@i].Parentesco" class="text-danger small"></span>
+                                                @* <span asp-validation-for="Criancas[@i].Parentesco" class="text-danger small"></span> *@
                                             </div>
                                         </div>
                                     </div>

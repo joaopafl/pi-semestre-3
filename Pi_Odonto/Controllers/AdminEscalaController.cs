@@ -141,11 +141,23 @@ namespace Pi_Odonto.Controllers
             var novasEscalas = new List<EscalaMensalDentista>();
             int escalasCriadas = 0;
             bool houveDuplicidade = false;
+            // Flag para horários que já passaram
+            bool houveHorarioPassado = false; 
 
             foreach (var horarioStr in horariosSelecionados)
             {
                 if (TimeSpan.TryParse(horarioStr, out TimeSpan horaInicio))
                 {
+                    // 1. VERIFICAÇÃO DE HORÁRIO PASSADO
+                    DateTime dataEHoraInicio = dataEscala.Date.Add(horaInicio);
+                    
+                    // Se a data da escala for HOJE E o horário de início JÁ PASSOU, ignora.
+                    if (dataEHoraInicio <= DateTime.Now)
+                    {
+                        houveHorarioPassado = true;
+                        continue;
+                    }
+                    
                     TimeSpan horaFim = horaInicio.Add(TimeSpan.FromHours(1));
 
                     // Verifica se JÁ EXISTE um bloco (para QUALQUER dentista) na Data e HoraInicio
@@ -172,21 +184,37 @@ namespace Pi_Odonto.Controllers
                 }
             }
 
+            // ATUALIZAÇÃO DAS MENSAGENS DE FEEDBACK
             if (novasEscalas.Any())
             {
                 _context.EscalasMensaisDentista.AddRange(novasEscalas);
                 _context.SaveChanges();
 
                 string mensagemSucesso = $"{escalasCriadas} blocos de escala criados com sucesso para {dataEscala:dd/MM/yyyy}!";
+                
                 if (houveDuplicidade)
                 {
                     mensagemSucesso += " (Alguns horários já existiam ou estavam ocupados e foram ignorados).";
                 }
+                if (houveHorarioPassado)
+                {
+                    mensagemSucesso += " (Horários que já se passaram no dia de hoje foram desconsiderados).";
+                }
+                
                 TempData["Sucesso"] = mensagemSucesso;
             }
-            else if (houveDuplicidade)
+            else if (houveDuplicidade || houveHorarioPassado) // Se não criou nenhum mas houve motivo (duplicidade/passado)
             {
-                TempData["Erro"] = "Nenhum novo bloco de escala foi criado, pois todos os horários selecionados já existiam ou estavam ocupados.";
+                string mensagemErro = "Nenhum novo bloco de escala foi criado. ";
+                if (houveDuplicidade)
+                {
+                    mensagemErro += "Todos os horários selecionados já existiam ou estavam ocupados. ";
+                }
+                if (houveHorarioPassado)
+                {
+                    mensagemErro += "Alguns horários que já se passaram foram desconsiderados. ";
+                }
+                 TempData["Erro"] = mensagemErro.Trim();
             }
             else
             {

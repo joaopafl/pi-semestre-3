@@ -65,16 +65,18 @@
         }
 
         .login-card {
-            background: white;
-            border-radius: 25px;
-            box-shadow: 0 20px 50px rgba(126, 87, 194, 0.15);
-            overflow: hidden;
-            border: none;
-            position: relative;
-            width: 100%;
-            max-width: 500px;
-            margin-left: 20%;
-        }
+    background: white;
+    border-radius: 25px;
+    box-shadow: 0 20px 50px rgba(126, 87, 194, 0.15);
+    overflow: hidden;
+    border: none;
+    position: relative;
+    width: 100%;
+    max-width: 500px;
+    /* Linha Original (com problema de alinhamento): margin-left: 20%; */
+    /* NOVA LINHA PARA CENTRALIZAR: */
+    margin: 0 auto; 
+}
 
         /* Barra superior colorida */
         .login-card::before {
@@ -484,9 +486,9 @@
                         
                         <p>
                             <strong>Não é dentista voluntário?</strong><br>
-                            <a href="/Login" style="color: var(--cor-primaria-dentista); text-decoration: none;">
+                            <a href="/Voluntario/Cadastro" style="color: var(--cor-primaria-dentista); text-decoration: none;">
                                 <i class="fas fa-users me-1"></i>
-                                Acesse o portal dos responsáveis
+                                Acesse o portal dos Voluntários
                             </a>
                         </p>
                         

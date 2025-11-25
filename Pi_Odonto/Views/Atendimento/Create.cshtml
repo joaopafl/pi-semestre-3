@@ -56,22 +56,47 @@
                                     <span asp-validation-for="DuracaoAtendimento" class="text-danger"></span>
                                 </div>
                             </div>
+                            
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label asp-for="IdDentista" class="form-label fw-bold">
                                         <i class="fas fa-user-md text-primary"></i> Dentista <span class="text-danger">*</span>
                                     </label>
-                                    <select asp-for="IdDentista" class="form-select" required>
-                                        <option value="0">Selecione um dentista</option>
-                                        @if (Model.DentistasDisponiveis != null)
-                                        {
-                                            @foreach (var dentista in Model.DentistasDisponiveis)
+
+                                    @{
+                                        bool isAdmin = Model.DentistasDisponiveis != null && Model.DentistasDisponiveis.Count > 1;
+                                        var dentistaLogado = Model.DentistasDisponiveis?.FirstOrDefault();
+                                    }
+
+                                    @if (isAdmin)
+                                    {
+                                        <select asp-for="IdDentista" class="form-select" required>
+                                            <option value="">Selecione um dentista</option>
+                                            @if (Model.DentistasDisponiveis != null)
                                             {
-                                                <option value="@dentista.Id">@dentista.Nome - CRO: @dentista.Cro</option>
+                                                @foreach (var dentista in Model.DentistasDisponiveis)
+                                                {
+                                                    <option value="@dentista.Id" selected="@(dentista.Id == Model.IdDentista)">@dentista.Nome - CRO: @dentista.Cro</option>
+                                                }
                                             }
-                                        }
-                                    </select>
-                                    <span asp-validation-for="IdDentista" class="text-danger"></span>
+                                        </select>
+                                        <span asp-validation-for="IdDentista" class="text-danger"></span>
+                                    }
+                                    else if (dentistaLogado != null)
+                                    {
+                                        <input type="text" 
+                                               class="form-control" 
+                                               value="@(dentistaLogado.Nome) - CRO: @(dentistaLogado.Cro)" 
+                                               readonly />
+                                        
+                                        <input type="hidden" asp-for="IdDentista" value="@dentistaLogado.Id" />
+                                        
+                                        <span asp-validation-for="IdDentista" class="text-danger"></span>
+                                    }
+                                    else
+                                    {
+                                        <div class="alert alert-warning">Erro: Dentista não identificado.</div>
+                                    }
                                 </div>
                             </div>
                         </div>
@@ -148,6 +173,7 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Campos existentes
             const selectCrianca = document.getElementById('selectCrianca');
             const odontogramaButtonContainer = document.getElementById('odontogramaButtonContainer');
             const odontogramaArea = document.getElementById('odontogramaArea');
@@ -155,28 +181,100 @@
             const horarioInput = document.querySelector('input[name="HorarioAtendimento"]');
             const duracaoSelect = document.querySelector('select[name="DuracaoAtendimento"]');
 
-            // Mostrar/Ocultar botão de odontograma baseado na seleção da criança
+            // NOVOS CAMPOS PARA ESCALA
+            const dataInput = document.querySelector('input[name="DataAtendimento"]');
+            // Prioriza o Select (Admin) e se não existir, pega o Hidden (Dentista)
+            const dentistaInput = document.querySelector('select[name="IdDentista"]') || document.querySelector('input[name="IdDentista"][type="hidden"]');
+            const dentistaReadonly = document.querySelector('input[readonly][value*="CRO"]'); // Campo de texto para o nome do dentista
+
+            // Funções auxiliares para exibir a mensagem de erro (melhora a UX)
+            function showValidationMessage(inputElement, message) {
+                let span = inputElement.nextElementSibling;
+                // Busca o span de validação existente ou cria um novo
+                if (!span || !span.classList.contains('text-danger')) {
+                    span = document.createElement('span');
+                    span.classList.add('text-danger');
+                    // Insere após o input
+                    inputElement.parentNode.insertBefore(span, inputElement.nextSibling);
+                }
+                span.textContent = message;
+            }
+
+            function removeValidationMessage(inputElement) {
+                let span = inputElement.nextElementSibling;
+                if (span && span.classList.contains('text-danger')) {
+                    span.textContent = '';
+                }
+            }
+            
+            // ==========================================================
+            // FUNÇÃO DE CHECAGEM DE ESCALA (AJAX)
+            // ==========================================================
+            function checkEscala() {
+                const idDentista = dentistaInput.value;
+                const dataAtendimento = dataInput.value;
+                
+                // Limpa a validação anterior antes de checar
+                removeValidationMessage(dataInput);
+                
+                if (!idDentista || idDentista === '0' || !dataAtendimento) {
+                    dataInput.setCustomValidity(''); // Libera se os campos estiverem incompletos
+                    return; 
+                }
+
+                // Chamar o endpoint no Controller
+                fetch(`/Atendimento/CheckEscala?idDentista=${idDentista}&dataAtendimento=${dataAtendimento}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (!data.success) {
+                            // Restrição de escala: Exibe mensagem e bloqueia o formulário
+                            const errorMessage = data.message || "Esta data não está na escala de trabalho do dentista.";
+                            showValidationMessage(dataInput, errorMessage);
+                            dataInput.setCustomValidity(errorMessage); // Bloqueia o submit
+                        } else {
+                            // Data e escala válidas: Libera o formulário
+                            dataInput.setCustomValidity('');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Erro ao verificar a escala:', error);
+                        // Em caso de erro de rede/servidor, libera o formulário para não bloquear indefinidamente.
+                        dataInput.setCustomValidity(''); 
+                    });
+            }
+
+            // ==========================================================
+            // LISTENERS DE EVENTOS
+            // ==========================================================
+            
+            // 1. Checagem de Escala na alteração da Data ou Dentista
+            dataInput.addEventListener('change', checkEscala);
+            dentistaInput.addEventListener('change', checkEscala);
+            
+            // 2. Comportamento do botão Odontograma
             selectCrianca.addEventListener('change', function() {
                 const criancaId = this.value;
 
                 if (criancaId && criancaId !== '0') {
-                    // Atualizar o href do botão com o ID da criança
-                    btnOdontograma.href = `https://localhost:7162/Odontograma/PorCrianca/${criancaId}`;
-                    // Mostrar o botão
+                    btnOdontograma.href = `/Odontograma/PorCrianca/${criancaId}`;
                     odontogramaButtonContainer.style.display = 'block';
-                    // Destacar a área do odontograma
                     odontogramaArea.classList.add('alert-info');
                     odontogramaArea.classList.remove('alert-success');
                 } else {
-                    // Ocultar o botão se nenhuma criança estiver selecionada
                     odontogramaButtonContainer.style.display = 'none';
-                    // Voltar cor original
                     odontogramaArea.classList.remove('alert-info');
                     odontogramaArea.classList.add('alert-success');
                 }
             });
 
-            // Script para calcular e exibir horário de término
+            // Dispara a checagem de escala e odontograma na carga da página, caso já haja valores (ex: após erro de validação)
+            selectCrianca.dispatchEvent(new Event('change'));
+            if (dataInput.value && dentistaInput.value && dentistaInput.value !== '0') {
+                checkEscala();
+            }
+
+            // ... (Restante dos scripts de cálculo de término e efeitos visuais) ...
+            
             function calcularHorarioTermino() {
                 if (horarioInput.value && duracaoSelect.value) {
                     const [horas, minutos] = horarioInput.value.split(':');
@@ -196,7 +294,6 @@
             horarioInput.addEventListener('change', calcularHorarioTermino);
             duracaoSelect.addEventListener('change', calcularHorarioTermino);
 
-            // Adicionar efeito visual ao botão de odontograma
             btnOdontograma.addEventListener('mouseenter', function() {
                 this.style.transform = 'scale(1.05)';
                 this.style.transition = 'transform 0.2s';

@@ -2,6 +2,8 @@
 
 @{
     ViewData["Title"] = "Editar Atendimento";
+    // 1. Obtém a URL de retorno configurada no Controller (AtendimentoController.cs)
+    var returnUrl = ViewData["ReturnUrl"] as string ?? "/Atendimento/Index"; 
 }
 
 <div class="container-fluid">
@@ -13,7 +15,8 @@
                         <i class="fas fa-edit"></i> Editar Atendimento
                     </h3>
                     <div class="card-tools">
-                        <a asp-action="Index" class="btn btn-secondary btn-sm">
+                        @* 2. Botão Voltar CORRIGIDO para usar a ReturnUrl dinâmica *@
+                        <a href="@returnUrl" class="btn btn-secondary btn-sm">
                             <i class="fas fa-arrow-left"></i> Voltar
                         </a>
                     </div>
@@ -24,7 +27,6 @@
                         <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
 
                         <div class="row">
-                            <!-- Data do Atendimento -->
                             <div class="col-md-4">
                                 <div class="form-group mb-3">
                                     <label asp-for="DataAtendimento" class="form-label">
@@ -35,7 +37,6 @@
                                 </div>
                             </div>
 
-                            <!-- Horário do Atendimento -->
                             <div class="col-md-4">
                                 <div class="form-group mb-3">
                                     <label asp-for="HorarioAtendimento" class="form-label">
@@ -46,7 +47,6 @@
                                 </div>
                             </div>
 
-                            <!-- Duração -->
                             <div class="col-md-4">
                                 <div class="form-group mb-3">
                                     <label asp-for="DuracaoAtendimento" class="form-label">
@@ -67,7 +67,6 @@
                         </div>
 
                         <div class="row">
-                            <!-- Criança -->
                             <div class="col-md-6">
                                 <div class="form-group mb-3">
                                     <label asp-for="IdCrianca" class="form-label">
@@ -87,7 +86,6 @@
                                 </div>
                             </div>
 
-                            <!-- Dentista -->
                             <div class="col-md-6">
                                 <div class="form-group mb-3">
                                     <label asp-for="IdDentista" class="form-label">
@@ -109,7 +107,6 @@
                         </div>
 
                         <div class="row">
-                            <!-- Agenda removida temporariamente -->
                             <div class="col-md-12">
                                 <div class="alert alert-warning">
                                     <i class="fas fa-info-circle"></i>
@@ -118,7 +115,6 @@
                             </div>
                         </div>
 
-                        <!-- Observações -->
                         <div class="form-group mb-3">
                             <label asp-for="Observacao" class="form-label">
                                 <i class="fas fa-sticky-note"></i> Observações
@@ -129,7 +125,6 @@
                             <div class="form-text">Máximo de 100 caracteres. Informações complementares sobre o atendimento.</div>
                         </div>
 
-                        <!-- Info sobre campos não editáveis -->
                         <div class="alert alert-info">
                             <i class="fas fa-info-circle"></i>
                             <strong>Informações:</strong>
@@ -140,10 +135,10 @@
                             </ul>
                         </div>
 
-                        <!-- Botões -->
                         <div class="form-group">
                             <div class="d-flex justify-content-between">
-                                <a asp-action="Index" class="btn btn-secondary">
+                                @* 3. Botão Cancelar/Voltar usando a ReturnUrl dinâmica também no rodapé *@
+                                <a href="@returnUrl" class="btn btn-secondary">
                                     <i class="fas fa-arrow-left"></i> Cancelar
                                 </a>
                                 <button type="submit" class="btn btn-primary">

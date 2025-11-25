@@ -103,35 +103,70 @@
         const dataInput = document.getElementById('dataInput');
         const dentistaSelect = document.getElementById('dentistaSelect');
         const checkboxes = document.querySelectorAll('input[name="horariosSelecionados"]');
+        
+        // NOVO: Função para verificar se a data selecionada é hoje e se o horário já passou
+        function checkPastHours(horarioStr, dataSelecionadaStr) {
+            const hoje = new Date();
+            const dataSelecionada = new Date(dataSelecionadaStr);
+            
+            // Verifica se a data selecionada é HOJE (ignorando o tempo)
+            const isToday = dataSelecionada.toDateString() === hoje.toDateString();
+
+            if (isToday) {
+                // Combina a data de hoje com o horário do checkbox
+                const [horas, minutos] = horarioStr.split(':').map(Number);
+                
+                // Cria um objeto Date com o dia de hoje, mas com a hora do bloco
+                const horaDoBloco = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate(), horas, minutos, 0);
+
+                // Verifica se a hora de INÍCIO do bloco JÁ PASSOU.
+                // Usamos 15 minutos de tolerância após a hora de início do bloco para considerar 'passado'
+                // Você pode ajustar 15 * 60 * 1000 (15 minutos em milissegundos)
+                return horaDoBloco.getTime() <= hoje.getTime();
+            }
+            // Se não for hoje, nenhum horário é considerado passado
+            return false;
+        }
+
 
         function atualizarHorariosDisponiveis() {
             const idDentista = dentistaSelect.value;
+            const dataSelecionadaStr = dataInput.value; // Formato yyyy-MM-dd
 
             checkboxes.forEach(cb => {
                 const horarioValue = cb.value; // Ex: 08:00:00
                 const horarioStr = horarioValue.substring(0, 5); // Pega apenas HH:mm
+                
+                // Variáveis de estado
                 const isOcupado = horariosOcupados.includes(horarioStr);
+                // NOVO: Verifica se o horário já se passou no dia de hoje
+                const isPast = checkPastHours(horarioStr, dataSelecionadaStr); 
 
-                // Desabilita se o horário estiver ocupado OU se nenhum dentista foi selecionado
-                const shouldBeDisabled = isOcupado || !idDentista;
+                // Desabilita se: 
+                // 1. O horário estiver ocupado (por outro dentista)
+                // 2. O horário já se passou (apenas para o dia de hoje)
+                // 3. Nenhum dentista foi selecionado
+                const shouldBeDisabled = isOcupado || isPast || !idDentista;
 
                 cb.disabled = shouldBeDisabled;
                 cb.checked = !shouldBeDisabled && cb.checked; // Desmarca se estiver desabilitado
 
                 // Estilo visual e Tooltip
-                if (shouldBeDisabled) {
-                    cb.parentElement.classList.add('text-danger');
-                    cb.parentElement.classList.remove('text-muted');
-                    if (isOcupado) {
-                       cb.title = `Horário ${horarioStr} já ocupado por outro bloco nesta data.`;
-                    } else {
-                       cb.title = 'Selecione um dentista para continuar.';
-                    }
-                } else {
-                    cb.parentElement.classList.remove('text-danger');
-                    cb.parentElement.classList.remove('text-muted');
-                    cb.title = '';
+                cb.parentElement.classList.remove('text-danger', 'text-muted');
+                cb.title = '';
+
+                if (isPast) {
+                    cb.parentElement.classList.add('text-muted');
+                    cb.title = `Horário ${horarioStr} já se passou no dia de hoje.`;
                 }
+                else if (isOcupado) {
+                    cb.parentElement.classList.add('text-danger');
+                    cb.title = `Horário ${horarioStr} já ocupado por outro bloco nesta data.`;
+                }
+                else if (!idDentista) {
+                    cb.parentElement.classList.add('text-muted');
+                    cb.title = 'Selecione um dentista para continuar.';
+                } 
             });
         }
 
@@ -139,11 +174,12 @@
         dentistaSelect.addEventListener('change', atualizarHorariosDisponiveis);
 
         // 2. Ouvir mudanças na data e redirecionar para recarregar a lista de horários ocupados
-        // Isso garante que o Controller traga a lista correta de horários ocupados para a nova data.
+        // Isso é crucial porque a lista de ocupados só é atualizada no servidor (Controller)
         dataInput.addEventListener('change', function() {
             const novaData = this.value;
-            // Preserva o Id do dentista na URL se necessário, mas o foco é recarregar a data
-            window.location.href = '@Url.Action("Criar", "AdminEscala")?data=' + novaData;
+            // Preserva o Id do dentista na URL
+            const idDentista = dentistaSelect.value;
+            window.location.href = '@Url.Action("Criar", "AdminEscala")?data=' + novaData + (idDentista ? '&idDentista=' + idDentista : '');
         });
 
         // 3. Executar ao carregar a página
