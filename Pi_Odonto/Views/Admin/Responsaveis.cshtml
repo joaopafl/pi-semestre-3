@@ -79,6 +79,28 @@
         </div>
     </div>
 
+    <div class="card mt-4 mb-4 border-0 shadow-sm">
+        <div class="card-header bg-light">
+            <h6 class="mb-0 text-primary"><i class="fas fa-info-circle"></i> Guia de Ícones de Ação</h6>
+        </div>
+        <div class="card-body py-2">
+            <div class="d-flex flex-wrap align-items-center">
+                <div class="mb-2 me-4">
+                    <i class="fas fa-eye text-info me-1"></i> Detalhes do Responsavel
+                </div>
+                <div class="mb-2 me-4">
+                    <i class="fas fa-edit text-warning me-1"></i> Editar Cadastro
+                </div>
+                <div class="mb-2 me-4">
+                    <i class="fas fa-check text-success me-1"></i> Ativar Responsavel  
+                </div>
+                <div class="mb-2 me-4">
+                    <i class="fas fa-ban text-danger me-1"></i> Desativar Responsavel  
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="card">
         <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
             <h5 class="mb-0">
@@ -187,43 +209,34 @@
                                             </span>
                                         }
                                     </td>
-                                    <td>
-                                        <div class="btn-group btn-group-sm" role="group">
-                                            <a href="/Admin/Responsaveis/Detalhes/@responsavel.Id" class="btn btn-outline-info" title="Ver detalhes">
+                                    <td class="align-middle">
+                                        <div class="d-flex justify-content-start">
+                                            
+                                            <a href="/Admin/Responsaveis/Detalhes/@responsavel.Id" class="btn btn-outline-info btn-sm me-1" title="Ver detalhes">
                                                 <i class="fas fa-eye"></i>
                                             </a>
-                                            <a href="/Admin/Responsaveis/Editar/@responsavel.Id" class="btn btn-outline-warning" title="Editar">
+                                            
+                                            <a href="/Admin/Responsaveis/Editar/@responsavel.Id" class="btn btn-outline-warning btn-sm me-1" title="Editar">
                                                 <i class="fas fa-edit"></i>
                                             </a>
-                                            <div class="btn-group btn-group-sm">
-                                                <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" title="Mais opções">
-                                                    <i class="fas fa-ellipsis-v"></i>
+                                            
+                                            <form method="post" asp-action="ToggleStatus" asp-route-id="@responsavel.Id" class="d-inline js-action-form">
+                                                @Html.AntiForgeryToken()
+                                                <button type="button" 
+                                                        class="btn btn-sm @(responsavel.Ativo ? "btn-outline-danger" : "btn-outline-success") js-confirm-action"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#confirmActionModal"
+                                                        data-action-url="/Admin/Responsaveis/ToggleStatus/@responsavel.Id" 
+                                                        data-message="Tem certeza que deseja @(responsavel.Ativo ? "DESATIVAR" : "ATIVAR") o responsável <strong>@responsavel.Nome</strong>?"
+                                                        data-header-class="@(responsavel.Ativo ? "bg-warning" : "bg-success")"
+                                                        data-confirm-text="@(responsavel.Ativo ? "Sim, Desativar" : "Sim, Ativar")"
+                                                        data-is-danger="false"
+                                                        title="@(responsavel.Ativo ? "Desativar" : "Ativar")">
+                                                    
+                                                    <i class="fas fa-@(responsavel.Ativo ? "ban" : "check")"></i> 
                                                 </button>
-                                                <ul class="dropdown-menu">
-                                                    <li>
-                                                        <form method="post" asp-action="ToggleStatus" asp-route-id="@responsavel.Id" class="d-inline js-action-form">
-                                                            <button type="button" 
-                                                                    class="dropdown-item js-confirm-action"
-                                                                    data-bs-toggle="modal"
-                                                                    data-bs-target="#confirmActionModal"
-                                                                    data-action-url="/Admin/Responsaveis/ToggleStatus/@responsavel.Id" 
-                                                                    data-message="Tem certeza que deseja @(responsavel.Ativo ? "DESATIVAR" : "ATIVAR") o responsável @responsavel.Nome?"
-                                                                    data-header-class="@(responsavel.Ativo ? "bg-warning" : "bg-success")"
-                                                                    data-confirm-text="@(responsavel.Ativo ? "Sim, Desativar" : "Sim, Ativar")"
-                                                                    data-is-danger="false">
-                                                                @if (responsavel.Ativo)
-                                                                {
-                                                                    <text><i class="fas fa-ban text-warning"></i> Desativar</text>
-                                                                }
-                                                                else
-                                                                {
-                                                                    <text><i class="fas fa-check text-success"></i> Ativar</text>
-                                                                }
-                                                            </button>
-                                                        </form>
-                                                    </li>
-                                                </ul>
-                                            </div>
+                                            </form>
+                                            
                                         </div>
                                     </td>
                                 </tr>
@@ -258,6 +271,28 @@
 
     @if (Model != null && Model.Any())
     {
+        <div class="card mt-4 mb-4 border-0 shadow-sm">
+            <div class="card-header bg-light">
+                <h6 class="mb-0 text-primary"><i class="fas fa-info-circle"></i> Guia de Ícones de Ação</h6>
+            </div>
+            <div class="card-body py-2">
+                <div class="d-flex flex-wrap align-items-center">
+                    <div class="mb-2 me-4">
+                        <i class="fas fa-eye text-info me-1"></i> Detalhes do Responsável
+                    </div>
+                    <div class="mb-2 me-4">
+                        <i class="fas fa-edit text-warning me-1"></i> Editar Cadastro
+                    </div>
+                    <div class="mb-2 me-4">
+                        <i class="fas fa-check text-success me-1"></i> Ativar Responsável (Se Inativo)
+                    </div>
+                    <div class="mb-2 me-4">
+                        <i class="fas fa-ban text-danger me-1"></i> Desativar Responsável (Se Ativo)
+                    </div>
+                </div>
+            </div>
+        </div>
+        
         <div class="row mt-4">
             <div class="col-md-12">
                 <div class="card bg-light">
@@ -326,12 +361,15 @@
     <script>
         // Auto-submit do form de busca após digitar
         let searchTimer;
-        document.querySelector('input[name="busca"]').addEventListener('input', function() {
-            clearTimeout(searchTimer);
-            searchTimer = setTimeout(() => {
-                this.form.submit();
-            }, 500);
-        });
+        const buscaInput = document.querySelector('input[name="busca"]');
+        if (buscaInput) {
+            buscaInput.addEventListener('input', function() {
+                clearTimeout(searchTimer);
+                searchTimer = setTimeout(() => {
+                    this.form.submit();
+                }, 500);
+            });
+        }
 
         // Lógica para Modais de Confirmação Amigáveis
         document.addEventListener('DOMContentLoaded', function() {

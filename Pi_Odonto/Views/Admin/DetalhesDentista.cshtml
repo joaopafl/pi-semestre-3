@@ -178,23 +178,24 @@
 
             <div class="card shadow-lg mt-4">
                 <div class="card-body text-center">
-                    <div class="btn-group" role="group">
-                        <a href="@Url.Action("EditarDentista", new { id = Model.Id })" class="btn btn-warning btn-lg">
+                    <div class="d-flex justify-content-center">
+                        
+                        <a href="@Url.Action("EditarDentista", new { id = Model.Id })" class="btn btn-warning btn-lg me-2">
                             <i class="fas fa-edit"></i> Editar
                         </a>
-                        <form asp-action="ToggleAtivoDentista" asp-route-id="@Model.Id" method="post" style="display: inline;">
+
+                        <form asp-action="ToggleAtivoDentista" asp-route-id="@Model.Id" method="post" class="d-inline me-2">
                             @Html.AntiForgeryToken()
                             <button type="submit" class="btn btn-lg @(Model.Ativo ? "btn-danger" : "btn-success")" 
                                     onclick="return confirm('Tem certeza que deseja @(Model.Ativo ? "desativar" : "ativar") este dentista?');">
                                 <i class="fas fa-@(Model.Ativo ? "ban" : "check")"></i> @(Model.Ativo ? "Desativar" : "Ativar")
                             </button>
                         </form>
-                        <a href="javascript:history.back()" class="btn btn-secondary">
-                            <i class="fas fa-list"></i> Voltar para a Lista
+                        
+                        <a href="javascript:history.back()" class="btn btn-secondary btn-lg">
+                            <i class="fas fa-arrow-left"></i> Voltar
                         </a>
-                        <!--<a href="/Admin/Dentistas" class="btn btn-secondary btn-lg">
-                            <i class="fas fa-list"></i> Voltar para Lista
-                        </a>-->
+                        
                     </div>
                 </div>
             </div>

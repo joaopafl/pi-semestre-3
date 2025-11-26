@@ -125,6 +125,28 @@
         </div>
     </div>
 
+    <div class="card mt-4 mb-4 border-0 shadow-sm">
+        <div class="card-header bg-light">
+            <h6 class="mb-0 text-primary"><i class="fas fa-info-circle"></i> Guia de Ícones de Ação</h6>
+        </div>
+        <div class="card-body py-2">
+            <div class="d-flex flex-wrap align-items-center">
+                <div class="mb-2 me-4">
+                    <i class="fas fa-eye text-info me-1"></i> Detalhes do Dentista
+                </div>
+                <div class="mb-2 me-4">
+                    <i class="fas fa-edit text-warning me-1"></i> Editar Cadastro
+                </div>
+                <div class="mb-2 me-4">
+                    <i class="fas fa-check text-success me-1"></i> Ativar Dentista 
+                </div>
+                <div class="mb-2 me-4">
+                    <i class="fas fa-ban text-danger me-1"></i> Desativar Dentista 
+                </div>
+            </div>
+        </div>
+    </div>
+
     @if (Model != null && Model.Any())
     {
         <div class="card">
@@ -151,20 +173,20 @@
                                 <th>Email</th>
                                 <th>Status</th>
                                 <th>Situação</th>
-                                <th width="250">Ações</th>
+                                <th width="120">Ações</th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach (var dentista in Model)
                             {
-                                <tr>
-                                    <td>
+                                <tr class="align-middle">
+                                    <td class="align-middle">
                                         <div class="d-flex align-items-center">
                                             <i class="fas fa-user-md text-primary me-2"></i>
                                             <strong>@dentista.Nome</strong>
                                         </div>
                                     </td>
-                                    <td>
+                                    <td class="align-middle">
                                         @if (dentista.Cpf.Length == 11)
                                         {
                                             @($"{dentista.Cpf.Substring(0, 3)}.{dentista.Cpf.Substring(3, 3)}.{dentista.Cpf.Substring(6, 3)}-{dentista.Cpf.Substring(9, 2)}")
@@ -174,10 +196,10 @@
                                             @dentista.Cpf
                                         }
                                     </td>
-                                    <td>
+                                    <td class="align-middle">
                                         <span class="badge bg-info">@dentista.Cro</span>
                                     </td>
-                                    <td>
+                                    <td class="align-middle">
                                         @if (dentista.Telefone.Length == 11)
                                         {
                                             <a href="tel:@dentista.Telefone" class="text-decoration-none">
@@ -189,12 +211,12 @@
                                             @dentista.Telefone
                                         }
                                     </td>
-                                    <td>
+                                    <td class="align-middle">
                                         <a href="mailto:@dentista.Email" class="text-decoration-none">
                                             @dentista.Email
                                         </a>
                                     </td>
-                                    <td>
+                                    <td class="align-middle">
                                         @if (dentista.Ativo)
                                         {
                                             <span class="badge bg-success">
@@ -208,29 +230,33 @@
                                             </span>
                                         }
                                     </td>
-                                    <td>
+                                    <td class="align-middle">
                                         @{
                                             var situacao = dentista.Situacao ?? "candidato";
                                             var situacaoClass = situacao.ToLower() switch
                                             {
                                                 "contratado" => "bg-success",
-                                                "banco de talento" => "bg-info",
+                                                "banco de talento" => "bg-warning text-dark",
                                                 "desvinculado" => "bg-secondary",
-                                                _ => "bg-warning"
+                                                _ => "bg-warning text-dark" 
                                             };
                                         }
                                         <span class="badge @situacaoClass">
                                             @situacao
                                         </span>
                                     </td>
-                                    <td>
-                                        <div class="btn-group btn-group-sm" role="group">
-                                            <a href="@Url.Action("DetalhesDentista", new { id = dentista.Id })" class="btn btn-outline-info" title="Ver detalhes">
-                                                <i class="fas fa-eye"></i> Detalhes
+                                    
+                                    <td class="align-middle">
+                                        <div class="d-flex justify-content-start"> 
+                                            
+                                            <a href="@Url.Action("DetalhesDentista", new { id = dentista.Id })" class="btn btn-outline-info btn-sm me-1" title="Ver Detalhes">
+                                                <i class="fas fa-eye"></i>
                                             </a>
-                                            <a href="@Url.Action("EditarDentista", new { id = dentista.Id })" class="btn btn-outline-warning" title="Editar">
-                                                <i class="fas fa-edit"></i> Editar
+                                            
+                                            <a href="@Url.Action("EditarDentista", new { id = dentista.Id })" class="btn btn-outline-warning btn-sm me-1" title="Editar">
+                                                <i class="fas fa-edit"></i>
                                             </a>
+                                            
                                             <form method="post" asp-action="ToggleAtivoDentista" asp-route-id="@dentista.Id" class="d-inline js-action-form">
                                                 @Html.AntiForgeryToken()
                                                 <button type="button" 
@@ -238,14 +264,16 @@
                                                         data-bs-toggle="modal"
                                                         data-bs-target="#confirmActionModal"
                                                         data-action-url="/Admin/ToggleAtivoDentista/@dentista.Id" 
-                                                        data-message="Tem certeza que deseja @(dentista.Ativo ? "DESATIVAR" : "ATIVAR") o dentista @dentista.Nome?"
+                                                        data-message="Tem certeza que deseja @(dentista.Ativo ? "DESATIVAR" : "ATIVAR") o dentista <strong>@dentista.Nome</strong>?"
                                                         data-header-class="@(dentista.Ativo ? "bg-warning" : "bg-success")"
                                                         data-confirm-text="@(dentista.Ativo ? "Sim, Desativar" : "Sim, Ativar")"
                                                         data-is-danger="false"
                                                         title="@(dentista.Ativo ? "Desativar" : "Ativar")">
-                                                    <i class="fas fa-@(dentista.Ativo ? "ban" : "check")"></i> @(dentista.Ativo ? "Desativar" : "Ativar")
+                                                    
+                                                    <i class="fas fa-@(dentista.Ativo ? "ban" : "check")"></i> 
                                                 </button>
                                             </form>
+                                            
                                         </div>
                                     </td>
                                 </tr>
@@ -282,6 +310,7 @@
                 </div>
             </div>
         </div>
+
     }
     else
     {
@@ -351,9 +380,6 @@
 
         // Lógica para Modais de Confirmação Amigáveis
         document.addEventListener('DOMContentLoaded', function() {
-            // Inicializa o modal do Bootstrap
-            const confirmActionModalElement = document.getElementById('confirmActionModal');
-            
             const confirmActionButton = document.getElementById('confirmActionButton');
             const actionForm = document.getElementById('actionForm');
 
@@ -366,7 +392,6 @@
                     const message = this.getAttribute('data-message');
                     const headerClass = this.getAttribute('data-header-class') || 'bg-danger';
                     const confirmText = this.getAttribute('data-confirm-text') || 'Confirmar';
-                    // IMPORTANTE: Mantenha o data-is-danger como 'false' para desativação/ativação
                     const isDanger = this.getAttribute('data-is-danger') === 'true'; 
 
                     // Pega o form original para copiar tokens de anti-forgery
@@ -383,7 +408,7 @@
                     confirmActionButton.className = `btn ${isDanger ? 'btn-danger' : 'btn-primary'}`;
                     confirmActionButton.innerHTML = `<i class="fas fa-check"></i> ${confirmText}`;
 
-                    // 3. Exibe/Oculta o alerta de perigo (NUNCA deve aparecer para Toggle Status, por isso mantive `isDanger` no modal, mas garantimos que o data-is-danger seja false acima)
+                    // 3. Exibe/Oculta o alerta de perigo (NUNCA deve aparecer para Toggle Status)
                     document.getElementById('modalWarning').style.display = isDanger ? 'block' : 'none';
 
                     // 4. Configura o formulário oculto
@@ -403,7 +428,6 @@
             confirmActionButton.addEventListener('click', function() {
                 // Envia o formulário oculto com a URL e token corretos
                 actionForm.submit();
-                // Não é necessário esconder o modal, o submit fará o refresh
             });
         });
     </script>

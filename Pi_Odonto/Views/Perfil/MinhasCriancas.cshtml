@@ -334,7 +334,7 @@
             <h1>
                 @if (isAdmin)
                 {
-                    <span>👨‍⚕️ Gerenciar Crianças</span>
+                    <span><i class="fas fa-users-cog"></i> Gerenciar Crianças</span>
                     @if (!string.IsNullOrEmpty(responsavelNome))
                     {
                         <br>
@@ -343,7 +343,7 @@
                 }
                 else
                 {
-                    <span>👶 Minhas Crianças</span>
+                    <span><i class="fas fa-child"></i> Minhas Crianças</span>
                 }
             </h1>
         </div>
@@ -352,18 +352,18 @@
             {
                 @if (ViewBag.ResponsavelId != null)
                 {
-                    <a href="/Perfil/CadastrarCrianca?responsavelId=@ViewBag.ResponsavelId" class="btn btn-info">➕ Adicionar</a>
-                    <a href="/Perfil/MinhasCriancas" class="btn btn-secondary">📋 Ver Todas</a>
+                    <a href="/Perfil/CadastrarCrianca?responsavelId=@ViewBag.ResponsavelId" class="btn btn-info"><i class="fas fa-plus"></i> Adicionar</a>
+                    <a href="/Perfil/MinhasCriancas" class="btn btn-secondary"><i class="fas fa-list"></i> Ver Todas</a>
                 }
                 else
                 {
-                    <a href="/Perfil/CadastrarCrianca" class="btn btn-info">➕ Adicionar</a>
-                    <a href="/Admin" class="btn btn-secondary">⬅️ Painel</a>
+                    <a href="/Perfil/CadastrarCrianca" class="btn btn-info"><i class="fas fa-plus"></i> Adicionar</a>
+                    <a href="/Admin" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Painel</a>
                 }
             }
             else
             {
-                <a href="/Perfil/CadastrarCrianca" class="btn btn-info">➕ Adicionar Criança</a>
+                <a href="/Perfil/CadastrarCrianca" class="btn btn-info"><i class="fas fa-plus"></i> Adicionar Criança</a>
             }
         </div>
     </div>
@@ -371,14 +371,14 @@
     @if (TempData["Sucesso"] != null)
     {
         <div style="background: #d4edda; color: #155724; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
-            @TempData["Sucesso"]
+            <i class="fas fa-check-circle"></i> @TempData["Sucesso"]
         </div>
     }
 
     @if (TempData["Erro"] != null)
     {
         <div style="background: #f8d7da; color: #721c24; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
-            @TempData["Erro"]
+            <i class="fas fa-exclamation-triangle"></i> @TempData["Erro"]
         </div>
     }
 
@@ -426,12 +426,12 @@
 
                         @if (crianca.Ativa)
                         {
-                            <a href="/Perfil/EditarCrianca/@crianca.Id" class="btn btn-warning">✏️ Editar</a>
+                            <a href="/Perfil/EditarCrianca/@crianca.Id" class="btn btn-warning"><i class="fas fa-edit"></i> Editar</a>
                             @if (isAdmin || Model.Count(c => c.Ativa) > 1)
                             {
                                 <button type="button" class="btn btn-danger"
                                         onclick="mostrarModalDesativar(@crianca.Id, '@crianca.Nome')">
-                                    ❌ Desativar
+                                    <i class="fas fa-ban"></i> Desativar
                                 </button>
                             }
                         }
@@ -439,15 +439,12 @@
                         {
                             <button type="button" class="btn btn-success"
                                     onclick="mostrarModalReativar(@crianca.Id, '@crianca.Nome')">
-                                ✅ Reativar
+                                <i class="fas fa-check"></i> Reativar
                             </button>
                         }
                     </div>
 
-                    @if (!crianca.Ativa)
-                    {
-                        <div class="text-muted">Criança desativada</div>
-                    }
+                    
                 </div>
             }
         </div>
@@ -460,7 +457,7 @@
     else
     {
         <div class="empty-state">
-            <div style="font-size: 3em; margin-bottom: 20px;">👶</div>
+            <div style="font-size: 3em; margin-bottom: 20px;"><i class="fas fa-baby text-muted"></i></div>
             @if (isAdmin)
             {
                 @if (!string.IsNullOrEmpty(responsavelNome))
@@ -468,7 +465,7 @@
                     <h2>Nenhuma criança cadastrada</h2>
                     <p>O responsável <strong>@responsavelNome</strong> ainda não tem crianças cadastradas.</p>
                     <a href="/Perfil/CadastrarCrianca?responsavelId=@ViewBag.ResponsavelId" class="btn btn-info" style="font-size: 1.1em; padding: 10px 20px;">
-                        ➕ Cadastrar Primeira Criança
+                        <i class="fas fa-plus"></i> Cadastrar Primeira Criança
                     </a>
                 }
                 else
@@ -476,7 +473,7 @@
                     <h2>Nenhuma criança no sistema</h2>
                     <p>Não há crianças cadastradas no sistema.</p>
                     <a href="/Perfil/CadastrarCrianca" class="btn btn-info" style="font-size: 1.1em; padding: 10px 20px;">
-                        ➕ Cadastrar Primeira Criança
+                        <i class="fas fa-plus"></i> Cadastrar Primeira Criança
                     </a>
                 }
             }
@@ -485,7 +482,7 @@
                 <h2>Nenhuma criança cadastrada</h2>
                 <p>Você ainda não tem crianças cadastradas em sua conta.</p>
                 <a href="/Perfil/CadastrarCrianca" class="btn btn-info" style="font-size: 1.1em; padding: 10px 20px;">
-                    ➕ Cadastrar Primeira Criança
+                    <i class="fas fa-plus"></i> Cadastrar Primeira Criança
                 </a>
             }
         </div>
@@ -494,16 +491,15 @@
     <div style="margin-top: 25px; padding-top: 15px; border-top: 1px solid #eee; text-align: center;">
         @if (isAdmin)
         {
-            <a href="/Admin" class="btn btn-secondary">⬅️ Voltar ao Painel Admin</a>
+            <a href="/Admin" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Voltar ao Painel Admin</a>
         }
         else
         {
-            <a href="/Perfil" class="btn btn-secondary">⬅️ Voltar ao Perfil</a>
+            <a href="/Perfil" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Voltar ao Perfil</a>
         }
     </div>
 </div>
 
-<!-- Modal de Confirmação -->
 <div id="confirmModal" class="modal-overlay" onclick="fecharModal(event)">
     <div class="modal-content-custom" onclick="event.stopPropagation()">
         <div id="modalHeader" class="modal-header-custom">

@@ -875,12 +875,12 @@ namespace Pi_Odonto.Controllers
                 return RedirectToAction("CandidatosVoluntarios");
             }
 
-            // Alterar situação para "banco de espera"
-            dentista.Situacao = "banco de espera";
+            // Alterar situação para "banco de talento"
+            dentista.Situacao = "banco de talento";
             dentista.Ativo = false;
             await _context.SaveChangesAsync();
 
-            TempData["Sucesso"] = $"Candidato {dentista.Nome} movido para banco de espera.";
+            TempData["Sucesso"] = $"Candidato {dentista.Nome} movido para banco de talento.";
             return RedirectToAction("CandidatosVoluntarios");
         }
 
