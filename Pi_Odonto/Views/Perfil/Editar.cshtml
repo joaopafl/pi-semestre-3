@@ -2,8 +2,9 @@
 @model Pi_Odonto.ViewModels.EditarPerfilResponsavelViewModel 
 @{
     ViewData["Title"] = "Editar Meu Perfil";
-    Layout = "~/Views/Shared/_Layout.cshtml"; 
+    Layout = "~/Views/Shared/_Layout.cshtml"; // Assumindo seu layout padrão
     
+    // Lista de opções de parentesco (necessária se o ViewModel não a tiver)
     var opcoesParentesco = Model.OpcoesParentesco ?? new List<string> { "Pai", "Mãe", "Avô", "Avó", "Tio", "Tia", "Padrasto", "Madrasta", "Tutor Legal" };
 }
 
@@ -28,10 +29,16 @@
 
                 <div class="card-body">
                     <form asp-action="Editar" method="post" id="editarPerfilForm">
-                        @Html.AntiForgeryToken()
-                        <h4 class="text-primary mb-3"><i class="fas fa-user"></i> Meus Dados</h4>
-                        
-                        @* ... Seus inputs aqui ... *@
+                        <input type="hidden" asp-for="Id" />
+                        <input type="hidden" asp-for="Email" /> @* Enviamos para o Controller, mas desabilitamos na View *@
+                        <input type="hidden" asp-for="Cpf" />
+
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                        <h4 class="text-primary mb-3">
+                            <i class="fas fa-user"></i> Meus Dados
+                        </h4>
+
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
@@ -77,8 +84,51 @@
                             <textarea asp-for="Endereco" class="form-control" rows="3"></textarea>
                             <span asp-validation-for="Endereco" class="text-danger"></span>
                         </div>
-                        
+
                         <div class="card mt-4">
+                            <div class="card-header bg-warning text-dark">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-key"></i> Alterar Senha (Opcional)
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle"></i>
+                                    Para alterar a senha, preencha os 3 campos. <strong>Deixe em branco</strong> para manter a senha atual.
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label asp-for="SenhaAtual" class="form-label">Senha Atual</label>
+                                            <input asp-for="SenhaAtual" type="password" class="form-control" placeholder="Sua senha atual" />
+                                            <span asp-validation-for="SenhaAtual" class="text-danger"></span>
+                                            
+                                            @* Link de Esqueci Senha se houver erro *@
+                                            @if (ViewData.ModelState.ContainsKey("SenhaAtual") && ViewData.ModelState["SenhaAtual"].Errors.Any())
+                                            {
+                                                <small class="text-muted d-block mt-1">
+                                                    <a asp-action="EsqueceuSenha" asp-controller="Auth" class="text-info">Esqueci minha senha</a>
+                                                </small>
+                                            }
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label asp-for="NovaSenha" class="form-label">Nova Senha</label>
+                                            <input asp-for="NovaSenha" type="password" class="form-control" placeholder="Mínimo 8 caracteres" />
+                                            <span asp-validation-for="NovaSenha" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label asp-for="ConfirmarNovaSenha" class="form-label">Confirmar Nova Senha</label>
+                                            <input asp-for="ConfirmarNovaSenha" type="password" class="form-control" placeholder="Confirme a nova senha" />
+                                            <span asp-validation-for="ConfirmarNovaSenha" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         <hr class="my-4">
@@ -89,17 +139,19 @@
                         <div id="criancas-container">
                             @for (int i = 0; i < Model.Criancas.Count; i++)
                             {
+                                @* Nota: O código da criança usa o índice do loop for (@i) *@
                                 <div class="border p-3 mb-3 rounded bg-light crianca-form" data-index="@i">
-                                    <div class="crianca-header-wrapper">
-                                        <h6 class="text-secondary mb-0">
-                                            <i class="fas fa-child"></i> Criança @(i + 1)
-                                        </h6>
-                                        
-                                        @* BOTÃO DE INATIVAR REMOVIDO DAQUI *@
-
-                                    </div>
+                                    <h6 class="text-secondary">
+                                        <i class="fas fa-child"></i> Criança @(i + 1)
+                                        @if (i > 0)
+                                        {
+                                            <button type="button" class="btn btn-outline-danger btn-sm float-end" onclick="removerCrianca(@i)">
+                                                <i class="fas fa-trash"></i> Remover Criança
+                                            </button>
+                                        }
+                                    </h6>
                                     
-                                    <input asp-for="Criancas[i].Id" type="hidden" /> 
+                                    <input asp-for="Criancas[i].Id" type="hidden" /> @* ID da Criança *@
                                     <input asp-for="Criancas[i].IdResponsavel" type="hidden" />
 
                                     <div class="row">
@@ -113,10 +165,7 @@
                                         <div class="col-md-6">
                                             <div class="mb-3">
                                                 <label asp-for="Criancas[i].Cpf" class="form-label">CPF</label>
-                                                <div class="input-group input-group-lock">
-                                                    <input asp-for="Criancas[i].Cpf" class="form-control cpf-crianca bg-light" readonly />
-                                                    <span class="input-group-text" title="CPF não pode ser alterado."><i class="fas fa-lock"></i></span>
-                                                </div>
+                                                <input asp-for="Criancas[i].Cpf" class="form-control cpf-crianca" />
                                                 <span asp-validation-for="Criancas[i].Cpf" class="text-danger"></span>
                                             </div>
                                         </div>
@@ -126,10 +175,7 @@
                                         <div class="col-md-6">
                                             <div class="mb-3">
                                                 <label asp-for="Criancas[i].DataNascimento" class="form-label">Data de Nascimento</label>
-                                                <div class="input-group input-group-lock">
-                                                    <input asp-for="Criancas[i].DataNascimento" type="date" class="form-control bg-light" readonly />
-                                                    <span class="input-group-text" title="Data de Nascimento não pode ser alterada."><i class="fas fa-lock"></i></span>
-                                                </div>
+                                                <input asp-for="Criancas[i].DataNascimento" type="date" class="form-control" />
                                                 <span asp-validation-for="Criancas[i].DataNascimento" class="text-danger"></span>
                                             </div>
                                         </div>
@@ -170,24 +216,32 @@
     </div>
 </div>
 
-@section Scripts {
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
-    
+
     <script>
         // Use a contagem atual das crianças para saber o próximo índice a adicionar
         var criancaIndex = @Model.Criancas.Count;
         var opcoesParentesco = @Html.Raw(Json.Serialize(opcoesParentesco)); 
 
         document.addEventListener('DOMContentLoaded', function () {
-            // APLICAÇÃO INICIAL DAS MÁSCARAS
-            $('#cpfInput').mask('000.000.000-00', { reverse: true }); 
+            // Aplica máscaras aos campos existentes ao carregar a página
+            $('#cpfInput').mask('000.000.000-00', { reverse: true });
             $('#telefoneInput').mask('(00) 00000-0000');
             $('.cpf-crianca').mask('000.000.000-00', { reverse: true });
             
-            // LISTENER CRÍTICO PARA REMOVER MÁSCARAS ANTES DO SUBMIT
+            // Adiciona listener para garantir que as máscaras sejam aplicadas a campos de criança adicionados dinamicamente
+            $(document).on('focus', '.cpf-crianca', function() {
+                 if (!$(this).data('mask-set')) {
+                    $(this).mask('000.000.000-00', { reverse: true });
+                    $(this).data('mask-set', true);
+                 }
+            });
+            // Adiciona listener de submit para reindexar e remover máscaras
             $('#editarPerfilForm').on('submit', function() {
                  reindexarCriancas();
+                 // Remover máscaras antes do POST para enviar o valor limpo
+                 $('#cpfInput').unmask(); 
                  $('#telefoneInput').unmask();
                  $('.cpf-crianca').unmask();
             });
@@ -195,17 +249,22 @@
             atualizarTitulosCriancas();
         });
 
-        // FUNÇÃO inativarCrianca REMOVIDA
 
+        // Funções de Máscara (simplificadas usando JQuery Mask, o que é mais robusto)
+        // Seus inputs já têm o ID/Classe no HTML: $('#cpfInput'), $('#telefoneInput'), $('.cpf-crianca')
+        // Elas foram aplicadas no DOMContentLoaded acima.
+        
         function adicionarCrianca() {
             var container = document.getElementById('criancas-container');
 
-            // --- CÓDIGO HTML da Criança ---
+            // --- NOVO CÓDIGO HTML da Criança ---
             var novaCriancaHtml = `
                 <div class="border p-3 mb-3 rounded bg-light crianca-form" data-novo-id="${criancaIndex}">
-                    <div class="crianca-header-wrapper">
-                        <h6 class="text-secondary mb-0"><i class="fas fa-child"></i> Criança Placeholder</h6>
-                        </div>
+                    <h6 class="text-secondary"><i class="fas fa-child"></i> Criança Placeholder
+                        <button type="button" class="btn btn-outline-danger btn-sm float-end" onclick="removerCrianca(this)">
+                            <i class="fas fa-trash"></i> Remover Criança
+                        </button>
+                    </h6>
                     <input name="Criancas[${criancaIndex}].Id" type="hidden" value="0" />
                     <input name="Criancas[${criancaIndex}].IdResponsavel" type="hidden" value="${@Model.Id}" />
 
@@ -251,23 +310,36 @@
 
             container.insertAdjacentHTML('beforeend', novaCriancaHtml);
 
-            // APLICAR MÁSCARA IMEDIATAMENTE APÓS INSERIR NOVO CAMPO
+            // Aplicar máscara no novo campo CPF
             var novoCampoCpf = container.querySelector(`input[name="Criancas[${criancaIndex}].Cpf"]`);
             $(novoCampoCpf).mask('000.000.000-00', { reverse: true });
 
             criancaIndex++;
-            atualizarTitulosCriancas();
+            atualizarTitulosCriancas(); // Atualiza a numeração para incluir a nova criança
         }
 
-        // Função vazia/removida
-        function removerCrianca(botao) {}
+        // FUNÇÃO CRÍTICA (CORRIGIDA)
+        function removerCrianca(botao) {
+            // Encontra o elemento pai 'crianca-form' e o remove
+            var formToRemove = botao.closest('.crianca-form');
+            if (formToRemove) {
+                 formToRemove.remove();
+                 // Reindexa imediatamente para manter a ordem visual
+                 atualizarTitulosCriancas();
+                 // O reindexamento final será feito no submit, mas fazemos aqui para manter a numeração visual correta
+            }
+        }
         
+        // NOVO MÉTODO: Renomeia todos os campos para garantir índices sequenciais (0, 1, 2, ...)
+        // Isso é crucial para o Model Binder do ASP.NET Core
         function reindexarCriancas() {
              var criancaForms = document.querySelectorAll('#criancas-container .crianca-form');
              criancaForms.forEach(function(form, index) {
+                 // Itera sobre todos os elementos de input, select e textarea dentro da div
                  form.querySelectorAll('input, select, textarea').forEach(function(element) {
                      let name = element.getAttribute('name');
                      if (name && name.startsWith('Criancas[')) {
+                         // Substitui o índice antigo pelo novo (o 'index' do forEach)
                          let novoName = name.replace(/Criancas\[\d+\]/g, `Criancas[${index}]`);
                          element.setAttribute('name', novoName);
                      }
@@ -275,16 +347,38 @@
              });
         }
 
-        // Método para corrigir a numeração
+        // Método para corrigir a numeração e botões (chamado após ADD e REMOVE)
         function atualizarTitulosCriancas() {
              var criancaForms = document.querySelectorAll('.crianca-form');
              criancaForms.forEach(function(form, index) {
-                 var tituloElement = form.querySelector('.crianca-header-wrapper h6');
-                 if(tituloElement) {
-                     tituloElement.innerHTML = `<i class="fas fa-child"></i> Criança ${index + 1}`;
+                 var tituloElement = form.querySelector('h6');
+                 // Nome base do título
+                 let tituloBase = `<i class="fas fa-child"></i> Criança ${index + 1}`;
+                 
+                 // Encontra o botão de remover existente ou cria um
+                 let removeButton = form.querySelector('.float-end');
+
+                 // O botão de remover só deve aparecer se não for a primeira criança (índice 0)
+                 if (index > 0) {
+                     if (!removeButton) {
+                        // Se não existe, insere o novo botão de remover
+                        tituloElement.insertAdjacentHTML('beforeend', `
+                             <button type="button" class="btn btn-outline-danger btn-sm float-end" onclick="removerCrianca(this)">
+                                 <i class="fas fa-trash"></i> Remover Criança
+                             </button>
+                         `);
+                     }
+                     // Atualiza o título (mantendo o botão, se existir)
+                     tituloElement.innerHTML = tituloBase + (removeButton ? removeButton.outerHTML : '');
+
+                 } else {
+                     // Se for a primeira criança (índice 0), remove o botão de exclusão
+                     if (removeButton) {
+                         removeButton.remove();
+                     }
+                     tituloElement.innerHTML = tituloBase;
                  }
-             });
+            });
         }
     </script>
     <partial name="_ValidationScriptsPartial" />
-}
