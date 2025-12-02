@@ -11,7 +11,7 @@ using System.Collections.Generic;
 
 namespace Pi_Odonto.Controllers
 {
-    [Authorize(AuthenticationSchemes = "AdminAuth,DentistaAuth")] 
+    [Authorize(AuthenticationSchemes = "AdminAuth,DentistaAuth")]
     public class AtendimentoController : Controller
     {
         private readonly AppDbContext _context;
@@ -32,7 +32,7 @@ namespace Pi_Odonto.Controllers
         private int GetCurrentDentistaId()
         {
             var claim = User.Claims.FirstOrDefault(c => c.Type == "DentistaId");
-            return claim != null ? int.Parse(claim.Value) : 0; 
+            return claim != null ? int.Parse(claim.Value) : 0;
         }
 
         /// <summary>
@@ -88,10 +88,10 @@ namespace Pi_Odonto.Controllers
             {
                 return Json(new { success = false, message = "Dentista inválido." });
             }
-            
+
             // 1. Procura por qualquer registro de escala para este dentista nesta data específica.
             bool estaNaEscala = await _context.EscalasMensaisDentista
-                                            .AnyAsync(e => e.IdDentista == idDentista && 
+                                            .AnyAsync(e => e.IdDentista == idDentista &&
                                                            e.DataEscala.Date == dataAtendimento.Date &&
                                                            e.Ativo);
 
@@ -148,9 +148,9 @@ namespace Pi_Odonto.Controllers
             {
                 return RedirectToAction("AcessoNegado", "Auth");
             }
-            
+
             // Define o retorno dinâmico para o botão Voltar na View
-            ViewData["ReturnUrl"] = GetRedirectAction(); 
+            ViewData["ReturnUrl"] = GetRedirectAction();
             return View(atendimento);
         }
 
@@ -218,9 +218,9 @@ namespace Pi_Odonto.Controllers
                     ModelState.AddModelError(nameof(viewModel.DataAtendimento), value.GetType().GetProperty("message")?.GetValue(value) as string ?? "Data fora da escala de trabalho do dentista.");
                 }
             }
-            
+
             // 3. Validação: Checagem de Conflito de Horário
-            if (viewModel.IdDentista > 0 && 
+            if (viewModel.IdDentista > 0 &&
                 await CheckForConflict(viewModel.IdDentista, viewModel.DataAtendimento, viewModel.HorarioAtendimento, viewModel.DuracaoAtendimento))
             {
                 ModelState.AddModelError(string.Empty, "O dentista selecionado já possui um agendamento neste horário e dia.");
@@ -254,7 +254,7 @@ namespace Pi_Odonto.Controllers
 
             // Recarregar dados para dropdowns em caso de erro
             viewModel.CriancasDisponiveis = await _context.Criancas.Where(c => c.Ativa).ToListAsync();
-            
+
             if (IsDentista())
             {
                 var dentista = await _context.Dentistas.FindAsync(GetCurrentDentistaId());
@@ -268,9 +268,85 @@ namespace Pi_Odonto.Controllers
             {
                 viewModel.DentistasDisponiveis = await _context.Dentistas.Where(d => d.Ativo).ToListAsync();
             }
-            
-            ViewData["ReturnUrl"] = GetRedirectAction(); 
+
+            ViewData["ReturnUrl"] = GetRedirectAction();
             return View(viewModel);
+        }
+
+
+        [HttpGet]
+        public async Task<IActionResult> Historico(string? nomeCrianca, string? cpfCrianca, string? nomeDentista, DateTime? dataInicio, DateTime? dataFim)
+        {
+            // Verifica se algum filtro foi usado
+            bool pesquisaRealizada = !string.IsNullOrEmpty(nomeCrianca) ||
+                                     !string.IsNullOrEmpty(cpfCrianca) ||
+                                     !string.IsNullOrEmpty(nomeDentista) ||
+                                     dataInicio.HasValue ||
+                                     dataFim.HasValue;
+
+            List<Atendimento> atendimentos = new List<Atendimento>();
+
+            // Só busca se houver pesquisa
+            if (pesquisaRealizada)
+            {
+                IQueryable<Atendimento> query = _context.Atendimentos
+                    .Include(a => a.Crianca)
+                    .Include(a => a.Dentista)
+                    .OrderByDescending(a => a.DataAtendimento)
+                    .ThenByDescending(a => a.HorarioAtendimento);
+
+                // Filtros
+                if (!string.IsNullOrEmpty(nomeCrianca))
+                {
+                    query = query.Where(a => a.Crianca!.Nome.Contains(nomeCrianca));
+                }
+
+                if (!string.IsNullOrEmpty(cpfCrianca))
+                {
+                    string cpfLimpo = cpfCrianca.Replace(".", "").Replace("-", "");
+                    query = query.Where(a => a.Crianca!.Cpf.Replace(".", "").Replace("-", "").Contains(cpfLimpo));
+                }
+
+                if (!string.IsNullOrEmpty(nomeDentista))
+                {
+                    query = query.Where(a => a.Dentista!.Nome.Contains(nomeDentista));
+                }
+
+                if (dataInicio.HasValue)
+                {
+                    query = query.Where(a => a.DataAtendimento >= dataInicio.Value);
+                }
+
+                if (dataFim.HasValue)
+                {
+                    query = query.Where(a => a.DataAtendimento <= dataFim.Value);
+                }
+
+                atendimentos = await query.ToListAsync();
+            }
+
+            // Buscar todas as crianças e dentistas para o autocomplete
+            ViewBag.Criancas = await _context.Criancas
+                .Where(c => c.Ativa)
+                .OrderBy(c => c.Nome)
+                .Select(c => new { c.Nome })
+                .ToListAsync();
+
+            ViewBag.Dentistas = await _context.Dentistas
+                .Where(d => d.Ativo)
+                .OrderBy(d => d.Nome)
+                .Select(d => new { d.Nome })
+                .ToListAsync();
+
+            // Manter valores dos filtros
+            ViewBag.NomeCrianca = nomeCrianca;
+            ViewBag.CpfCrianca = cpfCrianca;
+            ViewBag.NomeDentista = nomeDentista;
+            ViewBag.DataInicio = dataInicio?.ToString("yyyy-MM-dd");
+            ViewBag.DataFim = dataFim?.ToString("yyyy-MM-dd");
+            ViewBag.PesquisaRealizada = pesquisaRealizada;
+
+            return View(atendimentos);
         }
 
         // ==========================================================
@@ -303,7 +379,7 @@ namespace Pi_Odonto.Controllers
                 CriancasDisponiveis = await _context.Criancas.Where(c => c.Ativa).ToListAsync(),
                 DentistasDisponiveis = new List<Dentista>()
             };
-            
+
             if (IsDentista())
             {
                 var dentista = await _context.Dentistas.FindAsync(GetCurrentDentistaId());
@@ -336,7 +412,7 @@ namespace Pi_Odonto.Controllers
             {
                 return RedirectToAction("AcessoNegado", "Auth");
             }
-            
+
             if (IsDentista())
             {
                 viewModel.IdDentista = GetCurrentDentistaId();
@@ -412,7 +488,7 @@ namespace Pi_Odonto.Controllers
             {
                 viewModel.DentistasDisponiveis = await _context.Dentistas.Where(d => d.Ativo).ToListAsync();
             }
-            
+
             // Define o retorno dinâmico para o botão Voltar na View
             ViewData["ReturnUrl"] = GetRedirectAction();
             return View(viewModel);
@@ -433,7 +509,7 @@ namespace Pi_Odonto.Controllers
                 .FirstOrDefaultAsync(m => m.Id == id);
 
             if (atendimento == null) return NotFound();
-            
+
             ViewData["ReturnUrl"] = GetRedirectAction();
             return View(atendimento);
         }
